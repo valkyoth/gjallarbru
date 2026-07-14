@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible Gjallarbru bug.
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Steps, packet fixture, configuration, or test case.
+    validations:
+      required: true
+  - type: textarea
+    id: platform
+    attributes:
+      label: Platform and version
+      description: Gjallarbru version, Rust version, OS, architecture, and transport.
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security impact
+      description: Do not include exploitable private details. Use SECURITY.md for private reports.
+    validations:
+      required: false
+

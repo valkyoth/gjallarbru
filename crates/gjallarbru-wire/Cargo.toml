@@ -1,0 +1,16 @@
+[package]
+name = "gjallarbru-wire"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license = "MIT OR Apache-2.0"
+description = "Allocation-free no_std STUN/TURN wire primitives for Gjallarbru"
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["no-std", "stun", "turn", "network-protocol"]
+categories = ["network-programming", "no-std"]
+
+[lints]
+workspace = true

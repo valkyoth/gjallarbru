@@ -1,0 +1,214 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2026-07-14T10:29:37Z",
+    "creators": [
+      "Tool: cargo-sbom-v0.10.0"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://spdx.org/spdxdocs/gjallarbru-d30ed520-8f17-404f-b150-5d2f41764ec5",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-gjallarbru_core",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3c2387a4c8ea0479c6535fadd49c8c9c85d497f0"
+        }
+      ],
+      "fileName": "./Cargo.lock",
+      "fileTypes": [
+        "SOURCE",
+        "TEXT"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-gjallarbru_crypto",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3c2387a4c8ea0479c6535fadd49c8c9c85d497f0"
+        }
+      ],
+      "fileName": "./Cargo.lock",
+      "fileTypes": [
+        "SOURCE",
+        "TEXT"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-gjallarbru_runtime",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3c2387a4c8ea0479c6535fadd49c8c9c85d497f0"
+        }
+      ],
+      "fileName": "./Cargo.lock",
+      "fileTypes": [
+        "SOURCE",
+        "TEXT"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-gjallarbru",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3c2387a4c8ea0479c6535fadd49c8c9c85d497f0"
+        }
+      ],
+      "fileName": "./Cargo.lock",
+      "fileTypes": [
+        "SOURCE",
+        "TEXT"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-gjallarbru_wire",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3c2387a4c8ea0479c6535fadd49c8c9c85d497f0"
+        }
+      ],
+      "fileName": "./Cargo.lock",
+      "fileTypes": [
+        "SOURCE",
+        "TEXT"
+      ]
+    }
+  ],
+  "name": "gjallarbru",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-gjallarbru-server-0.1.0",
+      "description": "Security-first Gjallarbru STUN/TURN server application",
+      "downloadLocation": "NONE",
+      "homepage": "https://github.com/valkyoth/gjallarbru",
+      "licenseConcluded": "EUPL-1.2",
+      "licenseDeclared": "EUPL-1.2",
+      "name": "gjallarbru-server",
+      "versionInfo": "0.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gjallarbru-wire-0.1.0",
+      "description": "Allocation-free no_std STUN/TURN wire primitives for Gjallarbru",
+      "downloadLocation": "NONE",
+      "homepage": "https://github.com/valkyoth/gjallarbru",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "name": "gjallarbru-wire",
+      "versionInfo": "0.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gjallarbru-crypto-0.1.0",
+      "description": "no_std cryptographic provider boundaries for Gjallarbru",
+      "downloadLocation": "NONE",
+      "homepage": "https://github.com/valkyoth/gjallarbru",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "name": "gjallarbru-crypto",
+      "versionInfo": "0.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gjallarbru-runtime-0.1.0",
+      "description": "Portable operating-system runtime adapters for Gjallarbru",
+      "downloadLocation": "NONE",
+      "homepage": "https://github.com/valkyoth/gjallarbru",
+      "licenseConcluded": "EUPL-1.2",
+      "licenseDeclared": "EUPL-1.2",
+      "name": "gjallarbru-runtime",
+      "versionInfo": "0.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gjallarbru-core-0.1.0",
+      "description": "Deterministic no_std Sans-I/O STUN/TURN state engine",
+      "downloadLocation": "NONE",
+      "homepage": "https://github.com/valkyoth/gjallarbru",
+      "licenseConcluded": "MIT OR Apache-2.0",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "name": "gjallarbru-core",
+      "versionInfo": "0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-core-0.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-gjallarbru-runtime-0.1.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-runtime-0.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-gjallarbru-server-0.1.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-gjallarbru_wire",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-wire-0.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-gjallarbru-core-0.1.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-crypto-0.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-gjallarbru-core-0.1.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-gjallarbru_core",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-gjallarbru_crypto",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-wire-0.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-gjallarbru-runtime-0.1.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-core-0.1.0",
+      "relationshipType": "GENERATED_FROM",
+      "spdxElementId": "SPDXRef-File-gjallarbru_core"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-wire-0.1.0",
+      "relationshipType": "GENERATED_FROM",
+      "spdxElementId": "SPDXRef-File-gjallarbru_wire"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-gjallarbru_runtime",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-runtime-0.1.0",
+      "relationshipType": "GENERATED_FROM",
+      "spdxElementId": "SPDXRef-File-gjallarbru_runtime"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-server-0.1.0",
+      "relationshipType": "GENERATED_FROM",
+      "spdxElementId": "SPDXRef-File-gjallarbru"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-gjallarbru",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-gjallarbru-crypto-0.1.0",
+      "relationshipType": "GENERATED_FROM",
+      "spdxElementId": "SPDXRef-File-gjallarbru_crypto"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

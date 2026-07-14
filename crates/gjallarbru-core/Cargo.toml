@@ -1,0 +1,20 @@
+[package]
+name = "gjallarbru-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license = "MIT OR Apache-2.0"
+description = "Deterministic no_std Sans-I/O STUN/TURN state engine"
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["no-std", "sans-io", "stun", "turn"]
+categories = ["network-programming", "no-std"]
+
+[dependencies]
+gjallarbru-crypto.workspace = true
+gjallarbru-wire.workspace = true
+
+[lints]
+workspace = true

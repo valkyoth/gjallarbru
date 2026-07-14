@@ -1,0 +1,24 @@
+[release]
+version = "0.1.0"
+policy = "independent"
+
+[crates.gjallarbru-wire]
+previous_version = "unpublished"
+version = "0.1.0"
+change = "unpublished"
+publish = false
+reason = "The wire API and independent release gate are not stable yet."
+
+[crates.gjallarbru-crypto]
+previous_version = "unpublished"
+version = "0.1.0"
+change = "unpublished"
+publish = false
+reason = "The provider API and independent release gate are not stable yet."
+
+[crates.gjallarbru-core]
+previous_version = "unpublished"
+version = "0.1.0"
+change = "unpublished"
+publish = false
+reason = "The Sans-I/O API and independent release gate are not stable yet."

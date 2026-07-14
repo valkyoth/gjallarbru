@@ -1,0 +1,24 @@
+# number URL role
+2119 https://www.rfc-editor.org/rfc/rfc2119.txt normative-language
+5769 https://www.rfc-editor.org/rfc/rfc5769.txt test-vectors
+5780 https://www.rfc-editor.org/rfc/rfc5780.txt behavior-discovery
+5928 https://www.rfc-editor.org/rfc/rfc5928.txt turn-dns-resolution
+6062 https://www.rfc-editor.org/rfc/rfc6062.txt tcp-relay
+6679 https://www.rfc-editor.org/rfc/rfc6679.txt ecn-check
+7064 https://www.rfc-editor.org/rfc/rfc7064.txt stun-uri
+7065 https://www.rfc-editor.org/rfc/rfc7065.txt turn-uri
+7350 https://www.rfc-editor.org/rfc/rfc7350.txt dtls-transport
+7376 https://www.rfc-editor.org/rfc/rfc7376.txt auth-security
+7443 https://www.rfc-editor.org/rfc/rfc7443.txt stun-turn-alpn
+7635 https://www.rfc-editor.org/rfc/rfc7635.txt third-party-auth
+7982 https://www.rfc-editor.org/rfc/rfc7982.txt measurement
+7983 https://www.rfc-editor.org/rfc/rfc7983.txt shared-port-demux
+8016 https://www.rfc-editor.org/rfc/rfc8016.txt mobility
+8155 https://www.rfc-editor.org/rfc/rfc8155.txt turn-auto-discovery
+8174 https://www.rfc-editor.org/rfc/rfc8174.txt normative-language
+8265 https://www.rfc-editor.org/rfc/rfc8265.txt precis-profiles
+8489 https://www.rfc-editor.org/rfc/rfc8489.txt stun-base
+8656 https://www.rfc-editor.org/rfc/rfc8656.txt turn-base
+9147 https://www.rfc-editor.org/rfc/rfc9147.txt dtls-13
+9325 https://www.rfc-editor.org/rfc/rfc9325.txt tls-dtls-policy
+9443 https://www.rfc-editor.org/rfc/rfc9443.txt quic-shared-port

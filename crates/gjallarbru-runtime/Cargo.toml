@@ -1,0 +1,19 @@
+[package]
+name = "gjallarbru-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license = "EUPL-1.2"
+description = "Portable operating-system runtime adapters for Gjallarbru"
+homepage.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+gjallarbru-core.workspace = true
+gjallarbru-wire.workspace = true
+
+[lints]
+workspace = true
+

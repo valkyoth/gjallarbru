@@ -1,0 +1,22 @@
+[package]
+name = "gjallarbru-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license = "EUPL-1.2"
+description = "Security-first Gjallarbru STUN/TURN server application"
+homepage.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+gjallarbru-runtime.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "gjallarbru"
+path = "src/main.rs"
+

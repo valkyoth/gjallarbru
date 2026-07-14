@@ -1,0 +1,16 @@
+[package]
+name = "gjallarbru-crypto"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license = "MIT OR Apache-2.0"
+description = "no_std cryptographic provider boundaries for Gjallarbru"
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["no-std", "stun", "turn", "cryptography"]
+categories = ["cryptography", "no-std"]
+
+[lints]
+workspace = true

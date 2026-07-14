@@ -1,0 +1,95 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  checks:
+    name: Format, lint, test, policy, and audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Install security tools
+        run: |
+          cargo install --locked cargo-deny --version 0.20.2
+          cargo install --locked cargo-audit --version 0.22.2
+
+      - name: Install SBOM tool
+        run: cargo install --locked cargo-sbom --version 0.10.0
+
+      - name: Run local check gate
+        run: scripts/checks.sh
+
+      - name: Check dependency policy
+        run: cargo deny check
+
+      - name: Check RustSec advisories
+        run: cargo audit
+
+      - name: Verify committed SBOM
+        run: scripts/generate-sbom.sh --check
+
+  rust-versions:
+    name: Rust ${{ matrix.rust }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        rust:
+          - 1.90.0
+          - 1.91.0
+          - 1.92.0
+          - 1.93.0
+          - 1.94.0
+          - 1.95.0
+          - 1.96.0
+          - 1.96.1
+          - 1.97.0
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust ${{ matrix.rust }}
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal
+
+      - name: Check all features
+        run: cargo +${{ matrix.rust }} check --workspace --all-targets --all-features
+
+  host-portability:
+    name: Host ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Build and test workspace
+        run: cargo test --workspace --all-features
