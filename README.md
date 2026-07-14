@@ -152,7 +152,7 @@ levels required before a platform is advertised as production supported.
 ```bash
 scripts/checks.sh
 scripts/check-rust-version-matrix.sh
-cargo deny check
+cargo deny --locked check
 cargo audit
 ```
 

@@ -52,6 +52,5 @@ When adding or updating crates:
 - preserve `no_std` and allocation boundaries;
 - do not admit another STUN/TURN codec or state implementation;
 - update `Cargo.lock` and relevant tests;
-- run `cargo deny check` and `cargo audit`;
+- run `cargo deny --locked check` and `cargo audit`;
 - document why the crate belongs in this workspace.
-

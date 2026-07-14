@@ -116,6 +116,7 @@ The index and detailed contracts are checked together by
 | `0.64.1` | Tenant and realm isolation | Realm selection, keys, policies, state, certificates, revocation, and usage remain tenant-separated |
 | `0.65.0` | Graceful drain/shutdown | New-allocation policy, expiry, forced deadline, and restart tests pass |
 | `0.66.0` | Process hardening | Privilege drop, secret handling, filesystem/syscall policy, and failure evidence pass |
+| `0.66.1` | Panic blast-radius containment | Supervised worker processes restart after forced aborts within the availability SLO without leaking authority or secrets |
 | `0.67.0` | Portable desktop/server runtime | Linux, Windows, BSD, and macOS safe backends pass the common conformance suite |
 | `0.68.0` | Mobile embedding | Android and iOS builds, lifecycle, suspension, and bounded background behavior pass |
 | `0.69.0` | Aesynx readiness contract | Fixed storage and explicit time/random/network traits compile without OS assumptions |

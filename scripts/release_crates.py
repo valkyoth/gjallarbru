@@ -81,7 +81,9 @@ def parse_version(version: str) -> tuple[int, int, int]:
 
 
 def cargo_metadata() -> dict:
-    raw = capture(["cargo", "metadata", "--format-version", "1", "--no-deps"])
+    raw = capture(
+        ["cargo", "metadata", "--locked", "--format-version", "1", "--no-deps"]
+    )
     return json.loads(raw)
 
 
@@ -237,7 +239,7 @@ def run_preflight(args: argparse.Namespace) -> None:
     gate = ROOT / "scripts" / f"release_{release[0]}_{release[1]}_gate.sh"
     run([str(gate.relative_to(ROOT))] if gate.exists() else ["scripts/checks.sh"], dry_run=args.dry_run)
     run(["scripts/check-rust-version-matrix.sh"], dry_run=args.dry_run)
-    run(["cargo", "deny", "check"], dry_run=args.dry_run)
+    run(["cargo", "deny", "--locked", "check"], dry_run=args.dry_run)
     run(["cargo", "audit"], dry_run=args.dry_run)
 
 
@@ -257,7 +259,7 @@ def selected_steps(start_at: str, steps: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def publish(package: str, args: argparse.Namespace) -> None:
-    command = ["cargo", "publish", "-p", package]
+    command = ["cargo", "publish", "--locked", "-p", package]
     if args.no_verify:
         command.append("--no-verify")
     run(command, dry_run=args.dry_run)
@@ -338,6 +340,7 @@ def main() -> int:
         return 1
 
     run_preflight(args)
+    require_clean_tree(dry_run=args.dry_run)
     for index, package in enumerate(steps):
         publish(package, args)
         if index + 1 < len(steps):

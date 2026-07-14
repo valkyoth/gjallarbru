@@ -48,7 +48,7 @@ Every milestone and patch version is pentested before tagging. A version is
 not tag-ready until:
 
 - `scripts/checks.sh`, `scripts/check-rust-version-matrix.sh`,
-  `cargo deny check`, and `cargo audit` pass;
+  `cargo deny --locked check`, and `cargo audit` pass;
 - `scripts/generate-sbom.sh --check` confirms dependency-graph parity;
 - the version-specific verification and release gate pass;
 - release notes exist at `release-notes/RELEASE_NOTES_X.Y.Z.md`;
@@ -114,6 +114,7 @@ Current closure decisions are:
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
 | Platform and Aesynx support could be architectural slogans only. | Platform evidence in `v0.67.0` through `v0.69.0` and closure at `v0.95.0`. |
+| `panic = "abort"` could turn one provider panic into indefinite whole-service loss. | `v0.66.1` adds supervised process containment, forced-abort tests, fencing, and restart SLO evidence. |
 | Alternate routing, discovery, ALPN, PRECIS, DTLS 1.3, and registered optional attributes could be silently omitted. | Corrective protocol contracts are assigned to `v0.12.1`, `v0.20.1`, `v0.33.1`, `v0.54.1`, `v0.74.1`, `v0.76.1`, `v0.106.0`, and `v0.107.0`. |
 | Tenant labels could exist without a security boundary. | Listener/destination/SNI realm selection and isolated authority domains are required by `v0.64.1`. |
 | Pawalyze could expose a reusable browser credential. | Ephemeral OpenBao-backed issuance is `v0.91.1`; full browser and recovery closure is `v0.101.0`. |
@@ -1596,6 +1597,37 @@ Exit criteria:
 - Production mode refuses required hardening failures and documents residual platform gaps.
 - Stop: `v0.66.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.66.1 - Panic Blast-Radius Containment
+
+Goal: retain release-profile `panic = "abort"` while preventing one unexpected
+worker or provider panic from indefinitely removing the complete service.
+
+Deliverables:
+
+- explicit process-wide abort threat analysis and a supervised multi-worker process
+  model with generation identity, readiness, restart rate, backoff, and crash-loop limits;
+- bounded, redacted panic/crash evidence with secret-bearing core dumps disabled and no
+  attempt to use `catch_unwind` as isolation in an aborting release build;
+- listener/relay ownership, port-pool partition, stale-generation fencing, allocation-loss,
+  client recovery, and platform/service-manager responsibilities after worker death;
+- documented single-process development limitation and production minimum redundancy for
+  native, container, cluster, and future Aesynx deployment profiles.
+
+Verification:
+
+- test-only dependency/provider and first-party panic injection in release-profile workers,
+  proving process abort, supervisor detection, cleanup/fencing, and restart within the SLO
+- repeated crash, simultaneous worker crash, crash loop, supervisor death, partial startup,
+  secret/core-dump inspection, stale socket/completion, and healthy-worker continuity tests
+- Linux, Windows, BSD, macOS, container, service-manager, and cluster fault-injection matrix
+  with explicit capability exclusions where a platform cannot provide a claimed control
+
+Exit criteria:
+
+- An unexpected panic has a measured process-level blast radius, cannot preserve stale
+  TURN authority or expose secrets, and service capacity recovers within its published SLO.
+- Stop: `v0.66.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.67.0 - Portable Desktop and Server Runtimes
 
 Goal: verify the safe backend on Linux, Windows, BSD, and macOS.
@@ -1752,7 +1784,7 @@ Deliverables:
 Verification:
 
 - TLS scanner/interoperability suite plus handshake-flood and malformed-record tests
-- `cargo deny check` and provider advisory review
+- `cargo deny --locked check` and provider advisory review
 
 Exit criteria:
 

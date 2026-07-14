@@ -15,4 +15,4 @@ grep -Fq 'version = "0.1.0"' Cargo.toml
 grep -Fq 'first serious production-ready STUN/TURN server application' \
     docs/VERSION_PLAN.md
 
-cargo metadata --format-version 1 --no-deps >/dev/null
+cargo metadata --locked --format-version 1 --no-deps >/dev/null

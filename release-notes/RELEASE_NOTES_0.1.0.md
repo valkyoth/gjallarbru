@@ -15,6 +15,12 @@ checks, GitHub configuration, licensing model, and RFC reference process.
 - The runtime and server remain non-functional scaffolds.
 - Dependency, advisory, source, modularity, and RFC-integrity policies are
   defined before network parsing begins.
+- Workspace builds, tests, metadata, package checks, and publication commands
+  fail rather than rewriting the committed Cargo lockfile.
+- Package allowlist checks reject dirty publishable-crate input, and shell
+  syntax checks use each script's declared Bash or POSIX shell interpreter.
+- Abort-on-panic availability risk is explicit, with supervised worker-process
+  containment and forced-abort recovery testing assigned before production.
 - Twenty-three RFC Editor documents are locally checksum-locked.
 - The complete pre-1.0 sequence contains individually testable release
   contracts with an exact-candidate pentest stop for every tag.
@@ -33,7 +39,7 @@ checks, GitHub configuration, licensing model, and RFC reference process.
 ```bash
 scripts/checks.sh
 scripts/check-rust-version-matrix.sh
-cargo deny check
+cargo deny --locked check
 cargo audit
 ```
 

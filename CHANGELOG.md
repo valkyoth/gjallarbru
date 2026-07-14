@@ -13,7 +13,7 @@ No changes yet.
 - Added the security, modularity, platform, licensing, RFC-source,
   implementation, version, and release policy baseline.
 - Added checksum-locked tooling and local copies for 23 RFC references.
-- Added 129 complete version contracts through the production `1.0.0` release,
+- Added 130 complete version contracts through the production `1.0.0` release,
   including exact-commit pentest stops for every version.
 - Added a tested pentest/retest → PASS report → final CodeQL → tag workflow
   that permits documented CodeQL remediation without a report-only commit rule.
@@ -21,5 +21,8 @@ No changes yet.
   keeping the runtime, cluster, and server application private.
 - Planned secure clustering, Pawalyze credentials, Fluxheim interoperability,
   and qualified Wolfi and Debian rootless containers before `1.0.0`.
+- Hardened the foundation release after pentest with locked Cargo resolution,
+  clean package-list checks, interpreter-aware shell validation, and a planned
+  supervised-process panic-containment milestone.
 - Added GitHub CI and repository governance files based on the established
   Valkyoth project pattern.

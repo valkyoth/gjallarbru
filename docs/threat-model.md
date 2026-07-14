@@ -64,4 +64,20 @@ Status: foundation threat model
 - Zeroization cannot prove erasure of compiler-created or historical copies.
 - Public TURN service remains a high-value denial-of-service target even with
   bounded degradation.
+- Release builds use `panic = "abort"`; a panic in first-party code or a future
+  runtime/TLS/DTLS/provider dependency terminates the containing process and
+  cannot be isolated with `catch_unwind`.
 
+## Panic and Process Availability Contract
+
+Gjallarbru keeps abort-on-panic because continuing after an unexpected invariant
+failure could retain corrupted relay authority. The compensating availability
+boundary is operating-system process isolation, not language unwinding.
+
+`v0.66.1` must introduce supervised, generation-identified worker processes with
+bounded restart/backoff, crash-loop handling, stale socket/relay fencing, disabled
+secret-bearing core dumps, and redundant production capacity. Release-profile
+fault injection must deliberately trigger panics in first-party and provider-edge
+code and measure detection, authority cleanup, client impact, and recovery against
+the published availability SLO. Until that milestone, the foundation binary is
+non-functional and makes no per-connection panic-isolation claim.

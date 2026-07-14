@@ -18,5 +18,5 @@ for toolchain in "${toolchains[@]}"; do
         rustup toolchain install "$toolchain" --profile minimal
     fi
 
-    cargo "+$toolchain" check --workspace --all-targets --all-features
+    cargo "+$toolchain" check --workspace --all-targets --all-features --locked
 done

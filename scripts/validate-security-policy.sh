@@ -28,7 +28,7 @@ for crate in runtime server; do
     grep -Fq 'publish = false' "$manifest"
 done
 
-if cargo tree --workspace --edges normal --prefix none | \
+if cargo tree --locked --workspace --edges normal --prefix none | \
     rg -i '(^|[-_])(stun|turn|webrtc)([-_]|$)'; then
     echo "possible third-party STUN/TURN dependency requires explicit review" >&2
     exit 1

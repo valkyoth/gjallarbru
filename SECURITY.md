@@ -18,7 +18,7 @@ Run these regularly and before releases:
 scripts/checks.sh
 scripts/check-rust-version-matrix.sh
 scripts/check_latest_tools.sh
-cargo deny check
+cargo deny --locked check
 cargo audit
 ```
 
@@ -59,7 +59,7 @@ Every new or updated crate requires:
 - proof that `no_std` packages retain their intended boundary;
 - proof that it does not import a third-party STUN/TURN implementation;
 - tests for the admitted behavior;
-- `cargo deny check` and `cargo audit` evidence.
+- `cargo deny --locked check` and `cargo audit` evidence.
 
 ## Reporting
 

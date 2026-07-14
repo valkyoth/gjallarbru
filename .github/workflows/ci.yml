@@ -39,7 +39,7 @@ jobs:
         run: scripts/checks.sh
 
       - name: Check dependency policy
-        run: cargo deny check
+        run: cargo deny --locked check
 
       - name: Check RustSec advisories
         run: cargo audit
@@ -73,7 +73,7 @@ jobs:
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal
 
       - name: Check all features
-        run: cargo +${{ matrix.rust }} check --workspace --all-targets --all-features
+        run: cargo +${{ matrix.rust }} check --workspace --all-targets --all-features --locked
 
   host-portability:
     name: Host ${{ matrix.os }}
@@ -92,4 +92,4 @@ jobs:
         run: rustup show
 
       - name: Build and test workspace
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --all-features --locked
