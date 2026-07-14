@@ -35,7 +35,7 @@ primitives, TLS/DTLS, Unicode/PRECIS, system calls, and operational adapters.
 
 ## Current Status
 
-Status: RFC requirement-ledger release candidate for `v0.2.0`.
+Status: `v0.2.0` pentest passed; awaiting final GitHub CI and CodeQL.
 
 Implemented now:
 
