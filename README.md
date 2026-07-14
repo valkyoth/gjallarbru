@@ -108,14 +108,14 @@ release work uses pinned stable Rust `1.97.0`.
 
 | Rust | Required evidence |
 | --- | --- |
-| `1.90.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.91.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.92.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.93.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.94.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.95.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.96.0` | `cargo check --workspace --all-targets --all-features` |
-| `1.96.1` | `cargo check --workspace --all-targets --all-features` |
+| `1.90.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.91.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.92.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.93.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.94.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.95.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.96.0` | `cargo check --workspace --all-targets --all-features --locked` |
+| `1.96.1` | `cargo check --workspace --all-targets --all-features --locked` |
 | `1.97.0` | Full local check and release gate |
 
 Run the complete compatibility matrix with:

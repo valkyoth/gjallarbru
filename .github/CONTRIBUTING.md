@@ -20,8 +20,8 @@ See [`docs/licensing.md`](../docs/licensing.md).
 Use the pinned Rust toolchain from `rust-toolchain.toml`.
 
 ```bash
-cargo check --workspace --all-features
-cargo test --workspace --all-features
+cargo check --workspace --all-features --locked
+cargo test --workspace --all-features --locked
 scripts/checks.sh
 ```
 
