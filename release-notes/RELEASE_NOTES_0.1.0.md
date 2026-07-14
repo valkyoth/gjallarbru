@@ -1,6 +1,6 @@
 # Gjallarbru 0.1.0 Release Notes
 
-Status: implementation foundation, not tag-ready
+Release type: repository and security foundation
 
 ## Scope
 
@@ -15,6 +15,11 @@ checks, GitHub configuration, licensing model, and RFC reference process.
 - The runtime and server remain non-functional scaffolds.
 - Dependency, advisory, source, modularity, and RFC-integrity policies are
   defined before network parsing begins.
+- Twenty-three RFC Editor documents are locally checksum-locked.
+- The complete pre-1.0 sequence contains individually testable release
+  contracts with an exact-candidate pentest stop for every tag.
+- Reusable crate publication uses independent versions and admission gates;
+  the EUPL runtime, future cluster crate, and server remain private.
 
 ## Known Limitations
 
@@ -32,5 +37,5 @@ cargo deny check
 cargo audit
 ```
 
-The release remains untagged until its exact candidate commit passes the
-pentest and release-readiness flow in `docs/RELEASE_PLAN.md`.
+Tagging requires the exact candidate commit to pass the pentest and
+release-readiness flow in `docs/RELEASE_PLAN.md`.
