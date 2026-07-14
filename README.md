@@ -74,7 +74,7 @@ supported STUN/TURN profiles is postponed beyond `1.0.0`.
 | Pinned toolchain | Rust `1.97.0` |
 | Protocol authority | `no_std`, Sans-I/O, bounded |
 | Default external dependencies | None |
-| Unsafe policy | Forbidden in wire, crypto, and core; isolated and reviewed in future runtime modules |
+| Unsafe policy | Forbidden in the future facade, wire, crypto, and core; isolated and reviewed in future runtime modules |
 | Packet-path allocation target | None after startup |
 | Specification source | Checksum-locked RFC Editor text plus reviewed errata |
 | Code size | Non-generated Rust files must stay below 500 lines |
@@ -91,11 +91,18 @@ supported STUN/TURN profiles is postponed beyond `1.0.0`.
 | `gjallarbru-runtime` | EUPL-1.2 | no | internal | Portable and accelerated OS adapters |
 | `gjallarbru-server` | EUPL-1.2 | no | GitHub/OS artifacts | Configuration and deployable server binary |
 
+At `v0.55.1`, a thin MIT/Apache-2.0 `no_std` facade crate named `gjallarbru`
+will become the recommended library entry point. It will expose
+`gjallarbru::wire`, `gjallarbru::crypto`, and `gjallarbru::core` without
+depending on the EUPL runtime or server. Its package and crate documentation
+must remain identical to this repository README through an automated parity or
+single-source check.
+
 The dependency direction is inward only:
 
 ```text
-server -> runtime -> core -> wire
-                    -> crypto
+gjallarbru facade -> {wire, crypto, core}
+server -> runtime -> core -> {wire, crypto}
 ```
 
 Core crates never depend on the runtime, an operating system, an async
@@ -169,9 +176,11 @@ scripts/fetch-rfcs.sh
 GitHub is the canonical project and the server's primary distribution channel.
 Production releases will provide signed binaries, checksums, SBOMs,
 provenance, service definitions, and later OS packages. Reusable `no_std`
-crates will be published to crates.io only after their APIs and independent
-release gates are stable. They use versions independent from the server so an
-unchanged library is never republished merely because the application advances.
+support crates will be published to crates.io only after their APIs and
+independent release gates are stable. They use independent versions so an
+unchanged support crate is never republished merely because the application
+advances. The future `gjallarbru` facade follows project milestone versions and
+publishes last only when its package or dependency contract changes.
 See [`docs/CRATE_VERSION_MATRIX.md`](docs/CRATE_VERSION_MATRIX.md) for the
 consumer value, version rules, and current publication state.
 

@@ -3,9 +3,11 @@
 Status: all reusable crates are intentionally unpublished while their APIs and
 independent release gates are being established.
 
-Gjallarbru uses independent versions for crates.io packages. The server release
-version remains the workspace milestone, while a reusable crate changes version
-only when its own package contents require a crates.io release.
+Gjallarbru support crates use independent versions. The server release version
+remains the workspace milestone, and the planned `gjallarbru` facade follows
+that milestone version when its package or dependency contract changes. An
+unchanged support crate is never republished only because the facade or server
+advances.
 
 ## Why Publish Reusable Crates
 
@@ -23,6 +25,9 @@ configuration model, or deployment choices:
 - `gjallarbru-core` can provide a deterministic Sans-I/O STUN/TURN state engine
   for a different executor, appliance, simulator, mobile embedding, or future
   Aesynx adapter.
+- `gjallarbru` will give most consumers one documented `no_std` entry point
+  with `wire`, `crypto`, and `core` namespaces while preserving the smaller
+  crates for direct use.
 
 crates.io gives those consumers immutable package versions, Cargo-native
 dependency resolution, checksums, documentation hosting, discoverability, and
@@ -35,12 +40,13 @@ crates.io is a verified distribution channel, not a second development home.
 | --- | --- | --- |
 | `unpublished` | Keep the manifest version while the first public API is not admitted. | No |
 | `initial` | Publish the reviewed manifest version after the independent crate gate passes. | Yes |
-| `code` | Increment the crate's own minor version and reset patch to zero for a backward-compatible feature or material API addition. | Yes |
+| `code` | Increment a support crate's own minor version and reset patch to zero for a backward-compatible feature or material API addition. | Yes |
 | `breaking` | Before 1.0, increment minor and reset patch; after 1.0, increment major and reset minor/patch. | Yes |
 | `fix` | Increment only the existing patch version for a compatible code correction. | Yes |
 | `dependency` | Increment only the existing patch version. | Yes |
 | `metadata` | Increment only the existing patch version because crates.io package metadata is immutable. | Yes |
 | `unchanged` | Keep the previous published version. | No |
+| `facade` | Use the Gjallarbru milestone version when the facade API, features, documentation, or dependency contract changes. | Yes |
 
 `dependency` means first-party code did not materially change, but the package
 manifest must reference a newly published internal dependency. `metadata`
@@ -60,6 +66,7 @@ Initial publication is versioned work, not an unspecified future action:
 | `gjallarbru-wire` | `v0.22.0` | Wire API review, vectors, no-allocation evidence, fuzzing, MSRV matrix, package review, pentest/retest, and final CodeQL |
 | `gjallarbru-crypto` | `v0.34.0` | Provider API review, authentication vectors, secret-handling review, package review, pentest/retest, and final CodeQL |
 | `gjallarbru-core` | `v0.55.0` | Sans-I/O API review, RFC 8489/8656 conformance, state-model evidence, package review, pentest/retest, and final CodeQL |
+| `gjallarbru` | `v0.55.1` | Namespaced facade API, no_std/private-dependency proof, root-README parity, package review, support-crate publication verification, pentest/retest, and final CodeQL |
 
 An admission milestone is the earliest allowed publication, not an automatic
 publish command. The permanent pentest report and crate-specific release gate
@@ -72,7 +79,13 @@ must pass first, and publication still requires explicit maintainer approval.
 | `gjallarbru-wire` | No | `0.1.0` | `unpublished` | No | Wire API and crate-specific gate are not stable. |
 | `gjallarbru-crypto` | No | `0.1.0` | `unpublished` | No | Provider API and crate-specific gate are not stable. |
 | `gjallarbru-core` | No | `0.1.0` | `unpublished` | No | Sans-I/O API and crate-specific gate are not stable. |
+| `gjallarbru` | Not created | `0.55.1` admission | `planned` | No | Facade admission follows publication eligibility for all three support crates. |
+
+`planned` is a documentation-only state for the not-yet-created facade; it is
+not accepted by `release-crates.toml` until the package joins the workspace at
+its implementation milestone.
 
 Update this table and `release-crates.toml` together whenever a crate changes
-release state. Published crates must be processed in the dependency-safe order
-`gjallarbru-wire`, `gjallarbru-crypto`, then `gjallarbru-core`.
+release state. Once the facade exists, published crates must be processed in
+the dependency-safe order `gjallarbru-wire`, `gjallarbru-crypto`,
+`gjallarbru-core`, then `gjallarbru`.

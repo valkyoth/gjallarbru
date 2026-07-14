@@ -4,7 +4,10 @@ All notable changes to `gjallarbru` are documented here.
 
 ## Unreleased
 
-No changes yet.
+- Planned the `v0.55.1` no_std `gjallarbru` facade crate with stable `wire`,
+  `crypto`, and `core` namespaces and facade-last crates.io publication.
+- Added shared project branding and image navigation to each reusable support
+  crate README while retaining crate-specific scope and trust-boundary docs.
 
 ## 0.1.0 - 2026-07-14
 

@@ -17,6 +17,7 @@ acceleration adapters.
 Gjallarbru will provide:
 
 - A first-party STUN/TURN wire implementation.
+- A thin `no_std` `gjallarbru` facade over the reusable protocol crates.
 - Borrowed, allocation-free, panic-free decoding.
 - Caller-buffer encoding with exact integrity byte ranges.
 - A deterministic, bounded Sans-I/O server core.
@@ -77,7 +78,8 @@ and are not substituted for standard TURN.
 - Stable Rust `1.97.0` for main development.
 - Verified MSRV range `1.90.0` through `1.97.0`.
 - No nightly requirement for normal builds or releases.
-- `gjallarbru-wire`, `gjallarbru-crypto`, and `gjallarbru-core` are `no_std`.
+- `gjallarbru`, `gjallarbru-wire`, `gjallarbru-crypto`, and
+  `gjallarbru-core` are `no_std`.
 - `alloc` is not used by the core packet path; any optional allocation feature
   must remain explicit and must not define the public protocol model.
 - OS socket types never enter wire or core APIs.
@@ -107,6 +109,14 @@ and are not substituted for standard TURN.
 - Protocol acceleration always fails closed.
 
 ## 4. Workspace and Trust Boundaries
+
+### `gjallarbru`
+
+Public `no_std`, unsafe-free, `MIT OR Apache-2.0` facade introduced by
+`v0.55.1`. It owns no protocol implementation. It exposes the focused public
+crates as stable `wire`, `crypto`, and `core` namespaces, uses the repository
+README as its crates.io/docs.rs introduction with automated drift prevention,
+and never depends on the EUPL runtime, cluster, or server packages.
 
 ### `gjallarbru-wire`
 

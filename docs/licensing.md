@@ -21,6 +21,7 @@ text is [`LICENSE-EUPL-1.2`](../LICENSE-EUPL-1.2).
 
 These crates are dual-licensed under MIT OR Apache-2.0:
 
+- future `crates/gjallarbru` facade introduced by `v0.55.1`
 - `crates/gjallarbru-wire`
 - `crates/gjallarbru-crypto`
 - `crates/gjallarbru-core`

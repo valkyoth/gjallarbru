@@ -124,6 +124,7 @@ Current closure decisions are:
 | IP-path, DDoS, capacity/cost, and privacy work could remain operator assumptions. | Dedicated production contracts are `v0.102.0` through `v0.105.0`. |
 | Future readiness could be a one-time standards review. | API/config evolution, scheduled standards review, extension policy, and first-party provenance gates are `v0.108.0` through `v0.110.0`. |
 | Formal, fuzz, packaging, operations, specification closure, and external audit could be postponed past 1.0. | Assigned to `v0.93.0`, `v0.94.0`, and `v0.111.0` through `v0.115.0`. |
+| Separate public crates could leave users without a coherent `gjallarbru::` entry point or allow facade documentation to drift. | `v0.55.1` admits a no_std facade, stable namespaced re-exports, root-README parity, and facade-last publication. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1349,6 +1350,46 @@ Exit criteria:
 
 - No claimed base MUST/MUST NOT/SHOULD remains planned or merely implemented.
 - Stop: `v0.55.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.55.1 - `gjallarbru` Facade Crate
+
+Goal: give library users one ergonomic `gjallarbru::` entry point without
+merging the focused implementation or trust boundaries.
+
+Deliverables:
+
+- public `crates/gjallarbru` facade licensed `MIT OR Apache-2.0`, built as
+  `no_std`, forbidding unsafe code, and containing only documentation,
+  features, curated convenience exports, and namespaced `wire`, `crypto`, and
+  `core` re-exports;
+- default-empty feature policy with no dependency on the EUPL runtime, server,
+  cluster, operating-system I/O, executor, TLS/DTLS, or network behavior;
+- repository README used as the facade package README and crate-level
+  documentation, with an automated byte-parity or single-source check that
+  prevents the GitHub, crates.io, and docs.rs introductions from drifting;
+- facade version tied to the Gjallarbru project milestone while support crates
+  retain independent versions, plus release tooling that publishes in strict
+  `wire -> crypto -> core -> gjallarbru` dependency order;
+- documentation that directs most consumers to `gjallarbru`, while preserving
+  direct support-crate dependencies for minimal, embedded, alternate-runtime,
+  and independently versioned use cases.
+
+Verification:
+
+- `no_std` and Rust 1.90.0 through 1.97.0 builds for the facade and its default
+  graph, with dependency-tree assertions excluding every private package
+- compile tests for `gjallarbru::wire`, `gjallarbru::crypto`, and
+  `gjallarbru::core`, public-API/SemVer evidence, doctests, and facade README
+  parity failure fixtures
+- package-content inspection, docs.rs metadata review, publish dry runs, and
+  release-tool tests proving the facade cannot publish before or ahead of its
+  support crates
+
+Exit criteria:
+
+- Consumers have a documented, stable, no_std `gjallarbru::` namespace without
+  weakening crate isolation, licensing, dependency, or release guarantees.
+- Stop: `v0.55.1 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase E: Security and Operations
 

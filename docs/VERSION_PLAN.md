@@ -99,6 +99,7 @@ The index and detailed contracts are checked together by
 | `0.54.0` | UDP interoperability | Browsers, native clients, and coturn oracle scenarios pass IPv4/IPv6/loss tests |
 | `0.54.1` | URI, DNS, and discovery profile | RFC 7064/7065 URI handling and RFC 5928/8155 deployment discovery are interoperable and downgrade-safe |
 | `0.55.0` | `turn-udp-base` conformance | RFC 8656 requirement and errata matrix is verified end to end |
+| `0.55.1` | `gjallarbru` facade crate | A no_std MIT/Apache facade exposes wire, crypto, and core through stable namespaces, uses the repository README without drift, and publishes last |
 
 ## Phase E: Security and Operations
 

@@ -5,6 +5,8 @@ server.
 
 Rules:
 
+- the future `gjallarbru` package is a `no_std` facade of namespaced public
+  re-exports, never an implementation or runtime home;
 - `gjallarbru-wire` owns syntax, never authentication databases or state.
 - `gjallarbru-crypto` owns protocol cryptographic composition and provider
   traits, never sockets or allocation state.
