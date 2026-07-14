@@ -46,8 +46,10 @@ def assert_locked_commands() -> None:
     assert '["cargo", "publish", "--locked", "-p", package]' in release
     assert release.count("require_clean_tree(dry_run=args.dry_run)") == 2
 
-    gate = text("scripts/release_0_1_gate.sh")
-    assert "cargo deny --locked check" in gate
+    gates = sorted((ROOT / "scripts").glob("release_*_gate.sh"))
+    assert gates
+    for gate in gates:
+        assert "cargo deny --locked check" in gate.read_text(encoding="utf-8")
 
 
 def make_wrapper(path: Path, interpreter: str, real: str) -> None:

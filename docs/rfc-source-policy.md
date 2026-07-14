@@ -15,7 +15,13 @@ Requirements:
 - record errata separately rather than editing an RFC;
 - review source-list and checksum changes together;
 - map normative rules to a machine-readable ledger before implementation;
+- keep every numbered RFC 8489/8656 section visible, including sections with
+  no extracted normative keyword;
+- apply Verified errata and track unresolved errata without silently changing
+  immutable RFC text;
 - use IANA registries, not RFC memory, for current assignments;
 - never place RFC text inside published crates or software-license claims.
 
-See [`rfc/README.md`](../rfc/README.md) and the scripts named there.
+See [`rfc/README.md`](../rfc/README.md), the
+[`requirements` ledger](../requirements/README.md), and the scripts named
+there.

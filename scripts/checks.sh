@@ -19,6 +19,7 @@ python3 scripts/test-sbom-compare.py
 scripts/generate-sbom.sh --check
 scripts/verify-rfcs.sh
 python3 scripts/test-rfc-sources.py
+scripts/validate-requirements.sh
 cargo check --workspace --all-features --locked
 cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 cargo test --workspace --all-features --locked

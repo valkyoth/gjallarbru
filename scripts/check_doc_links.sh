@@ -2,7 +2,7 @@
 set -eu
 
 missing=0
-find README.md CHANGELOG.md SECURITY.md crates docs rfc release-notes security \
+find README.md CHANGELOG.md SECURITY.md crates docs requirements rfc release-notes security \
     -type f -name '*.md' -print | while IFS= read -r file; do
     sed -n 's/.*](\([^)]*\.md\)).*/\1/p' "$file" | while IFS= read -r link; do
         case "$link" in

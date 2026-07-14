@@ -16,7 +16,7 @@ version = "0.1.0"
 
 [[package]]
 name = "gjallarbru-runtime"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "gjallarbru-core",
  "gjallarbru-wire",
@@ -24,7 +24,7 @@ dependencies = [
 
 [[package]]
 name = "gjallarbru-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "gjallarbru-runtime",
 ]

@@ -15,6 +15,7 @@ server and must not be deployed as one.
 Run these regularly and before releases:
 
 ```bash
+scripts/validate-requirements.sh
 scripts/checks.sh
 scripts/check-rust-version-matrix.sh
 scripts/check_latest_tools.sh

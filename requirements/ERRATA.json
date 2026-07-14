@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "checked_at": "2026-07-14",
+  "source": "https://errata.rfc-editor.org/search/",
+  "errata": [
+    {
+      "rfc": 8489,
+      "id": 6268,
+      "source": "https://errata.rfc-editor.org/eid6268/",
+      "status": "Verified",
+      "section": "Appendix B.1",
+      "type": "Technical",
+      "reported": "2020-08-30",
+      "disposition": "apply",
+      "implementation": "planned:v0.19.0",
+      "security": "Use the corrected SHA-256 password algorithm, length, attribute, and HMAC vector; never admit the published broken vector as a success case."
+    },
+    {
+      "rfc": 8489,
+      "id": 6290,
+      "source": "https://errata.rfc-editor.org/eid6290/",
+      "status": "Verified",
+      "section": "18.1",
+      "type": "Technical",
+      "reported": "2020-09-14",
+      "disposition": "apply",
+      "implementation": "planned:v0.12.1",
+      "security": "Interpret STUN security-feature bit numbering from the least-significant side so negotiation cannot silently select the wrong feature."
+    },
+    {
+      "rfc": 8489,
+      "id": 8434,
+      "source": "https://errata.rfc-editor.org/eid8434/",
+      "status": "Verified",
+      "section": "6.2.2",
+      "type": "Editorial",
+      "reported": "2025-05-27",
+      "disposition": "not-applicable",
+      "implementation": "not-applicable:spelling-only",
+      "security": "Accept the through spelling correction; it changes no transport lifetime or cleanup behavior."
+    },
+    {
+      "rfc": 8489,
+      "id": 8746,
+      "source": "https://errata.rfc-editor.org/eid8746/",
+      "status": "Reported",
+      "section": "Annex B.1",
+      "type": "Technical",
+      "reported": "2026-02-08",
+      "disposition": "track-not-applied",
+      "implementation": "planned:v0.20.1",
+      "security": "Do not silently alter OpaqueString or the vector while the erratum is unresolved; independently verify Unicode preparation and HMAC bytes at the PRECIS milestone."
+    },
+    {
+      "rfc": 8489,
+      "id": 8900,
+      "source": "https://errata.rfc-editor.org/eid8900/",
+      "status": "Reported",
+      "section": "Appendix A",
+      "type": "Technical",
+      "reported": "2026-05-04",
+      "disposition": "track-not-applied",
+      "implementation": "planned:v0.7.0",
+      "security": "Keep method inputs bounded to 12 bits and test every type-bit position; do not treat the unresolved C snippet edit as normative authority."
+    },
+    {
+      "rfc": 8656,
+      "id": 8901,
+      "source": "https://errata.rfc-editor.org/eid8901/",
+      "status": "Reported",
+      "section": "18.13 Figure 11",
+      "type": "Technical",
+      "reported": "2026-05-04",
+      "disposition": "track-not-applied",
+      "implementation": "planned:v0.52.0",
+      "security": "Enforce the prose-defined 8-bit ICMP type and code widths and reject malformed lengths while the diagram correction remains unresolved."
+    }
+  ]
+}

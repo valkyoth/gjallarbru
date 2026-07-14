@@ -4,10 +4,22 @@ All notable changes to `gjallarbru` are documented here.
 
 ## Unreleased
 
+No changes yet.
+
+## 0.2.0 - 2026-07-14
+
 - Planned the `v0.55.1` no_std `gjallarbru` facade crate with stable `wire`,
   `crypto`, and `core` namespaces and facade-last crates.io publication.
 - Added shared project branding and image navigation to each reusable support
   crate README while retaining crate-specific scope and trust-boundary docs.
+- Added a JSON-schema-bound inventory of all 184 numbered RFC 8489/8656
+  sections and 393 uppercase normative keyword occurrences.
+- Assigned every extracted requirement to a profile, component, implementation
+  milestone, test milestone, status, and security note.
+- Added reviewed decisions for all six current RFC 8489/8656 errata and an
+  optional official live-drift comparison.
+- Added negative fixtures for missing, duplicate, invalid, unassigned,
+  orphaned, falsely completed, and unsafe errata entries.
 
 ## 0.1.0 - 2026-07-14
 

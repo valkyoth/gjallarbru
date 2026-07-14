@@ -4,6 +4,7 @@ Status: control baseline
 
 | Control area | Required control |
 | --- | --- |
+| Requirements | checksum-bound RFC section/keyword ledger, explicit owner/status/evidence, reviewed errata disposition |
 | Parsing | checked cursor, bounded linear work, no unsafe, exact padding/length validation |
 | Authentication | RFC ordering, modern SHA-256 preference, explicit legacy profile, constant-time verification |
 | Nonces/tokens | authenticated, versioned, scoped, expiring, key identified, replay tested |

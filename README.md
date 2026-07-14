@@ -35,7 +35,7 @@ primitives, TLS/DTLS, Unicode/PRECIS, system calls, and operational adapters.
 
 ## Current Status
 
-Status: repository foundation for `v0.1.0`.
+Status: RFC requirement-ledger release candidate for `v0.2.0`.
 
 Implemented now:
 
@@ -46,6 +46,12 @@ Implemented now:
 - Rust `1.90.0` MSRV with stable `1.97.0` pinned for development.
 - Security, modularity, toolchain, platform, RFC-source, implementation,
   version, and release policies.
+- A checksum-bound machine-readable inventory of all 184 numbered RFC 8489 and
+  RFC 8656 sections and 393 uppercase normative keyword occurrences, each with
+  an owning profile, component, milestone, test assignment, status, and
+  security note.
+- Reviewed dispositions for all six current RFC 8489/8656 errata, with live
+  drift checking separated from reproducible offline validation.
 - Local checks for formatting, linting, tests, Rust-version compatibility,
   file-size policy, documentation links, a committed SBOM, and locked RFC
   reference copies.
@@ -59,6 +65,8 @@ Not implemented yet:
 - No sockets, TLS, DTLS, credential provider, or administrative endpoint.
 - No production server behavior. Running the binary prints a foundation
   notice and exits.
+- The requirement ledger is traceability evidence, not a protocol-conformance
+  claim; every planned rule still requires implementation and test evidence.
 
 The complete sequence to production readiness is in
 [`docs/VERSION_PLAN.md`](docs/VERSION_PLAN.md). Nothing required for the
@@ -141,6 +149,9 @@ test vectors.
 
 Exact RFC Editor text is held under [`rfc/`](rfc/README.md), outside the
 project software licenses, and checksum-verified by the normal test gate.
+The [`requirements` ledger](requirements/README.md) maps every RFC 8489/8656
+section and extracted normative keyword to its planned implementation and test
+milestone, with separately reviewed errata decisions.
 
 ## Platform Direction
 
@@ -157,6 +168,7 @@ levels required before a platform is advertised as production supported.
 ## Development
 
 ```bash
+scripts/validate-requirements.sh
 scripts/checks.sh
 scripts/check-rust-version-matrix.sh
 cargo deny --locked check
@@ -169,6 +181,7 @@ offline builds:
 ```bash
 scripts/check_latest_tools.sh
 scripts/fetch-rfcs.sh
+scripts/rfc_errata.py --live
 ```
 
 ## Distribution

@@ -10,7 +10,7 @@ default-members = ["crates/gjallarbru-server"]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.90"
 authors = ["Gjallarbru contributors"]
@@ -36,11 +36,10 @@ cast_sign_loss = "deny"
 [workspace.dependencies]
 gjallarbru-core = { path = "crates/gjallarbru-core", version = "0.1.0" }
 gjallarbru-crypto = { path = "crates/gjallarbru-crypto", version = "0.1.0" }
-gjallarbru-runtime = { path = "crates/gjallarbru-runtime", version = "0.1.0" }
+gjallarbru-runtime = { path = "crates/gjallarbru-runtime", version = "0.2.0" }
 gjallarbru-wire = { path = "crates/gjallarbru-wire", version = "0.1.0" }
 
 [profile.release]
 overflow-checks = true
 panic = "abort"
 strip = "symbols"
-

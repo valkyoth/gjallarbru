@@ -72,7 +72,7 @@ An admission milestone is the earliest allowed publication, not an automatic
 publish command. The permanent pentest report and crate-specific release gate
 must pass first, and publication still requires explicit maintainer approval.
 
-## v0.1.0 Tracking Table
+## v0.2.0 Tracking Table
 
 | Crate | Published | Planned | Change | Publish | Reason |
 | --- | --- | --- | --- | --- | --- |

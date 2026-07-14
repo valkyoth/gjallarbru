@@ -15,6 +15,10 @@ The RFC Editor permits unmodified reproduction. These copies must never be
 edited, reformatted, annotated, line-ending normalized, or stripped of
 notices. Project notes belong in `docs/` or later requirement/errata data.
 
+The machine-readable base section inventory, normative keyword ledger, and
+reviewed errata decisions live in [`requirements/`](../requirements/README.md).
+They bind back to these checksum-locked bytes and never modify them.
+
 ## Tracked Baseline
 
 | RFC | Role |
@@ -55,6 +59,9 @@ ceiling.
   verifies them, and makes the local copies read-only.
 - `scripts/lock-rfcs.sh` reapplies the local read-only guard.
 - `scripts/test-rfc-sources.py` tests the complete source/checksum baseline.
+- `scripts/validate-requirements.sh` rejects missing, stale, duplicate,
+  invalid, falsely completed, or unassigned RFC 8489/8656 requirements and
+  errata decisions.
 - `.gitattributes` disables text and line-ending normalization for RFC text.
 - `CODEOWNERS` protects this directory when branch rules require review.
 

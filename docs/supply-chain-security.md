@@ -18,6 +18,9 @@ Status: policy
 - CodeQL uses GitHub default setup, not a duplicate advanced workflow.
 - RFC reference text and later IANA snapshots are checksum locked and updated
   only by deliberate networked tools.
+- Generated RFC 8489/8656 requirement data is deterministically rebuilt from
+  locked source bytes; reviewed errata decisions are validated offline and
+  compared with the official service only through an explicit live command.
 - Release artifacts will include checksums, signatures, SBOMs, and provenance.
 - Container final roots use reviewed, digest-pinned Wolfi/apko and Debian
   stable-slim definitions; each image has independent rebuild, package,

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/valkyoth/gjallarbru/requirements/SCHEMA.json",
+  "title": "Gjallarbru base RFC requirement ledger",
+  "type": "object",
+  "required": ["schema", "checked_at", "documents", "sections", "requirements"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": 1 },
+    "checked_at": { "type": "string", "format": "date" },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rfc", "profile", "source", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "rfc": { "enum": [8489, 8656] },
+          "profile": { "enum": ["stun-base", "turn-udp-base"] },
+          "source": { "type": "string", "format": "uri" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rfc", "section", "title", "line", "requirements"],
+        "additionalProperties": false,
+        "properties": {
+          "rfc": { "enum": [8489, 8656] },
+          "section": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "requirements": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id", "rfc", "section", "line", "level", "profile",
+          "component", "symbol", "test", "status", "security",
+          "source_sha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^RFC(8489|8656)-" },
+          "rfc": { "enum": [8489, 8656] },
+          "section": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "level": {
+            "enum": [
+              "MUST NOT", "SHALL NOT", "SHOULD NOT", "NOT RECOMMENDED",
+              "MUST", "REQUIRED", "SHALL", "SHOULD", "RECOMMENDED",
+              "MAY", "OPTIONAL"
+            ]
+          },
+          "profile": { "enum": ["stun-base", "turn-udp-base"] },
+          "component": {
+            "enum": [
+              "architecture", "wire", "crypto", "core", "runtime",
+              "server", "security", "registry", "conformance"
+            ]
+          },
+          "symbol": { "type": "string", "minLength": 1 },
+          "test": { "type": "string", "minLength": 1 },
+          "status": {
+            "enum": ["planned", "implemented", "verified", "excluded", "not-applicable"]
+          },
+          "security": { "type": "string", "minLength": 1 },
+          "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}
