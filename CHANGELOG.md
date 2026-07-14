@@ -15,6 +15,8 @@ No changes yet.
 - Added checksum-locked tooling and local copies for 23 RFC references.
 - Added 129 complete version contracts through the production `1.0.0` release,
   including exact-commit pentest stops for every version.
+- Added a tested pentest/retest → PASS report → final CodeQL → tag workflow
+  that permits documented CodeQL remediation without a report-only commit rule.
 - Added independent reusable-crate version and publication tooling while
   keeping the runtime, cluster, and server application private.
 - Planned secure clustering, Pawalyze credentials, Fluxheim interoperability,

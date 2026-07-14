@@ -481,5 +481,5 @@ server as a fixed non-root user under qualified rootless Docker and Podman
 topologies, with a read-only Wolfi default and documented Debian customization;
 public APIs and configuration migrations
 have compatibility gates; standards and first-party protocol provenance controls
-are operational; and the exact release candidate has passed independent security
-review with all findings resolved.
+are operational; and a reviewed candidate plus any documented later CodeQL
+remediation has passed independent security review with all findings resolved.

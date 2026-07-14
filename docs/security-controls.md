@@ -17,8 +17,7 @@ Status: control baseline
 | Secrets | no debug/log/metric output, separate key domains, rotation, dump restrictions |
 | Administration | separate authenticated endpoint, immutable generations, auditable commands |
 | Supply chain | crates.io only by default, action SHA pins, cargo-deny/audit, SBOM/provenance |
-| Releases | exact-candidate tests, pentest, remediation, CodeQL default setup, signed evidence |
+| Releases | candidate tests, pentest/retest, documented CodeQL remediation, final green CI, signed evidence |
 
 Every control gains an implementation symbol, test identifier, and release
 evidence before its associated compliance profile is claimed.
-

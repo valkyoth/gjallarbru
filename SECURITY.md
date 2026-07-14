@@ -39,8 +39,11 @@ Every release requires:
 - a permanent `Status: PASS` report under `security/pentest/`;
 - confirmation that GitHub CI and CodeQL default setup are green.
 
-Tags and release publication occur only when explicitly requested after those
-conditions are satisfied.
+If CI or CodeQL finds an issue after the PASS report is committed, fix and test
+it, update the same report with the remediation, commit, and wait for GitHub
+again. The report's reviewed commit must remain in tag history; a special
+report-only commit is not required. Tags are pushed only after those conditions
+are satisfied and the maintainer confirms the release.
 
 ## Dependency Policy
 
@@ -63,4 +66,3 @@ Every new or updated crate requires:
 Do not publish exploitable details before a fix is available. Use a private
 GitHub security advisory or contact the maintainers through the repository's
 configured private security channel.
-

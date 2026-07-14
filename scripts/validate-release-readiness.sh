@@ -27,6 +27,10 @@ test -s "$report" || {
     echo "missing pentest report: $report" >&2
     exit 1
 }
+git cat-file -e "HEAD:$report" 2>/dev/null || {
+    echo "pentest report must be committed in the tag candidate: $report" >&2
+    exit 1
+}
 grep -Eq '^Status: PASS$' "$report"
 grep -Eq '^Reviewed-Commit: [0-9a-f]{40}$' "$report"
 grep -Eq '^Tester: .+' "$report"
@@ -38,22 +42,13 @@ test -z "$(git status --porcelain)" || {
     exit 1
 }
 
-parent_fields="$(git rev-list --parents -n 1 HEAD | awk '{print NF}')"
-test "$parent_fields" -eq 2 || {
-    echo "pentest report must be a non-merge commit directly after the reviewed commit" >&2
-    exit 1
-}
-
 reviewed_commit="$(sed -n 's/^Reviewed-Commit: //p' "$report")"
-parent_commit="$(git rev-parse HEAD^)"
-test "$reviewed_commit" = "$parent_commit" || {
-    echo "pentest Reviewed-Commit is not the report commit's parent" >&2
+git cat-file -e "${reviewed_commit}^{commit}" 2>/dev/null || {
+    echo "pentest Reviewed-Commit does not exist: $reviewed_commit" >&2
     exit 1
 }
-
-changed_files="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-test "$changed_files" = "$report" || {
-    echo "pentest report commit must change only: $report" >&2
+git merge-base --is-ancestor "$reviewed_commit" HEAD || {
+    echo "pentest Reviewed-Commit is not in the tag candidate history" >&2
     exit 1
 }
 

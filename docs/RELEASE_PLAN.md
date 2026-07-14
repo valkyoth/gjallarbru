@@ -33,7 +33,8 @@ Every release must have:
 - updated threat model, documentation, changelog, and release notes;
 - an updated committed SBOM and package-content evidence;
 - a versioned local release gate;
-- completed pentest evidence for the exact reviewed implementation commit;
+- completed pentest/retest evidence for a reviewed implementation commit that
+  remains in the final candidate history, with later CodeQL fixes recorded;
 - no hidden dependency on one platform, network service, or developer machine.
 
 Every implementation prefers first-party STUN/TURN wire and state behavior,
@@ -55,8 +56,7 @@ not tag-ready until:
 - `security/pentest/vX.Y.Z.md` records `Status: PASS`, the exact full
   `Reviewed-Commit`, tester, date, scope, methods, findings, fixes, retest, and
   residual risk;
-- GitHub CI and CodeQL default setup are green for the reviewed commit and the
-  final report commit;
+- GitHub CI and CodeQL default setup are green for the final tag candidate;
 - `scripts/validate-release-readiness.sh vX.Y.Z` passes;
 - the tag does not already exist.
 
@@ -70,19 +70,22 @@ Do not create a tag at that stop.
 
 ### Pentest Handoff Flow
 
-1. Finish the scoped implementation and all release documentation.
-2. Run local, MSRV, dependency, SBOM, RFC, package, and version-specific gates.
-3. Stop and identify the exact implementation commit for pentest.
-4. The maintainer records temporary findings in root `PENTEST.md`.
-5. Fix findings and add regression tests, documentation, and release-note
-   entries.
-6. Remove `PENTEST.md`, rerun every gate, and commit remediation.
-7. Repeat pentest until the exact reviewed commit passes.
-8. Confirm CI and CodeQL default setup on that commit.
-9. Add only the permanent report as the next commit. Its first parent is the
-   `Reviewed-Commit` and that commit changes only the report file.
-10. Confirm CI/CodeQL again and run release readiness locally.
-11. Tag or publish only when explicitly requested.
+1. Finish, test, commit, and identify the implementation commit for pentest.
+2. If pentest finds issues, the maintainer writes root `PENTEST.md`; fix and
+   test them, commit the remediation, remove `PENTEST.md`, and request retest.
+3. Repeat step 2 until pentest is green.
+4. Create or update `security/pentest/vX.Y.Z.md` with `Status: PASS`, the
+   reviewed commit, findings/fixes/retest, and residual risk, then commit it.
+5. Push and wait for normal GitHub CI and CodeQL default setup.
+6. If GitHub or CodeQL finds an issue, fix and test it, update the permanent
+   report with the finding and remediation, commit, push, and wait again.
+7. Repeat step 6 until GitHub CI and CodeQL are green.
+8. Run release readiness, create the tag, and push the tag when the maintainer
+   confirms the release should proceed.
+
+The PASS report must be committed, and its `Reviewed-Commit` must remain an
+ancestor of the final tag candidate. It does not need a special report-only
+commit. This keeps the workflow flexible when CodeQL requires a later fix.
 
 ## Publication and Versioning
 
@@ -2973,7 +2976,7 @@ Exit criteria:
 ### v1.0.0 - Production-Ready Gjallarbru
 
 Goal: release the first serious production-ready STUN/TURN server application with
-all declared profiles and security claims backed by exact-candidate evidence.
+all declared profiles and security claims backed by pentest and final-CI evidence.
 
 Deliverables:
 
@@ -2989,7 +2992,7 @@ Verification:
 - complete workspace and Rust 1.90.0-through-1.97.0 matrix, platform/device matrix,
   all RFC/profile gates, dependency/license policy, fuzz/formal/soak evidence,
   reproducible packaging, and `scripts/validate-release-readiness.sh v1.0.0`
-- independent pentest and audit retest against the exact candidate commit
+- independent pentest and audit retest, plus documented later CodeQL remediation
 - Chromium/Firefox/Safari Pawalyze, node/region loss, mixed-upgrade, source-preserving
   rootless/native, Wolfi/Debian parity, Fluxheim hybrid, secure-cluster, NAT64/PMTU,
   link-defense, privacy, and capacity/cost gates
@@ -2997,5 +3000,5 @@ Verification:
 Exit criteria:
 
 - All `v1.0.0` claims are evidenced, every release blocker is closed, no critical or
-  high finding remains, and the reviewed commit is exactly the commit being tagged.
+  high finding remains, the reviewed commit is in tag history, and final CodeQL is green.
 - Stop: `v1.0.0 implementation stop reached. Run pentest for this exact commit.`

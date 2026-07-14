@@ -8,6 +8,7 @@ scripts/validate-modularity-policy.sh
 scripts/validate-security-policy.sh
 scripts/validate-release-metadata.sh
 python3 scripts/validate-release-plan.py
+scripts/test-release-readiness.sh
 python3 scripts/test-release-crates.py
 python3 scripts/release_crates.py --check
 scripts/check-packages.sh

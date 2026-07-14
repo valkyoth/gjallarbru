@@ -37,5 +37,5 @@ cargo deny check
 cargo audit
 ```
 
-Tagging requires the exact candidate commit to pass the pentest and
-release-readiness flow in `docs/RELEASE_PLAN.md`.
+Tagging requires a green pentest/retest report, final green GitHub CI and
+CodeQL, and the release-readiness flow in `docs/RELEASE_PLAN.md`.

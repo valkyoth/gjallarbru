@@ -57,9 +57,9 @@ Initial publication is versioned work, not an unspecified future action:
 
 | Crate | Earliest admission milestone | Required scope |
 | --- | --- | --- |
-| `gjallarbru-wire` | `v0.22.0` | Wire API review, vectors, no-allocation evidence, fuzzing, MSRV matrix, package review, and exact-candidate pentest |
-| `gjallarbru-crypto` | `v0.34.0` | Provider API review, authentication composition vectors, secret-handling review, package review, and exact-candidate pentest |
-| `gjallarbru-core` | `v0.55.0` | Sans-I/O API review, RFC 8489/8656 conformance, state-model evidence, package review, and exact-candidate pentest |
+| `gjallarbru-wire` | `v0.22.0` | Wire API review, vectors, no-allocation evidence, fuzzing, MSRV matrix, package review, pentest/retest, and final CodeQL |
+| `gjallarbru-crypto` | `v0.34.0` | Provider API review, authentication vectors, secret-handling review, package review, pentest/retest, and final CodeQL |
+| `gjallarbru-core` | `v0.55.0` | Sans-I/O API review, RFC 8489/8656 conformance, state-model evidence, package review, pentest/retest, and final CodeQL |
 
 An admission milestone is the earliest allowed publication, not an automatic
 publish command. The permanent pentest report and crate-specific release gate
