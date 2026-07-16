@@ -261,6 +261,13 @@ structural typestates land before protocol-specific FINGERPRINT and integrity
 finalizers, so the API does not claim immutability while tags are still being
 computed.
 
+Every finalizer slot is bound to one plan identity, exact expected output
+length, algorithm/purpose, input range, and dependency node. It is filled
+exactly once and cannot be copied, transferred, substituted, or reused by
+another plan. The dependency graph requires all integrity fields in wire order
+before FINGERPRINT, detects missing/duplicate/cyclic finalization, and admits
+`FinalizedEncodePlan` only when every required node is complete.
+
 Sizing, prescribed HMAC/CRC range views, prepared fixed-size tags, and final
 writing derive from the same validated segment plan. Provider finalization
 completes before direct caller output changes, writing occurs once, and the
@@ -331,23 +338,38 @@ by an explicit runtime-owned buffer lease.
 The core is a pure reducer: identical initial state, immutable configuration,
 ordered events, supplied monotonic/absolute times, entropy results, and provider
 completions produce byte-identical commands and identical resulting state.
-Every transition receives a single-use, non-cloneable command-batch permit
-covering command count, output bytes, retained leases/buffers, authoritative
-operation slots, and property-specific queue capacity. Its normalized
-descriptor binds worker, queue, and configuration generations and is an
-explicit reducer input wherever it can affect a decision; excess capacity
-cannot change otherwise identical state or commands. Outstanding permits and
-total reserved slots/bytes are bounded. Failed transitions, cancellation,
-dropped permits, shutdown, queue resize/restart, and worker replacement release
-unused reservations deterministically and make stale permits inert.
+It first performs one bounded preparation pass into caller-provided fixed
+workspace. The resulting non-cloneable `PreparedTransition` contains immutable
+planned state changes, commands, and exact `TransitionRequirements`; it binds
+the event, state revision, configuration generation, and worker epoch.
+Preparation performs parsing, authentication, policy scans, encoding planning,
+and other attacker-controlled work at most once.
 
-Insufficient capacity or encoding failure leaves state and output unchanged.
-Success consumes the permit and atomically publishes the complete batch with
-its resulting state at one ordered commit point, so neither commands nor state
-can become visible first. Operation IDs are either explicit permit/reducer
-inputs or are generated deterministically by core state. Partial batch
-acceptance is prohibited; adversarial adapters can only reject an uncommitted
-prepared batch.
+The runtime acquires one exact single-use command-batch permit from those
+requirements. Acquisition has bounded constant/declared work, limits
+outstanding permits and total reserved slots/bytes, and cannot retry
+preparation, incrementally hoard queue capacity, or expose excess capacity to
+the reducer. A too-old prepared transition or insufficient capacity is
+discarded without mutation and may be retried only as a new external event
+under its ordinary work budget.
+
+The permit binds worker, queue, and configuration generations. Failed commit,
+cancellation, dropped permit, shutdown, queue resize/restart, and worker
+replacement release unused reservations deterministically and make stale
+permits inert. Semantic operation IDs are created only by core from an explicit
+engine/worker epoch and bounded generational counter. Exhaustion or generation
+wrap fails closed. Runtime queue/provider IDs are correlation metadata only and
+cannot affect reducer behavior.
+
+Mutable core state is exclusively worker-owned. Commit writes commands into
+reserved but unpublished queue slots, completes the state mutation, then
+performs one infallible batch-ready release publication. Cross-thread consumers
+observe only ready batches through acquire ordering. State inspection occurs
+through owner-generated immutable snapshots, never concurrent direct reads.
+A crash before publication invalidates the prepared state and reserved slots
+through the worker epoch; recovery never treats either side as committed.
+Partial batch acceptance is prohibited, while later OS execution remains
+explicitly non-atomic and completion-driven.
 
 Runtime effects use a composite envelope rather than mutually exclusive
 classes. Orthogonal properties describe semantic authority, retained-resource
@@ -355,6 +377,16 @@ ownership, delivery guarantee, and durability/audit policy. A best-effort UDP
 send can therefore own a buffer, consume quota, and require bounded audit
 accounting without inventing a semantic delivery completion. Delivery failure,
 cancellation, and shutdown release every retained resource exactly once.
+
+Chargeable work has four distinct accounting modes. Occupancy reservations are
+released exactly once when their slot, buffer, or lease ends. Attempt charges
+are consumed at accepted work admission and are never refunded because delivery
+later fails. Completion usage is recorded only from a valid generation-bound
+completion. A retry consumes a new attempt charge unless a bounded idempotency
+budget explicitly binds it to the original operation. No failure path can
+refund attacker-driven work, double-charge completion, or bypass quota through
+retry classification.
+
 Partial execution after full-batch acceptance and compensation are
 deterministic ordinary events. State never assumes an authoritative external
 effect succeeded before its matching completion.
@@ -491,13 +523,27 @@ instead of inferred from operating-system defaults.
 
 ## 12. Security Policy
 
+Before the first public UDP listener becomes functional, global, listener, and
+worker ingress budgets limit packets, bytes, parsing work, HMAC attempts,
+credential lookups, and error-response bytes. Charges occur before expensive
+work, use deterministic exhaustion behavior, and include spoofed-source and
+amplification-safe policies. Binding therefore never ships as an unbudgeted
+internet-facing CPU or response-amplification path.
+
 Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
-functional, a non-optional minimum safety profile denies metadata services,
-loopback, listeners, administration endpoints, relay pools, and relay loops.
-It also enforces fixed global/worker/allocation/permission/buffer ceilings plus
-pre-authentication packet, byte, cryptographic-work, and error-response budgets
-with deterministic exhaustion behavior. No placeholder or allow-all policy
-implementation can satisfy the relay command constructors.
+functional, every received destination becomes one canonical and effective
+destination identity. IPv4-mapped IPv6 normalizes to IPv4; configured NAT64
+prefixes are de-embedded and checked as both IPv6 and effective IPv4;
+unspecified, multicast, broadcast, and inappropriate link-local/scope forms are
+rejected; IPv6 equality includes interface/scope where required; and local
+listener/control comparisons occur after bind/public-address translation.
+
+A non-optional minimum relay safety profile applies to that canonical identity
+and denies metadata services, loopback, listeners, administration endpoints,
+relay pools, and relay loops. It enforces fixed global/worker/allocation/
+relay-port/permission/channel/buffer ceilings with deterministic exhaustion.
+No placeholder or allow-all policy implementation can satisfy relay command
+constructors, and alternate encodings cannot bypass a protected destination.
 
 Later resource accounting is hierarchical: global, listener, relay IP, worker,
 source address/prefix, realm, tenant, identity, allocation, and peer.

@@ -109,7 +109,7 @@ Current closure decisions are:
 | Current STUN/TURN base and IPv6 could be mistaken for RFC 5389/5766/6156 layering. | RFC 8489 and RFC 8656 are the base from `v0.2.0`; IPv6 is native in `v0.48.0` and `v0.49.0`. |
 | Integrity could be described as “MD5 HMAC.” | Separate legacy key derivation/HMAC-SHA-1 in `v0.18.0` and modern SHA-256 in `v0.19.0`. |
 | Resource creation could occur before authentication. | Authentication and two-phase allocation are explicit in `v0.27.0`, `v0.38.0`, and `v0.39.0`. |
-| Private-destination policy could be either universally blocked or accidentally open, while early relay releases could temporarily use placeholder gates. | `v0.37.2` installs the mandatory protected-destination, loop, resource, and pre-authentication baseline before relay methods; `v0.56.0` and `v0.57.0` add configurable profiles and comprehensive SSRF controls. |
+| Private-destination policy could be either universally blocked or accidentally open, while address aliases or early relay releases could bypass placeholder gates. | `v0.37.2` canonicalizes received/effective destinations, `v0.37.3` installs mandatory protected-destination, loop, and relay-resource defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
 | Secure transports and crypto could become home-grown protocol code. | Provider boundaries in `v0.19.0`, `v0.73.0`, and `v0.75.0`; primitives/TLS/DTLS remain reviewed dependencies. |
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
@@ -135,22 +135,24 @@ Current closure decisions are:
 | Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
 | Batching or kernel acceleration could treat partial sends, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes batch completion semantics and `v0.82.1` closes fast-path revocation, reuse, expiry, and reconciliation. |
 | Keyword anchors could be marked verified by plausible-looking strings without semantic refinement, a real symbol, or an executed test. | `v0.2.2` adds semantic child requirements and a CI evidence manifest that resolves implementation symbols and records observed test execution. |
-| A successful core transition could still overrun a downstream queue or be only partly executed by the runtime. | `v0.23.2` defines whole-batch admission and `v0.23.3` makes its permit single-use, generation-bound, bounded, deterministically released, and atomically published with state. |
+| A successful core transition could still overrun a downstream queue, repeat expensive work while sizing a permit, or be only partly visible. | `v0.23.2` creates one exact prepared transition, `v0.23.3` closes permit/operation-ID authority, and `v0.23.4` defines worker-owned release/acquire publication. |
 | Client identity could survive listener, socket, configuration, proxy, interface, or worker reuse. | `v0.4.1` makes every relevant path/provenance generation part of authorization identity. |
 | An opaque synchronous crypto provider could conceal blocking HSM/KMS I/O, allocation, mutable state, ambient entropy, or nondeterministic output. | `v0.17.2` separates bounded deterministic packet crypto from asynchronous external-crypto command/completion operations. |
 | Stale timing-wheel entries and large time jumps could create unbounded expiration debt or accidentally extend authorization. | `v0.36.1` bounds live/dead entries, rescheduling, expiration work, overdue fairness, and time-jump behavior. |
 | Configuration reload and emergency revocation could conflict with transaction retransmission idempotence. | `v0.30.2` pins ordinary transactions to their decision generation and gives every revocation class an explicit replay/error/discard/teardown rule. |
 | TLS/DTLS resumption could admit replayable early application data for state-changing STUN/TURN methods. | Initial rejection is mandatory in `v0.73.0` and `v0.75.0`; `v0.76.2` proves cross-provider/topology closure and requires a future method-level proof for any exception. |
-| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, while a supposedly immutable plan could still need CRC/HMAC insertion. | `v0.16.0` introduces `EncodeDraft -> ValidatedPlan -> FinalizedEncodePlan -> commit`; `v0.17.0` through `v0.19.0` add protocol-specific CRC/HMAC finalization before caller-visible output. |
+| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, while finalizer slots could be reused, transferred, or executed out of dependency order. | `v0.16.0` introduces plan-bound exact-once slots and an integrity-before-FINGERPRINT graph across `EncodeDraft -> ValidatedPlan -> FinalizedEncodePlan -> commit`; `v0.17.0` through `v0.19.0` add protocol-specific finalizers. |
 | Send/Data relay could transfer borrowed payloads before zero-copy lease ownership is implemented. | `v0.43.1` requires bounded runtime-owned copies for early relay paths; `v0.47.1` later admits generation-tagged zero-copy leases. |
 | Fast-path packet/byte counters could become independently refillable quota authority. | `v0.82.2` models kernel budgets as finite generation-bound leases reconciled by core before renewal. |
 | Relay-port randomness could conflict with deterministic reducer inputs or repeat biased candidates after fork/restart. | `v0.37.1` specifies explicit worker-seed/completion policy, unbiased unique search, seed independence, and deterministic exhaustion. |
 | Absolute-time rollback handling alone could leave forward jumps, uninitialized clocks, and recovery ambiguous or make nonce work depend on a later type. | `v0.4.0` defines absolute time, trust, source, and generation; `v0.25.1` adds production clock-health transitions and recovery without altering monotonic lifetimes. |
 | Concurrency models could arrive only after cross-worker queues and configuration publication are already entrenched. | Initial focused Loom evidence is an exit condition of `v0.78.0`; `v0.78.1` expands the inventory and `v0.93.0` remains comprehensive closure. |
-| Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` requires one pre-reserved whole-batch permit; adversarial partial acceptance proves the transition remains uncommitted, while partial execution is handled only after atomic acceptance. |
-| Treating every output as one mutually exclusive effect class could exhaust operation tables or lose ownership/audit duties on a best-effort send. | `v0.23.4` composes semantic authority, resource ownership, delivery guarantee, and durability/audit properties in one effect envelope. |
+| Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` acquires one exact whole-batch permit from immutable prepared requirements; adversarial partial acceptance remains uncommitted, while later partial execution is completion-driven. |
+| Treating every output as one mutually exclusive effect class could exhaust operation tables or lose ownership/audit duties on a best-effort send. | `v0.23.5` composes semantic authority, resource ownership, delivery guarantee, and durability/audit properties in one effect envelope. |
 | Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
 | A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
+| A public Binding listener could expose parse, HMAC, lookup, or error-response work before TURN-specific safety milestones. | `v0.30.3` installs global/listener/worker internet-ingress budgets before the first real UDP runtime in `v0.31.0`. |
+| Queue occupancy, attempted work, successful completion, and retries could be refunded or charged inconsistently. | `v0.23.6` gives each accounting mode explicit admission, release, completion, retry, and idempotency semantics. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -711,6 +713,11 @@ Deliverables:
 - validation that resolves canonical ordering, exact lengths, capacity,
   padding, adjusted integrity boundaries, every borrowed segment, and typed
   finalizer slots without claiming tags have already been computed;
+- plan-bound, non-transferable finalizer slots carrying plan identity, exact
+  output length, algorithm/purpose, authenticated range, and dependency node;
+- exact-once slot filling plus a bounded acyclic dependency graph requiring
+  integrity finalizers in wire order before FINGERPRINT and rejecting missing,
+  duplicate, foreign-plan, transferred, substituted, or cyclic finalization;
 - sizing, prescribed future HMAC/CRC prefix/range views, finalizer-slot
   placement, and final writing derived from the same validated segment plan;
 - a generic bounded finalizer interface and deterministic test finalizers only;
@@ -729,15 +736,19 @@ Deliverables:
 Verification:
 
 - `cargo test -p gjallarbru-wire encoder`
-- compile-fail typestate fixtures plus sentinel-filled output comparisons after
-  failure injected at every planning, finalization, staging, writing, and commit boundary
+- compile-fail typestate/slot-transfer fixtures plus sentinel-filled output
+  comparisons after failure injected at every planning, dependency, finalization,
+  staging, writing, and commit boundary
+- missing/duplicate/wrong-plan/wrong-length/wrong-order/cycle properties proving
+  only the complete integrity-before-FINGERPRINT graph can finalize
 - segment-plan/range equivalence for sizing/HMAC/CRC/write, canonical round trips,
   exact/short/maximum buffers, overlap, and direct-versus-staged copy counters
 
 Exit criteria:
 
 - No draft or merely validated plan can write output; every committed frame
-  comes from one finalized segment plan and failure cannot change caller-visible bytes.
+  comes from one exact-once dependency-complete finalized segment plan, and
+  failure cannot change caller-visible bytes.
 - Stop: `v0.16.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.17.0 - FINGERPRINT Finalization
@@ -750,7 +761,9 @@ Deliverables:
 - provider/first-party CRC decision, final-attribute enforcement, and XOR
   constant handling;
 - a CRC finalizer that consumes the validated range view, fills the typed
-  fingerprint slot, and alone advances that plan toward `FinalizedEncodePlan`;
+  plan-bound fingerprint slot exactly once, requires all preceding integrity
+  nodes, and alone advances that dependency-complete plan toward
+  `FinalizedEncodePlan`;
 - official, corruption, wrong-position, and duplicate vectors.
 
 Verification:
@@ -870,7 +883,8 @@ Deliverables:
 - reviewed MD5 key-derivation and HMAC-SHA-1 provider boundaries;
 - exact adjusted-length verification/encoding and constant-time comparison;
 - a legacy-HMAC finalizer that consumes only validated segment/range views and
-  fills its typed slot before `FinalizedEncodePlan` may commit.
+  fills its plan-bound typed slot exactly once before FINGERPRINT and before
+  `FinalizedEncodePlan` may commit.
 
 Verification:
 
@@ -892,7 +906,8 @@ Deliverables:
 - SHA-256 derivation and HMAC-SHA-256 provider boundaries;
 - RFC 8489 integrity ordering, algorithm negotiation inputs, and errata decisions;
 - a SHA-256 finalizer that consumes only validated segment/range views and
-  proves every required integrity/fingerprint slot is fixed before commit.
+  fills its plan-bound slot exactly once and proves every required integrity
+  dependency precedes the final FINGERPRINT slot before commit.
 
 Verification:
 
@@ -1104,80 +1119,113 @@ Exit criteria:
   transition API and differentially verified at runtime boundaries.
 - Stop: `v0.23.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.2 - Atomic Command-Batch Admission
+### v0.23.2 - Prepared Transition and Atomic Admission
 
-Goal: make reducer state and runtime command admission one indivisible boundary
-without pretending later operating-system execution is atomic.
+Goal: compute exact command-batch requirements once before permit acquisition
+without repeating parsing, authentication, encoding, or attacker-controlled scans.
 
 Deliverables:
 
-- a pre-reserved `CommandBatchPermit` covering the maximum command count,
-  encoded bytes, retained leases/buffers, authoritative operation slots, and
-  property-specific queue capacity for one transition;
-- `step` requires and consumes the permit only on success; insufficient permit
-  capacity returns without changing state, output, counters, or runtime queues;
-- successful `step` atomically publishes the full command batch and resulting
-  state to the conforming runtime; partial batch acceptance is prohibited;
-- an adversarial partial-accept adapter can only reject the still-uncommitted
-  prepared batch and is never allowed to expose its state transition;
-- partial execution after full atomic acceptance remains explicit: dependencies,
-  completion events, and compensation are deterministic ordinary effects;
-- cancellation and shutdown eventually account for every command in an
-  accepted batch without inventing rollback of already completed OS actions.
+- one bounded preparation pass into caller-provided fixed workspace producing a
+  non-`Clone` `PreparedTransition` with immutable planned state changes, commands,
+  and exact `TransitionRequirements`;
+- preparation bound to event identity, state revision, configuration generation,
+  and worker epoch so stale plans cannot commit after any relevant change;
+- exact requirements for command count, encoded bytes, retained leases/buffers,
+  semantic operation slots, effect-property queue capacity, and commit workspace;
+- permit acquisition only after preparation, with bounded declared work and no
+  retry loop that reparses, reauthenticates, re-HMACs, rescans, or replans input;
+- fixed limits for preparation workspace/time/operations and deterministic
+  failure when the event cannot be represented within them;
+- one commit API consuming the prepared transition and an exact permit; partial
+  batch acceptance is prohibited while later OS execution remains non-atomic.
 
 Verification:
 
-- permit-too-small, queue-race, synchronous rejection, and adversarial
-  partial-accept tests proving state/batch remain entirely uncommitted
-- partial-execute, dependency failure, duplicate completion, compensation
-  failure, cancellation, and shutdown models after full-batch acceptance
+- instrumentation proving each parser, integrity, policy, lookup-planning,
+  encoder-planning, and requirement calculation runs at most once per event
+- exact-requirement properties across every event kind and capacity boundary
+- stale-plan, queue-race, insufficient-permit, oversized-workspace, and
+  adversarial partial-accept tests leaving state and queues unchanged
 
 Exit criteria:
 
-- No reducer state is visible unless its complete command batch is admitted,
-  while later partial execution has one deterministic completion/compensation path.
+- Every permit is sized from one immutable prepared transition, and admission
+  never repeats attacker-controlled work or guesses capacity by retry.
 - Stop: `v0.23.2 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.3 - Linear Command-Batch Permit Lifecycle
+### v0.23.3 - Linear Permit and Operation-ID Authority
 
-Goal: make command-batch capacity authority single-use, bounded, generation-bound,
-and deterministically recoverable across every non-commit path.
+Goal: make permit capacity single-use and generation-bound while assigning all
+semantic operation identity exclusively to the deterministic core.
 
 Deliverables:
 
-- a non-`Clone`, non-reusable `CommandBatchPermit` whose normalized descriptor
-  binds worker, queue, and configuration generations plus reserved counts,
-  bytes, leases/buffers, operation slots, and property-specific queue capacity;
+- a non-`Clone`, non-reusable `CommandBatchPermit` exactly matching one prepared
+  transition and binding worker, queue, and configuration generations;
 - explicit limits for outstanding permits and total reserved bytes/slots at
-  global, worker, and queue scopes, with deterministic exhaustion outcomes;
-- automatic exactly-once release of every reservation after failed transition,
-  cancellation, permit drop, shutdown, queue restart/resize, worker replacement,
-  or stale-generation rejection, including deterministic unused-capacity handling;
-- one ordered commit publication point making prepared state and commands
-  visible together, never commands-before-state or state-before-commands;
-- operation IDs either supplied as normalized reducer inputs by the permit or
-  allocated deterministically from core state, never acquired as ambient runtime data;
-- determinism rules requiring the normalized descriptor as input when its
-  identity/capacity can affect a decision, while excess sufficient capacity
-  must produce byte-identical state and commands.
+  global, worker, and queue scopes, with bounded acquisition work and no
+  incremental reservation/queue-capacity hoarding;
+- automatic exactly-once release after failed commit, cancellation, permit
+  drop, shutdown, queue restart/resize, worker replacement, or stale rejection;
+- semantic operation IDs generated only by core from an explicit engine/worker
+  epoch plus bounded generational counter, with exhaustion/wrap failing closed;
+- runtime, queue, provider, and transport correlation IDs kept outside reducer
+  equality and forbidden from changing protocol behavior or authorization;
+- exact permit capacity hidden from semantic decisions beyond successful
+  requirement satisfaction, preserving byte-identical deterministic replay.
 
 Verification:
 
 - compile-time non-clone/single-consume checks plus reuse, double-release,
-  permit-drop, failed-step, cancellation, shutdown, queue-resize/restart,
-  worker-replacement, and stale-generation models
-- outstanding-count/reserved-byte exhaustion properties and publication-order
-  concurrency tests proving no observer can see only one side of the commit
-- replay tests varying excess permit capacity and operation-ID source according
-  to the declared determinism rule
+  permit-drop, failed-commit, cancellation, shutdown, queue-resize/restart,
+  worker-replacement, stale-generation, and reservation-hoarding models
+- semantic-ID uniqueness, epoch change, counter exhaustion/wrap, stale
+  completion, and correlation-ID substitution tests
+- replay tests proving runtime correlation IDs and queue layout cannot change
+  state, commands, semantic IDs, or authorization
 
 Exit criteria:
 
-- No permit can be reused, leaked, or survive its bound generations, and every
-  successful transition publishes state and its complete batch as one ordered unit.
+- No permit can be reused, leaked, or hoard capacity, and no runtime-provided
+  identifier can become semantic protocol authority.
 - Stop: `v0.23.3 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.4 - Composable Runtime Effect Envelope
+### v0.23.4 - Atomic Publication Memory Model
+
+Goal: define portable state/command visibility without requiring a transaction
+across independently mutable memory structures.
+
+Deliverables:
+
+- mutable core state exclusively owned by one worker, with no concurrent direct
+  state reads or writes from runtime consumers;
+- commands written into permit-reserved but unpublished queue slots before the
+  prepared state mutation is completed;
+- one infallible batch-ready publication using release ordering after state
+  mutation, with consumers observing ready batches using acquire ordering;
+- owner-generated immutable/versioned snapshots as the only cross-thread state
+  inspection path, published independently without widening command authority;
+- worker epoch invalidation for crashes before publication, abandoned reserved
+  slots, stale snapshots, restarts, and ownership transfer;
+- a safe single-thread reference adapter plus Loom/model representation of the
+  publication protocol and memory-order assumptions.
+
+Verification:
+
+- Loom/model tests for every interleaving around reserved-slot writes, state
+  mutation, ready publication, acquire consumption, snapshot, crash, and restart
+- fault injection before and after every publication boundary proving consumers
+  never observe commands without committed owner state or partial batches
+- safe-reference differential tests and platform concurrency sanitizer runs
+
+Exit criteria:
+
+- Cross-thread consumers observe only complete ready batches, core state remains
+  worker-owned, and pre-publication crashes invalidate both prepared sides.
+- Stop: `v0.23.4 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.5 - Composable Runtime Effect Envelope
 
 Goal: compose semantic authority, resource ownership, delivery guarantee, and
 durability/audit obligations without forcing one mutually exclusive class.
@@ -1188,7 +1236,7 @@ Deliverables:
   retained-resource ownership, delivery-guarantee, durability/audit, and
   chargeable-work properties, plus validation of legal/illegal combinations;
 - authoritative relay open/close, credential lookup, external crypto, and
-  similar state decisions with operation IDs and semantic completions;
+  similar state decisions with core-owned operation IDs and semantic completions;
 - retained buffer/lease ownership that releases exactly once on completion,
   delivery failure, cancellation, stale result, permit rollback, or shutdown
   without implying protocol success;
@@ -1213,7 +1261,42 @@ Exit criteria:
 
 - Hot-path sends can combine delivery, ownership, quota, and audit obligations
   without inventing protocol authority or losing any terminal accounting.
-- Stop: `v0.23.4 implementation stop reached. Run pentest for this exact commit.`
+- Stop: `v0.23.5 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.6 - Chargeable-Work Accounting
+
+Goal: make occupancy, attempted work, valid completion usage, and retries charge
+the correct authority exactly once without attacker-controlled refunds.
+
+Deliverables:
+
+- occupancy reservations charged at resource admission and released exactly
+  once only when the buffer, slot, lease, or other occupancy actually ends;
+- attempt charges consumed when work is accepted and never refunded because a
+  send/provider/OS action later fails, times out, or is cancelled;
+- completion usage recorded only from a valid generation-bound semantic
+  completion, with duplicates, stale results, and correlation-only events inert;
+- retry policy making every retry a new attempt charge unless an explicit
+  bounded idempotency budget ties it to the original semantic operation;
+- separate counters/ledgers for reserved occupancy, consumed attempts,
+  completion-derived usage, retry consumption, refunds, and rejected work;
+- saturation, rollback, compensation, shutdown, and reconciliation rules that
+  cannot double-charge, undercharge, or revive released quota authority.
+
+Verification:
+
+- send/provider failure and cancellation matrices proving occupancy releases
+  once while attempt charges remain consumed and no false completion is recorded
+- duplicate/stale/reordered completion plus retry/idempotency properties across
+  quota exhaustion, counter saturation, crash, shutdown, and reconciliation
+- adversarial tests attempting refund loops, retry bypass, double completion,
+  correlation-ID substitution, and occupancy leaks
+
+Exit criteria:
+
+- Every charge has one declared lifecycle, and failures or retries cannot refund
+  attacker-driven work, bypass quota, or double-count valid usage.
+- Stop: `v0.23.6 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1482,6 +1565,42 @@ Exit criteria:
   cannot replay a success that falsely represents revoked live authority.
 - Stop: `v0.30.2 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.3 - Internet-Ingress Work Budgets
+
+Goal: bound unauthenticated and pre-authentication work before the first public
+UDP Binding listener exposes the core to internet traffic.
+
+Deliverables:
+
+- fixed global, listener, and worker budgets for received packets/bytes, parse
+  operations/bytes, integrity/HMAC attempts, credential-lookup admissions, and
+  generated error-response packets/bytes;
+- charge points before each expensive stage, with malformed, unauthenticated,
+  unknown-user, bad-integrity, stale-nonce, and successful paths accounted;
+- bounded acquisition/update work, saturating arithmetic, deterministic
+  exhaustion outcomes, and no attacker-controlled retry/refund loop;
+- spoofable-source policy that does not depend solely on per-source identity,
+  plus amplification ceilings for unauthenticated responses;
+- integration with `v0.23.6` attempt/occupancy/completion accounting and
+  `v0.30.0` transaction caching so retransmissions cannot bypass or double-charge;
+- immutable safe defaults required by production listener construction, with
+  later hierarchical/fairness extensions reserved for `v0.58.0`/`v0.59.0`.
+
+Verification:
+
+- `cargo test -p gjallarbru-core ingress_budgets`
+- malformed/valid packet floods across global/listener/worker boundaries,
+  HMAC/lookup exhaustion, cached retransmission, error amplification, and
+  counter saturation/wrap
+- model tests proving bounded work per datagram, deterministic recovery, and
+  no refund/retry/double-charge bypass
+
+Exit criteria:
+
+- The first real UDP listener cannot perform unbounded parse, crypto, lookup,
+  or error-response work for unauthenticated traffic.
+- Stop: `v0.30.3 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -1491,6 +1610,8 @@ Deliverables:
 - safe single-worker portable UDP listener, fixed buffer pool, path conversion,
   full-batch operation-queue reservation/acceptance, command execution, exact
   completion accounting, and clean shutdown;
+- mandatory `v0.30.3` ingress-budget admission before parse, HMAC, credential
+  lookup, and error-response work;
 - loopback integration harness with no task/timer per request.
 
 Verification:
@@ -1741,20 +1862,56 @@ Exit criteria:
   and cannot silently reuse a randomness stream after process duplication.
 - Stop: `v0.37.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.37.2 - Minimum Relay Safety Baseline
+### v0.37.2 - Canonical Effective Destinations
 
-Goal: make the first functional relay methods depend on real destination,
-relay-loop, resource, and pre-authentication defenses rather than placeholder traits.
+Goal: reduce every received peer representation to one policy identity while
+preserving effective destinations hidden by mapping, translation, or IPv6 scope.
 
 Deliverables:
 
-- a mandatory immutable baseline denying metadata services, loopback, all
-  Gjallarbru listeners, administration/control endpoints, configured relay
-  pools, same-node/self destinations, and direct or recursive relay loops;
+- canonical IPv4/IPv6 address domains with IPv4-mapped IPv6 normalized to IPv4
+  before equality, indexing, permission, policy, quota, logging, or loop checks;
+- configured NAT64 prefix de-embedding that retains both the received IPv6 and
+  effective IPv4 destination and requires both to pass policy;
+- rejection of unspecified, multicast, IPv4 broadcast, and inappropriate
+  link-local/interface/scope combinations before relay command construction;
+- interface/scope-aware IPv6 equality and canonical hashing where zone identity
+  is semantically required;
+- local listener, administration/control, and relay-pool comparison after
+  bind/local/public address translation and one-to-one NAT mapping;
+- one bounded canonicalization result consumed by permission, channel,
+  destination policy, relay-loop, quota, and audit logic without re-decoding.
+
+Verification:
+
+- `cargo test -p gjallarbru-core canonical_destination`
+- cross-representation properties for IPv4, IPv4-mapped IPv6, configured NAT64,
+  scoped/link-local IPv6, translated bind/public addresses, multicast,
+  broadcast, unspecified, metadata, loopback, listener, and relay-pool targets
+- alias-bypass tests proving all encodings of an effective protected
+  destination receive the same or stricter denial
+
+Exit criteria:
+
+- No alternate address representation, NAT64 form, scope, or public/bind
+  translation can change the security classification of one effective destination.
+- Stop: `v0.37.2 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.37.3 - Minimum Relay Safety Baseline
+
+Goal: make the first functional relay methods depend on canonical destination,
+relay-loop, and fixed relay-resource defenses rather than placeholder traits.
+
+Deliverables:
+
+- a mandatory immutable baseline operating on the `v0.37.2` canonical/effective
+  identity and denying metadata services, loopback, all Gjallarbru listeners,
+  administration/control endpoints, configured relay pools, same-node/self
+  destinations, and direct or recursive relay loops;
 - fixed global, worker, allocation, relay-port, permission, channel, retained
   buffer, and queued-byte ceilings with atomic reserve/commit/release behavior;
-- pre-authentication packet, byte, cryptographic-work, credential-lookup, and
-  error-response budgets that bound spoofed and unauthenticated work;
+- mandatory reuse of the `v0.30.3` internet-ingress budgets for every TURN
+  request before relay-specific admission begins;
 - deterministic silent-discard, authenticated error, retry-later, or admission
   refusal behavior for every exhausted or denied path without amplification;
 - capability-shaped policy/quota gates required by Allocate, CreatePermission,
@@ -1766,16 +1923,16 @@ Deliverables:
 Verification:
 
 - `cargo test -p gjallarbru-core minimum_relay_safety`
-- generated IPv4/IPv6 metadata, loopback, listener, admin, relay-pool,
+- generated canonical/effective metadata, loopback, listener, admin, relay-pool,
   same-allocation, same-node, and two-relay loop fixtures
-- model/property tests for every fixed ceiling, reserve/rollback path, spoofed
-  pre-authentication flood, crypto/error budget, and deterministic exhaustion result
+- model/property tests for every fixed relay ceiling, reserve/rollback path,
+  inherited ingress-budget gate, and deterministic exhaustion result
 
 Exit criteria:
 
 - No later relay command can be constructed without the minimum safety gates,
-  and hostile pre-authentication traffic cannot exceed their fixed work budgets.
-- Stop: `v0.37.2 implementation stop reached. Run pentest for this exact commit.`
+  and address aliases cannot bypass their destination or loop decisions.
+- Stop: `v0.37.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.38.0 - Allocate Semantic Validation
 
@@ -1784,7 +1941,7 @@ Goal: validate Allocate completely before any relay resource is opened.
 Deliverables:
 
 - requested transport/family/lifetime/even-port/reservation/fragment schemas;
-- authentication, existing allocation, mandatory `v0.37.2` quota/policy baseline,
+- authentication, existing allocation, mandatory `v0.37.3` quota/policy baseline,
   and relay availability ordering.
 
 Verification:
@@ -2317,7 +2474,8 @@ Goal: make peer reachability explicit for public, enterprise, custom, and test d
 
 Deliverables:
 
-- immutable numeric prefix/profile decisions with deny reasons and rate classes;
+- immutable numeric prefix/profile decisions over the `v0.37.2`
+  canonical/effective destination, with deny reasons and rate classes;
 - special-use, internal allowlist, DNS-at-load-only, policy generation, and atomic reload tests.
 
 Verification:
@@ -2337,7 +2495,7 @@ Goal: prevent TURN from reaching protected infrastructure or recursively relayin
 Deliverables:
 
 - listener, control, metadata, database, relay-pool, same-allocation, local-node,
-  and configured-sensitive-prefix denial;
+  and configured-sensitive-prefix denial over canonical/effective destinations;
 - source/destination loop detection and policy-epoch invalidation.
 
 Verification:

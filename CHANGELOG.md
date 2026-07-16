@@ -23,6 +23,10 @@ All notable changes to `gjallarbru` are documented here.
   domains, a linear generation-bound command-permit lifecycle, composable
   runtime effect properties, and a mandatory minimum relay-safety baseline
   before any functional Allocate/CreatePermission/Send path.
+- Added exact prepared-transition permit sizing, core-only semantic operation
+  IDs, a portable release/acquire publication model, pre-listener internet
+  ingress budgets, canonical/effective destination handling, exact charge
+  lifecycles, and plan-bound finalizer dependency slots.
 
 ## 0.2.0 - 2026-07-14
 
