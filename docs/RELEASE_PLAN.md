@@ -168,6 +168,10 @@ Current closure decisions are:
 | Peer-bound commands could use typed endpoint authority while client responses and indications still use raw or stale paths. | `v0.30.6` requires one `AuthorizedClientPath` for every client send; `v0.45.0`/`v0.47.0` canonicalize incoming peer identity before permission/channel lookup. |
 | A revocation fence could rely on FIFO assumptions without proving every queue, submission ring, or kernel lane stopped older authority. | `v0.23.12` defines monotonic authority sequences, per-domain acknowledgements, reuse barriers, and disjoint-generation fallback. |
 | Partial `sendmmsg` or provider batches could consume all single-use capabilities even though only a prefix reached the OS. | `v0.79.2` consumes only handed-off entries; unsent packets retain exclusive ownership and revalidate authority/fences before charged retry. |
+| Repeated revocations could allocate unbounded fence operations or invalidate unrelated worker commands while an earlier fence remains pending. | `v0.23.13` coalesces fixed per-lane high-water marks, freezes bounded lane membership, defines acknowledgement precisely, and separates ordering from semantic generations. |
+| A local timeout could be mistaken for proof that an external operation failed or was cancelled. | `v0.23.14` makes deadline expiry nonterminal, initiates cancellation/reconciliation, and preserves operation-policy handling of valid late success. |
+| Fixed-header classification could claim to identify cached retransmissions before paying the transaction-cache lookup needed to prove them. | `v0.30.7` charges the ordinary method class and one bounded lookup before entering a cached-response substate, with no work refunds or cheap collision oracle. |
+| A partially written TCP/TLS frame could expire or be revoked with its tail dropped while the connection remains open, corrupting stream framing. | `v0.79.3` keeps the frame at the write-ledger head and requires bounded completion or connection close with an exact TLS/provider handoff boundary. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1579,6 +1583,91 @@ Exit criteria:
   before reuse, or the uncertain old domain is made permanently non-aliasing.
 - Stop: `v0.23.12 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.23.13 - Bounded Fence Watermarks
+
+Goal: keep revocation storms bounded and scoped while one or more execution
+lanes are still acknowledging an earlier authority fence.
+
+Deliverables:
+
+- one fixed-capacity pending high-water `FenceId` per registered execution lane,
+  with no per-revocation queue item, waiter, future, or control-slot growth;
+- monotonic coalescing: repeated advances replace the required watermark with
+  the newest value while preserving every older reuse barrier;
+- acknowledgement of fence `F` defined precisely as every command through `F`
+  being handed off and tracked, rejected before handoff, or terminally
+  reconciled—not merely read, dequeued, cancelled, or submitted;
+- a fixed-capacity execution-lane registry with lane identity/generation,
+  maximum lanes per domain, and deterministic exhaustion behavior;
+- a lane added during a pending fence starts beyond the captured watermark and
+  cannot receive commands from the older authority interval;
+- lane removal requires acknowledgement/drain or destruction/quarantine of its
+  execution domain before its identity or resources can be reused;
+- ordering `FenceId` separated from allocation, permission, channel, path,
+  policy, buffer, and other semantic object generations;
+- explicit fence scope and blast radius per execution-domain type, with coarse
+  worker-wide invalidation permitted only when deliberately configured,
+  documented, capacity-tested, and never implied by sequence comparison;
+- control-lane reserve/accounting for the one coalesced fence state and its
+  acknowledgements integrated with `v0.23.7`.
+
+Verification:
+
+- `cargo test -p gjallarbru-core fence_watermark`
+- revocation-storm models with repeated/nested object invalidation while every
+  lane is delayed, reordered, lost, replaced, or acknowledging older watermarks
+- lane add/remove/reuse, registry exhaustion, generation wrap, domain restart,
+  coalescing, and wrong-lane/stale acknowledgement tests
+- mixed unrelated allocations/permissions proving narrow revocation does not
+  stale unrelated commands unless the declared coarse blast radius requires it
+- fixed-slot/counter assertions proving revocation frequency cannot increase
+  pending fence memory, tasks, queues, or control-lane operations without bound
+
+Exit criteria:
+
+- Each lane has one bounded coalesced required watermark, acknowledgement has
+  one exact meaning, and semantic authority outside the declared fence scope
+  remains unaffected.
+- Stop: `v0.23.13 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.14 - Nonterminal Timeout Observations
+
+Goal: ensure local deadline expiry initiates recovery without inventing proof
+that an external operation failed, stopped, or was successfully cancelled.
+
+Deliverables:
+
+- `DeadlineExceeded` as a nonterminal mailbox observation/state distinct from
+  `Failed`, `Cancelled`, and `Uncertain`;
+- operation-specific transition from `Pending` to `DeadlineExceeded` and then
+  cancellation request and/or reconciliation work under reserved control capacity;
+- timeout never records external failure/completion usage, releases external
+  ownership prematurely, refunds an attempt, or proves OS/provider cancellation;
+- generation-valid success/failure/cancel observations arriving after timeout
+  handled by the same declared operation policy as observations racing an
+  explicit `CancelRequested`;
+- repeated local timers and duplicate deadline observations coalesced without
+  additional terminal slots, audit events, cancellation commands, or charges;
+- timeout versus shutdown, revocation, crash, fence, resource inventory, and
+  compensation ordering integrated with `v0.23.7`, `v0.23.9`, and `v0.23.11`;
+- distinct external/provider timeout completions allowed only when the provider
+  contract proves their terminal meaning rather than inheriting local timer semantics.
+
+Verification:
+
+- exhaustive mailbox transitions for timeout before/after handoff, cancellation
+  request, success, failure, provider cancellation, crash, and reconciliation
+- valid late-success policies for send, open, close, credential, crypto, and
+  provider operations plus contradictory-result uncertainty tests
+- repeated/stale timer, clock jump, shutdown, revocation, and full-control-lane
+  models proving one cancellation/reconciliation path and one final terminal state
+
+Exit criteria:
+
+- A local timeout is never terminal evidence; it starts bounded recovery while
+  preserving truthful handling of every later generation-valid observation.
+- Stop: `v0.23.14 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.24.0 - Binding State Processing
 
 Goal: implement Binding request validation and response planning without sockets.
@@ -1879,8 +1968,9 @@ Deliverables:
   plus amplification ceilings for unauthenticated responses;
 - integration with `v0.23.6` attempt/occupancy/completion accounting and
   `v0.30.0` transaction caching so retransmissions cannot bypass or double-charge;
-- cached retransmissions still consume packet, parse/classification, and send
-  attempts, while transaction identity prevents recreation of semantic side effects;
+- cached retransmissions still consume packet, parse/classification,
+  transaction-cache lookup, and send attempts, while transaction identity
+  prevents recreation of semantic side effects;
 - immutable safe defaults required by production listener construction, with
   later hierarchical/fairness extensions reserved for `v0.58.0`/`v0.59.0`.
 
@@ -1931,8 +2021,9 @@ Deliverables:
 - a fixed bounded class registry controlled by immutable configuration:
   attacker-declared unknown methods map to one finite unknown/invalid class and
   cannot manufacture class identifiers, fairness queues, or new quota domains;
-- transaction-cache recognition and ChannelData classification preserve their
-  own finite classes without skipping semantic work charges required later.
+- ChannelData has its finite fixed-header class; STUN requests remain in their
+  ordinary method class through the charged transaction-cache lookup, with no
+  pre-lookup cached-retransmission class.
 
 Verification:
 
@@ -1940,7 +2031,7 @@ Verification:
 - compile/API tests for unclassified/classified typestates, exact-once
   conversion, and forbidden repeat/split/merge/transfer/reclassification
 - exhaustive fixed-header method/class combinations plus malformed, truncated,
-  unknown-method, ChannelData, cached-retransmission, and class-exhaustion tests
+  unknown-method, ChannelData, retransmission, and class-exhaustion tests
 - adversarial mixed-listener floods proving Binding never reserves TURN HMAC/
   lookup capacity, declared methods cannot create classes, and failed conversion
   performs no attribute/HMAC/lookup/preparation work
@@ -2041,6 +2132,53 @@ Exit criteria:
   command, charge, deadline, and authority sequence, and stale paths cannot send.
 - Stop: `v0.30.6 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.7 - Cached Retransmission Admission
+
+Goal: recognize an exact cached retransmission only after charging the ordinary
+method path and the bounded transaction-cache lookup needed to prove identity.
+
+Deliverables:
+
+- fixed-header classification always selects the normal finite STUN method/
+  work class; no cache-hit, retransmission, or transaction-ID class exists
+  before lookup;
+- the classified method permit reserves and charges one bounded transaction-
+  cache lookup with explicit operation, probe, byte-read, and collision ceilings;
+- only a successful strong-identity lookup after its charge may enter a typed
+  `CachedResponse` substate bound to the original transaction/configuration/
+  authentication/path generations and cached response bytes;
+- a cache hit may release still-unused HMAC, credential-lookup, preparation,
+  and semantic-mutation reservations that will provably not start;
+- packet/frame admission, fixed-header classification, request parsing/identity
+  work, cache lookup, response construction/copy where applicable, and send
+  attempts remain consumed and cannot be refunded by the hit;
+- cache miss, digest/byte mismatch, deliberately colliding transaction IDs,
+  evicted entries, invalidated entries, and stale generations continue/reject
+  under the ordinary method budget without a cheaper repeatable lookup path;
+- hit/miss/error timing, response size, amplification, audit, and rate-limit
+  behavior cannot reveal cache existence beyond the protocol-visible response;
+- cached response delivery still requires `v0.30.6` live client-path authority
+  and cannot recreate allocation or other semantic side effects.
+
+Verification:
+
+- `cargo test -p gjallarbru-core cached_retransmission_admission`
+- charge-ledger tests for hit, miss, collision, digest match/byte mismatch,
+  eviction, invalidation, expiry, stale path/configuration, and response exhaustion
+- assertions that a hit releases only unstarted reservations while admission,
+  classification, parsing/identity, lookup, response/copy, and send attempts
+  remain charged
+- adversarial repeated/colliding transaction-ID floods proving bounded probes,
+  no cheap cache oracle, no fairness bypass, and no semantic side-effect replay
+- ordinary-versus-cached path timing/amplification envelopes and exact response/
+  transaction identity differential tests
+
+Exit criteria:
+
+- Cached retransmission is a post-lookup substate, never a pre-lookup fairness
+  class, and cache hits cannot refund performed work or reproduce side effects.
+- Stop: `v0.30.7 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -2052,12 +2190,15 @@ Deliverables:
   completion accounting, and clean shutdown;
 - mandatory `v0.30.3`-`v0.30.5` two-stage just-in-time ingress admission before
   class-specific parse, HMAC, lookup, preparation, and response work;
+- `v0.30.7` charged cache lookup/substate behavior for exact retransmissions;
 - `v0.30.6` authorized client delivery for every Binding/error response, with
   final path/deadline/fence validation immediately before socket handoff;
 - implementation of the `v0.23.9` accepted-batch crash/reconciliation contract
   through the `v0.23.10` single-thread portable publication adapter;
 - local execution-domain implementation of `v0.23.12` fence acknowledgement
-  and disconnect/listener/buffer reuse barriers;
+  plus `v0.23.13` coalesced watermarks and disconnect/listener/buffer reuse barriers;
+- local timer integration using `v0.23.14` nonterminal deadline observations
+  rather than synthesizing failed/cancelled socket results;
 - loopback integration harness with no task/timer per request.
 
 Verification:
@@ -2454,6 +2595,8 @@ Deliverables:
 - concrete reuse of the `v0.23.12` monotonic authority sequence and per-lane
   acknowledgement protocol for queues, socket/provider submission, and later
   accelerated lanes, never FIFO ordering alone;
+- `v0.23.13` fixed lane registry, coalesced required watermark, acknowledgement
+  meaning, semantic-generation separation, and declared execution-domain scope;
 - bounded in-flight semantics after OS handoff: recall/cancellation is never
   assumed, attempt/byte charges remain consumed, and each possible late result
   follows the `v0.23.11` terminal-mailbox contract;
@@ -2600,7 +2743,8 @@ Deliverables:
 - `v0.37.5` execution-tick, queue-age, command/batch/charge, single-use, and
   revocation-fence validation immediately before socket/provider handoff;
 - `v0.23.12` socket-worker/queue acknowledgement before relay endpoint,
-  operation, descriptor, or buffer identity reuse;
+  operation, descriptor, or buffer identity reuse, with `v0.23.13` coalescing
+  under repeated revocation;
 - fixed pool/prebind extension points without changing core commands.
 
 Verification:
@@ -3493,6 +3637,8 @@ Deliverables:
 
 - queued frame/byte/age limits, partial-frame ceilings, read suspension, fair writes,
   hard-close thresholds, and peer-data drop policy;
+- a write-ledger extension point requiring any later partially accepted frame
+  to remain connection-head ordered and end in completion or connection close;
 - occupancy/work accounting for stream framing bytes and retained partial
   frames before a complete frame can acquire semantic ingress authority;
 - allocation/global accounting of queued bytes and leased buffers.
@@ -3517,6 +3663,8 @@ Deliverables:
 - certificate/key loading, handshake/result normalization, session cleanup, and
   mandatory rejection of TLS/provider early application data before framing,
   authentication, or core processing;
+- an exact provider plaintext-output acceptance result distinct from encrypted
+  record buffering and eventual kernel write completion, consumed by `v0.79.3`;
 - dedicated handshake budgets followed by one common `v0.30.3`-`v0.30.5`
   two-stage ingress permit for every handshake-confirmed plaintext frame;
 - provider substitution tests proving the adapter cannot accidentally enable
@@ -3762,7 +3910,8 @@ Deliverables:
 - worker-local stores/timers/buffers/relays, stable flow steering, bounded cross-worker control,
   immutable configuration epochs, and ownership migration prohibition;
 - per-worker execution domains implementing `v0.23.12` authority sequences and
-  acknowledgement across cross-worker queues before ownership/identifier reuse;
+  `v0.23.13` coalesced lane watermarks across cross-worker queues before
+  ownership/identifier reuse;
 - safe single-worker reference retained for differential tests;
 - initial focused Loom models for bounded cross-worker queue publication,
   ownership epochs, immutable configuration publication, cancellation, and
@@ -3916,6 +4065,54 @@ Exit criteria:
   be live, acknowledged, and correctly charged before any retry.
 - Stop: `v0.79.2 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.79.3 - Partial Stream-Frame Closure
+
+Goal: preserve TCP/TLS framing and delivery truth when only part of one
+client-bound frame has crossed the runtime/provider handoff boundary.
+
+Deliverables:
+
+- one ordered per-connection write ledger whose partially accepted frame
+  remains at the head until its tail completes or the connection closes;
+- later responses, indications, ChannelData frames, and relay bytes forbidden
+  from overtaking or interleaving with the retained tail;
+- the frame's single-use client-delivery capability consumed exactly once at
+  first accepted byte, with the tail owned by that same bounded in-flight
+  operation rather than reauthorized or charged as a new semantic delivery;
+- exact retained-tail byte, age, retry/write-attempt, provider-buffer, and
+  connection-wide ceilings with fair scheduling across other connections;
+- operation-specific already-in-flight policy after authority expiry,
+  revocation, cancellation, shutdown, or local timeout: the tail may finish
+  only within a fixed byte/time window, otherwise the connection must close;
+- dropping/truncating the tail while keeping the connection open forbidden,
+  including best-effort indications, because stream framing would be corrupted;
+- exact TCP syscall and TLS-provider acceptance boundaries: provider acceptance
+  reports the plaintext prefix transferred into provider-owned output, while
+  encryption, record coalescing, and eventual kernel writes remain separately
+  tracked and cannot invent application-level completion;
+- disconnect/close releases the tail, provider buffers, leases, capability,
+  charges, and terminal mailbox ownership exactly once without attempting to
+  resume the frame on a replacement connection.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime partial_stream_frame`
+- every partial byte offset for STUN responses, Data indications, ChannelData,
+  and representative RFC 6062 control frames
+- later-frame ordering/interleaving assertions plus tail expiry, revocation,
+  cancellation, timeout, shutdown, provider failure, and connection-close tests
+- two-provider/test-double acceptance-boundary differential tests distinguishing
+  plaintext provider acceptance, encrypted-record buffering, and kernel writes
+- bounded in-flight window exhaustion proving either complete frame bytes in
+  order or connection close—never a truncated frame followed by later traffic
+
+Exit criteria:
+
+- A consumed partial stream frame either completes in order within its bounded
+  in-flight window or closes the connection; its tail is never dropped,
+  overtaken, reauthorized, or moved to another connection.
+- Stop: `v0.79.3 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.80.0 - Buffer Pools and Scatter/Gather
 
 Goal: prove zero allocator calls and avoid unnecessary payload copies on the hot path.
@@ -3946,6 +4143,8 @@ Deliverables:
   generation-tagged user data, cancellation, shutdown, and portable fallback;
 - `v0.79.2` per-entry capability consumption and unsent/retry semantics for
   linked, multishot, or vector submissions with partial acceptance;
+- `v0.79.3` ordered stream-tail ownership/close semantics where `io_uring`
+  accepts only part of a stream frame;
 - isolated unsafe/syscall modules with safety evidence.
 
 Verification:
@@ -3992,7 +4191,8 @@ Deliverables:
 - remove-or-invalidate-before-reuse ordering for allocation/channel/policy
   generations and emergency revocation;
 - `v0.23.12` authority sequences carried by every rule/install/remove command,
-  with acknowledgement from each kernel map/program/queue lane before reuse;
+  with `v0.23.13` coalesced high-water acknowledgement from each kernel
+  map/program/queue lane before reuse;
 - kernel expiry that is never later than core expiry, with bounded clock/
   epoch translation and fail-closed uncertainty;
 - map loss, eviction, reload, worker restart, reconciliation failure, and
@@ -4155,7 +4355,8 @@ Deliverables:
 - per-direction queues, pre-bind byte/time caps, partial-write handling, fair
   scheduling, close policy, and allocation-level quotas;
 - client-bound relay/control writes retain `v0.30.6` connection/path/fence
-  authority and `v0.79.2` per-entry partial-write consumption semantics;
+  authority plus `v0.79.2` per-entry consumption and `v0.79.3` ordered
+  partial-tail completion-or-close semantics;
 - deterministic backpressure and cleanup behavior for disconnects and half-closes.
 
 Verification:

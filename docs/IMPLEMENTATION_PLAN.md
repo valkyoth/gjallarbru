@@ -431,8 +431,12 @@ mailbox that coalesces duplicate/stale completion observations without
 allocating new control slots indefinitely.
 
 The terminal mailbox follows an explicit state machine:
-`Pending -> CancelRequested -> Succeeded | Failed | Cancelled | Uncertain`,
-with direct `Pending` transitions to valid terminal states where applicable.
+`Pending -> DeadlineExceeded -> CancelRequested -> Succeeded | Failed |
+Cancelled | Uncertain`, with direct transitions to valid terminal states where
+applicable. `DeadlineExceeded` is a nonterminal local observation, not evidence
+that external work failed or stopped. It initiates the operation-specific
+cancellation/reconciliation path and still permits a generation-valid late
+success where that operation's policy allows it.
 A cancellation request records intent and blocks forbidden new work but never
 proves that an OS operation was cancelled. Operation-specific contracts decide
 whether a generation-valid success observed after cancellation request wins.
@@ -451,6 +455,18 @@ or uncertain acknowledgement destroys the old execution domain or advances to
 a disjoint generation whose identifiers cannot alias the unacknowledged one.
 The portable core represents fence commands, acknowledgements, and generations
 as ordinary no-atomic values; runtime adapters implement the synchronization.
+
+Fence state is fixed-capacity. Each registered execution lane owns one pending
+high-water mark; repeated revocations coalesce monotonically into the newest
+required `FenceId` rather than allocating another control operation. An
+acknowledgement of `F` means every command through `F` is handed off and tracked,
+rejected, or terminally reconciled, never merely dequeued. Lane membership has
+a generation: a lane added during a pending fence begins beyond the captured
+watermark and cannot receive older commands; removal must acknowledge, drain,
+or destroy its domain. Ordering `FenceId`s are distinct from semantic object
+generations, so a narrowly scoped permission revocation does not invalidate
+unrelated commands unless the configured execution domain deliberately uses a
+coarser documented blast radius.
 
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
@@ -595,6 +611,15 @@ generation, path/endpoint authority, and fence acknowledgement before retry.
 For a stream/vector call that accepts only part of one entry, that entry's
 capability is consumed once and its remaining tail stays owned by the same
 bounded in-flight operation; it is never reclassified as a fresh unsent packet.
+The partially written frame stays at the head of its connection write ledger;
+later frames cannot overtake or interleave with its tail. The tail is neither
+reauthorized nor charged as a new semantic delivery. If authority expires,
+revocation/cancellation arrives, or the connection enters shutdown, the tail
+may finish only within its declared already-in-flight byte/time window;
+otherwise the connection closes. Dropping a tail while retaining the stream is
+forbidden because it would corrupt framing. TLS/provider adapters define an
+exact prefix-acceptance boundary into provider-owned output independently from
+eventual encrypted-record or kernel-write completion.
 Retry attempt charging follows the declared idempotency policy and never
 recreates a consumed capability. Expiry, revocation, disconnect, or buffer
 reuse between a partial result and retry makes the unsent entry inert.
@@ -654,7 +679,9 @@ work class, atomic conversion consumes that classification authority and either
 acquires a class permit reserving the applicable HMAC, lookup, preparation, and
 response capacity or stops before attribute scanning, HMAC, or lookup.
 Attacker-declared methods cannot create new classes, repeat conversion, probe
-capacity without charge, or refund classification work.
+capacity without charge, or refund classification work. Fixed-header
+classification always selects the ordinary finite method class; it cannot know
+that a request is an exact cached retransmission.
 
 Within the classified permit, starting HMAC, lookup, response construction/send,
 or preparation converts only that stage's reservation into a non-refundable
@@ -675,6 +702,15 @@ released before the next packet where practical. Deterministic fairness
 prevents one listener or classified work class from starving another; cheap
 Binding classification cannot reserve authenticated TURN HMAC/lookup capacity,
 and expensive traffic cannot evade its own charges.
+
+The ordinary method class includes one bounded charged transaction-cache lookup.
+Only after that lookup may processing enter a `CachedResponse` substate. A hit
+may release still-unused HMAC, credential, and semantic-mutation reservations,
+but never refunds admission, fixed-header classification, request parsing,
+cache lookup, or response/send attempts. A miss continues through the ordinary
+method path. Deliberately colliding transaction IDs, near matches, and repeated
+misses consume the same bounded lookup/classification authority and cannot form
+a cheap cache-existence or capacity oracle.
 
 Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
 functional, every received destination becomes one canonical and effective

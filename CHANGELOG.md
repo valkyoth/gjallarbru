@@ -43,6 +43,9 @@ All notable changes to `gjallarbru` are documented here.
   classification, symmetric typed client-delivery capabilities, canonical
   incoming-peer checks, and per-packet capability ownership across partial
   batched sends.
+- Added bounded coalesced fence watermarks, nonterminal timeout observations,
+  charged cached-retransmission substates, and TCP/TLS partial-frame
+  completion-or-close semantics with exact provider handoff boundaries.
 
 ## 0.2.0 - 2026-07-14
 
