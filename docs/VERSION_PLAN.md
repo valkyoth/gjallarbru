@@ -29,7 +29,7 @@ The index and detailed contracts are checked together by
 | `0.2.1` | Deterministic architecture contract | Reducer inputs, output atomicity, time, entropy, storage, capability, lease, and protocol-name rules are frozen before APIs |
 | `0.2.2` | Executed requirement evidence | Semantic requirements can become verified only when CI resolves their real symbol and observes their named test |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
-| `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, time, limits, and errors have boundary tests |
+| `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, monotonic time, absolute-time trust/source generations, limits, and errors have boundary tests |
 | `0.4.1` | Complete client-path identity | Listener, socket, provenance, interface, configuration, connection, and worker generations prevent stale or cross-realm authority |
 | `0.5.0` | Checked cursors | Exhaustive read/write bounds and arbitrary-slice no-panic tests pass |
 | `0.5.1` | Hostile-input parser foundation | Progress, termination, checked padding, complexity, size, and early fuzz obligations are executable |
@@ -52,8 +52,8 @@ The index and detailed contracts are checked together by
 | `0.14.0` | Permission/channel attributes | Peer, channel, data, and ICMP attributes cover every valid and invalid length |
 | `0.15.0` | ChannelData codec | Datagram and stream length/padding boundaries round trip |
 | `0.15.1` | UDP ChannelData alignment closure | Both legal datagram forms are accepted while arbitrary trailing bytes remain rejected |
-| `0.16.0` | Sealed caller-buffer encoder | One immutable encode plan drives sizing, integrity, and final writing; failed transactional encodes leave caller-visible bytes unchanged |
-| `0.17.0` | FINGERPRINT | RFC 5769 and corruption vectors pass with FINGERPRINT last |
+| `0.16.0` | STUN encoder typestate engine | `EncodeDraft` becomes a validated and then finalized plan before one transactional caller-buffer commit |
+| `0.17.0` | FINGERPRINT finalization | RFC 5769 and corruption vectors pass with CRC finalization integrated and FINGERPRINT last |
 | `0.17.1` | Crypto provider and secret contract | Capability-specific fixed-output providers, opaque keys, redacted secrets, and fail-closed errors are proven |
 | `0.17.2` | Synchronous and external crypto split | Packet crypto is bounded and deterministic; HSM/KMS work is asynchronous and cannot hide I/O or entropy |
 | `0.17.3` | External packet-crypto ownership | Base packet HMAC stays synchronous; any admitted asynchronous profile retains immutable bounded message input through completion |
@@ -73,7 +73,8 @@ The index and detailed contracts are checked together by
 | `0.23.0` | Sans-I/O event/command API | Synthetic events produce bounded commands with no borrowed data escaping |
 | `0.23.1` | Atomic deterministic reducer | Identical explicit inputs produce byte-identical results and capacity failure leaves state and runtime untouched |
 | `0.23.2` | Atomic command-batch admission | A pre-reserved permit covers the whole batch; partial acceptance is prohibited and cannot expose committed state |
-| `0.23.3` | Runtime effect classes | Authoritative, ownership, delivery, observability, and security-audit effects receive only the state and completion semantics they require |
+| `0.23.3` | Linear command-batch permit lifecycle | Single-use generation-bound permits release every reservation deterministically and cannot become stale authority |
+| `0.23.4` | Composable runtime effect envelope | Semantic authority, resource ownership, delivery guarantee, and durability combine orthogonally without false completions |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -101,6 +102,7 @@ The index and detailed contracts are checked together by
 | `0.36.1` | Timing-wheel debt and jump closure | Stale debt, reschedule policy, expiration work, backlog fairness, and large time jumps remain bounded and cannot extend authority |
 | `0.37.0` | Relay-port allocator | Randomized bounded search, collision, exhaustion, and atomic pair tests pass |
 | `0.37.1` | Relay-port entropy profile | Explicit worker seeds or completions, unbiased unique candidates, fork/restart handling, and deterministic exhaustion are proven |
+| `0.37.2` | Minimum relay safety baseline | Mandatory destination/loop denials, fixed resource ceilings, and pre-authentication work budgets exist before relay methods |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |

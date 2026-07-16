@@ -109,7 +109,7 @@ Current closure decisions are:
 | Current STUN/TURN base and IPv6 could be mistaken for RFC 5389/5766/6156 layering. | RFC 8489 and RFC 8656 are the base from `v0.2.0`; IPv6 is native in `v0.48.0` and `v0.49.0`. |
 | Integrity could be described as “MD5 HMAC.” | Separate legacy key derivation/HMAC-SHA-1 in `v0.18.0` and modern SHA-256 in `v0.19.0`. |
 | Resource creation could occur before authentication. | Authentication and two-phase allocation are explicit in `v0.27.0`, `v0.38.0`, and `v0.39.0`. |
-| Private-destination policy could be either universally blocked or accidentally open. | Explicit profiles and SSRF/loop controls in `v0.56.0` and `v0.57.0`. |
+| Private-destination policy could be either universally blocked or accidentally open, while early relay releases could temporarily use placeholder gates. | `v0.37.2` installs the mandatory protected-destination, loop, resource, and pre-authentication baseline before relay methods; `v0.56.0` and `v0.57.0` add configurable profiles and comprehensive SSRF controls. |
 | Secure transports and crypto could become home-grown protocol code. | Provider boundaries in `v0.19.0`, `v0.73.0`, and `v0.75.0`; primitives/TLS/DTLS remain reviewed dependencies. |
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
@@ -135,20 +135,20 @@ Current closure decisions are:
 | Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
 | Batching or kernel acceleration could treat partial sends, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes batch completion semantics and `v0.82.1` closes fast-path revocation, reuse, expiry, and reconciliation. |
 | Keyword anchors could be marked verified by plausible-looking strings without semantic refinement, a real symbol, or an executed test. | `v0.2.2` adds semantic child requirements and a CI evidence manifest that resolves implementation symbols and records observed test execution. |
-| A successful core transition could still overrun a downstream queue or be only partly executed by the runtime. | `v0.23.2` defines pre-step queue admission, effect operation IDs, completion truth, dependencies, compensation, cancellation, and shutdown accounting. |
+| A successful core transition could still overrun a downstream queue or be only partly executed by the runtime. | `v0.23.2` defines whole-batch admission and `v0.23.3` makes its permit single-use, generation-bound, bounded, deterministically released, and atomically published with state. |
 | Client identity could survive listener, socket, configuration, proxy, interface, or worker reuse. | `v0.4.1` makes every relevant path/provenance generation part of authorization identity. |
 | An opaque synchronous crypto provider could conceal blocking HSM/KMS I/O, allocation, mutable state, ambient entropy, or nondeterministic output. | `v0.17.2` separates bounded deterministic packet crypto from asynchronous external-crypto command/completion operations. |
 | Stale timing-wheel entries and large time jumps could create unbounded expiration debt or accidentally extend authorization. | `v0.36.1` bounds live/dead entries, rescheduling, expiration work, overdue fairness, and time-jump behavior. |
 | Configuration reload and emergency revocation could conflict with transaction retransmission idempotence. | `v0.30.2` pins ordinary transactions to their decision generation and gives every revocation class an explicit replay/error/discard/teardown rule. |
 | TLS/DTLS resumption could admit replayable early application data for state-changing STUN/TURN methods. | Initial rejection is mandatory in `v0.73.0` and `v0.75.0`; `v0.76.2` proves cross-provider/topology closure and requires a future method-level proof for any exception. |
-| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, especially after provider finalization failure. | `v0.16.0` uses one sealed immutable encode plan for sizing, integrity/CRC input, prepared tags, and final writing; optional staging is explicit and separately accounted. |
+| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, while a supposedly immutable plan could still need CRC/HMAC insertion. | `v0.16.0` introduces `EncodeDraft -> ValidatedPlan -> FinalizedEncodePlan -> commit`; `v0.17.0` through `v0.19.0` add protocol-specific CRC/HMAC finalization before caller-visible output. |
 | Send/Data relay could transfer borrowed payloads before zero-copy lease ownership is implemented. | `v0.43.1` requires bounded runtime-owned copies for early relay paths; `v0.47.1` later admits generation-tagged zero-copy leases. |
 | Fast-path packet/byte counters could become independently refillable quota authority. | `v0.82.2` models kernel budgets as finite generation-bound leases reconciled by core before renewal. |
 | Relay-port randomness could conflict with deterministic reducer inputs or repeat biased candidates after fork/restart. | `v0.37.1` specifies explicit worker-seed/completion policy, unbiased unique search, seed independence, and deterministic exhaustion. |
-| Absolute-time rollback handling alone could leave forward jumps, uninitialized clocks, and recovery ambiguous. | `v0.25.1` adds trusted/uncertain/unavailable clock state and generation-changing recovery without altering monotonic lifetimes. |
+| Absolute-time rollback handling alone could leave forward jumps, uninitialized clocks, and recovery ambiguous or make nonce work depend on a later type. | `v0.4.0` defines absolute time, trust, source, and generation; `v0.25.1` adds production clock-health transitions and recovery without altering monotonic lifetimes. |
 | Concurrency models could arrive only after cross-worker queues and configuration publication are already entrenched. | Initial focused Loom evidence is an exit condition of `v0.78.0`; `v0.78.1` expands the inventory and `v0.93.0` remains comprehensive closure. |
 | Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` requires one pre-reserved whole-batch permit; adversarial partial acceptance proves the transition remains uncommitted, while partial execution is handled only after atomic acceptance. |
-| Treating every output as an authoritative operation could exhaust operation tables on packet sends and metrics. | `v0.23.3` gives authoritative, ownership, delivery, observability, and security-audit effects distinct completion and durability semantics. |
+| Treating every output as one mutually exclusive effect class could exhaust operation tables or lose ownership/audit duties on a best-effort send. | `v0.23.4` composes semantic authority, resource ownership, delivery guarantee, and durability/audit properties in one effect envelope. |
 | Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
 | A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
 
@@ -292,13 +292,17 @@ Goal: define OS-independent protocol, time, identity, limit, and error types.
 Deliverables:
 
 - IP/transport addresses, methods/classes, transaction IDs, channel numbers,
-  paths, monotonic/absolute time, capacities, and stable errors;
+  paths, monotonic time, capacities, and stable errors;
+- `AbsoluteTime` with an observation, explicit trusted/uncertain/unavailable
+  status, source identity, and generation, kept distinct from monotonic time;
 - checked constructors and redacted formatting for sensitive identifiers.
 
 Verification:
 
 - `cargo test -p gjallarbru-wire -p gjallarbru-core`
 - boundary and formatting tests for every constructor and error category
+- absolute-time equality/order/source-generation tests proving untrusted or
+  cross-source observations cannot be silently treated as trusted timestamps
 
 Exit criteria:
 
@@ -695,18 +699,24 @@ Exit criteria:
   admitted as ChannelData.
 - Stop: `v0.15.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.16.0 - Sealed STUN Caller-Buffer Encoder
+### v0.16.0 - STUN Encoder Typestate Engine
 
-Goal: build canonical STUN messages transactionally from one immutable plan
-whose sizing, integrity/CRC inputs, and final bytes cannot drift.
+Goal: build canonical STUN messages through explicit structural typestates so
+only a fully finalized plan can transactionally modify caller-visible output.
 
 Deliverables:
 
-- a sealed immutable `EncodePlan` that resolves ordering, exact lengths,
-  capacity, padding, adjusted integrity boundaries, and every borrowed segment;
-- sizing, prescribed HMAC/CRC prefix/range views, and final writing derived
-  from the same immutable segment plan, with fixed prepared integrity/
-  fingerprint outputs stored in the plan;
+- `EncodeDraft -> ValidatedPlan -> FinalizedEncodePlan -> committed output`,
+  with construction/validation failures unable to produce a writable plan;
+- validation that resolves canonical ordering, exact lengths, capacity,
+  padding, adjusted integrity boundaries, every borrowed segment, and typed
+  finalizer slots without claiming tags have already been computed;
+- sizing, prescribed future HMAC/CRC prefix/range views, finalizer-slot
+  placement, and final writing derived from the same validated segment plan;
+- a generic bounded finalizer interface and deterministic test finalizers only;
+  FINGERPRINT and integrity algorithms populate it in `v0.17.0`-`v0.19.0`;
+- only `FinalizedEncodePlan` may write caller-visible bytes, and its fixed
+  prepared outputs cannot be changed during the commit operation;
 - all provider finalization and every other fallible operation completed before
   caller-visible direct output is modified;
 - byte-for-byte unchanged caller output on transactional failure, commit-length
@@ -719,25 +729,28 @@ Deliverables:
 Verification:
 
 - `cargo test -p gjallarbru-wire encoder`
-- sentinel-filled output comparisons after failure injected at every planning,
-  provider-finalization, staging, writing, and commit boundary
+- compile-fail typestate fixtures plus sentinel-filled output comparisons after
+  failure injected at every planning, finalization, staging, writing, and commit boundary
 - segment-plan/range equivalence for sizing/HMAC/CRC/write, canonical round trips,
   exact/short/maximum buffers, overlap, and direct-versus-staged copy counters
 
 Exit criteria:
 
-- Sizing, authentication, fingerprinting, and final output are derived from one
-  sealed segment plan; failure cannot change caller-visible transactional bytes.
+- No draft or merely validated plan can write output; every committed frame
+  comes from one finalized segment plan and failure cannot change caller-visible bytes.
 - Stop: `v0.16.0 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.17.0 - FINGERPRINT
+### v0.17.0 - FINGERPRINT Finalization
 
-Goal: implement exact STUN CRC-32 fingerprint framing and verification.
+Goal: implement exact STUN CRC-32 fingerprint framing and integrate it with the
+encoder finalization typestate.
 
 Deliverables:
 
 - provider/first-party CRC decision, final-attribute enforcement, and XOR
   constant handling;
+- a CRC finalizer that consumes the validated range view, fills the typed
+  fingerprint slot, and alone advances that plan toward `FinalizedEncodePlan`;
 - official, corruption, wrong-position, and duplicate vectors.
 
 Verification:
@@ -747,7 +760,8 @@ Verification:
 
 Exit criteria:
 
-- FINGERPRINT is calculated over the exact required bytes and can only be last.
+- FINGERPRINT is calculated over the exact required bytes, can only be last,
+  and cannot be inserted after caller-visible commit begins.
 - Stop: `v0.17.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.17.1 - Crypto Provider and Secret Contract
@@ -854,7 +868,9 @@ Goal: support legacy long-term credentials without making them the modern core.
 Deliverables:
 
 - reviewed MD5 key-derivation and HMAC-SHA-1 provider boundaries;
-- exact adjusted-length verification/encoding and constant-time comparison.
+- exact adjusted-length verification/encoding and constant-time comparison;
+- a legacy-HMAC finalizer that consumes only validated segment/range views and
+  fills its typed slot before `FinalizedEncodePlan` may commit.
 
 Verification:
 
@@ -874,7 +890,9 @@ Goal: implement the preferred modern password and integrity mechanisms.
 Deliverables:
 
 - SHA-256 derivation and HMAC-SHA-256 provider boundaries;
-- RFC 8489 integrity ordering, algorithm negotiation inputs, and errata decisions.
+- RFC 8489 integrity ordering, algorithm negotiation inputs, and errata decisions;
+- a SHA-256 finalizer that consumes only validated segment/range views and
+  proves every required integrity/fingerprint slot is fixed before commit.
 
 Verification:
 
@@ -1095,7 +1113,7 @@ Deliverables:
 
 - a pre-reserved `CommandBatchPermit` covering the maximum command count,
   encoded bytes, retained leases/buffers, authoritative operation slots, and
-  class-specific queue capacity for one transition;
+  property-specific queue capacity for one transition;
 - `step` requires and consumes the permit only on success; insufficient permit
   capacity returns without changing state, output, counters, or runtime queues;
 - successful `step` atomically publishes the full command batch and resulting
@@ -1120,39 +1138,82 @@ Exit criteria:
   while later partial execution has one deterministic completion/compensation path.
 - Stop: `v0.23.2 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.3 - Runtime Effect Classes
+### v0.23.3 - Linear Command-Batch Permit Lifecycle
 
-Goal: give each runtime effect only the protocol state, ownership, completion,
-and durability semantics it actually requires.
+Goal: make command-batch capacity authority single-use, bounded, generation-bound,
+and deterministically recoverable across every non-commit path.
 
 Deliverables:
 
-- authoritative effects for relay open/close, credential lookup, external
-  crypto, and similar state decisions, each with operation ID and semantic completion;
-- ownership effects for buffers and leases, whose completion/cancellation
-  releases resources without implying delivery or protocol success;
-- delivery effects for best-effort datagram sends, where atomic runtime
-  acceptance may be terminal for core state and delivery failure is accounted
-  without a per-packet authoritative operation record;
-- observability effects for bounded lossy metrics with explicit drop counters
-  and no backpressure on protocol authority;
-- security-audit effects with a separately configured durable/bounded policy,
-  explicit overload behavior, and no silent equivalence to ordinary metrics;
-- per-class idempotency, queue, byte, timeout, cancellation, shutdown, retry,
-  completion, and terminal-accounting rules.
+- a non-`Clone`, non-reusable `CommandBatchPermit` whose normalized descriptor
+  binds worker, queue, and configuration generations plus reserved counts,
+  bytes, leases/buffers, operation slots, and property-specific queue capacity;
+- explicit limits for outstanding permits and total reserved bytes/slots at
+  global, worker, and queue scopes, with deterministic exhaustion outcomes;
+- automatic exactly-once release of every reservation after failed transition,
+  cancellation, permit drop, shutdown, queue restart/resize, worker replacement,
+  or stale-generation rejection, including deterministic unused-capacity handling;
+- one ordered commit publication point making prepared state and commands
+  visible together, never commands-before-state or state-before-commands;
+- operation IDs either supplied as normalized reducer inputs by the permit or
+  allocated deterministically from core state, never acquired as ambient runtime data;
+- determinism rules requiring the normalized descriptor as input when its
+  identity/capacity can affect a decision, while excess sufficient capacity
+  must produce byte-identical state and commands.
 
 Verification:
 
-- class matrix tests proving only authoritative effects can change semantic
-  pending state and only ownership effects retain/release payload resources
+- compile-time non-clone/single-consume checks plus reuse, double-release,
+  permit-drop, failed-step, cancellation, shutdown, queue-resize/restart,
+  worker-replacement, and stale-generation models
+- outstanding-count/reserved-byte exhaustion properties and publication-order
+  concurrency tests proving no observer can see only one side of the commit
+- replay tests varying excess permit capacity and operation-ID source according
+  to the declared determinism rule
+
+Exit criteria:
+
+- No permit can be reused, leaked, or survive its bound generations, and every
+  successful transition publishes state and its complete batch as one ordered unit.
+- Stop: `v0.23.3 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.4 - Composable Runtime Effect Envelope
+
+Goal: compose semantic authority, resource ownership, delivery guarantee, and
+durability/audit obligations without forcing one mutually exclusive class.
+
+Deliverables:
+
+- one typed composite envelope with orthogonal semantic-authority,
+  retained-resource ownership, delivery-guarantee, durability/audit, and
+  chargeable-work properties, plus validation of legal/illegal combinations;
+- authoritative relay open/close, credential lookup, external crypto, and
+  similar state decisions with operation IDs and semantic completions;
+- retained buffer/lease ownership that releases exactly once on completion,
+  delivery failure, cancellation, stale result, permit rollback, or shutdown
+  without implying protocol success;
+- best-effort datagram delivery whose runtime acceptance may be terminal for
+  semantic state while still retaining a buffer, charging quota, and producing
+  bounded security-audit evidence;
+- bounded lossy observability with drop counters and separately configured
+  durable/bounded security-audit policy and explicit overload behavior;
+- per-property idempotency, queue, byte, timeout, cancellation, shutdown, retry,
+  completion, terminal-accounting, and cross-property composition rules.
+
+Verification:
+
+- property cross-product tests proving only semantic authority changes pending
+  protocol state and only ownership retains/releases payload resources
+- delivery-failure tests proving one retained buffer is released exactly once
+  without manufacturing a semantic delivery completion
 - packet-flood tests proving delivery/metrics do not exhaust authoritative
   operation tables; audit overload/durability/fail-closed policy tests
 
 Exit criteria:
 
-- Hot-path sends and metrics do not create unnecessary protocol operations,
-  while authoritative, ownership, and security-audit effects remain fully accounted.
-- Stop: `v0.23.3 implementation stop reached. Run pentest for this exact commit.`
+- Hot-path sends can combine delivery, ownership, quota, and audit obligations
+  without inventing protocol authority or losing any terminal accounting.
+- Stop: `v0.23.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1200,13 +1261,13 @@ Exit criteria:
 
 ### v0.25.1 - Absolute-Clock Trust Model
 
-Goal: fail safely when wall time is unavailable, uninitialized, rolled back,
-jumped forward, or recovering, without coupling it to monotonic lifetimes.
+Goal: implement production clock-health transitions for the `AbsoluteTime`
+primitive defined by `v0.4.0`, without coupling wall time to monotonic lifetimes.
 
 Deliverables:
 
-- an explicit absolute-time status such as `Trusted`, `Uncertain`, and
-  `Unavailable`, with source/generation and bounded skew/jump policy;
+- runtime transitions among the established `Trusted`, `Uncertain`, and
+  `Unavailable` states, with bounded skew/jump policy and source generations;
 - failure to issue or newly validate time-based credentials, nonces, and tokens
   when required absolute time is not trusted;
 - large forward-jump, rollback, resynchronization, and clock-source replacement
@@ -1680,6 +1741,42 @@ Exit criteria:
   and cannot silently reuse a randomness stream after process duplication.
 - Stop: `v0.37.1 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.37.2 - Minimum Relay Safety Baseline
+
+Goal: make the first functional relay methods depend on real destination,
+relay-loop, resource, and pre-authentication defenses rather than placeholder traits.
+
+Deliverables:
+
+- a mandatory immutable baseline denying metadata services, loopback, all
+  Gjallarbru listeners, administration/control endpoints, configured relay
+  pools, same-node/self destinations, and direct or recursive relay loops;
+- fixed global, worker, allocation, relay-port, permission, channel, retained
+  buffer, and queued-byte ceilings with atomic reserve/commit/release behavior;
+- pre-authentication packet, byte, cryptographic-work, credential-lookup, and
+  error-response budgets that bound spoofed and unauthenticated work;
+- deterministic silent-discard, authenticated error, retry-later, or admission
+  refusal behavior for every exhausted or denied path without amplification;
+- capability-shaped policy/quota gates required by Allocate, CreatePermission,
+  Send, ChannelBind, and ChannelData constructors, with no allow-all/default
+  implementation admitted in production profiles;
+- an extension boundary allowing `v0.56.0`-`v0.59.0` to add configurable
+  profiles, hierarchical accounting, and fairness without weakening this baseline.
+
+Verification:
+
+- `cargo test -p gjallarbru-core minimum_relay_safety`
+- generated IPv4/IPv6 metadata, loopback, listener, admin, relay-pool,
+  same-allocation, same-node, and two-relay loop fixtures
+- model/property tests for every fixed ceiling, reserve/rollback path, spoofed
+  pre-authentication flood, crypto/error budget, and deterministic exhaustion result
+
+Exit criteria:
+
+- No later relay command can be constructed without the minimum safety gates,
+  and hostile pre-authentication traffic cannot exceed their fixed work budgets.
+- Stop: `v0.37.2 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.38.0 - Allocate Semantic Validation
 
 Goal: validate Allocate completely before any relay resource is opened.
@@ -1687,7 +1784,8 @@ Goal: validate Allocate completely before any relay resource is opened.
 Deliverables:
 
 - requested transport/family/lifetime/even-port/reservation/fragment schemas;
-- authentication, existing allocation, quota, policy, and relay availability ordering.
+- authentication, existing allocation, mandatory `v0.37.2` quota/policy baseline,
+  and relay availability ordering.
 
 Verification:
 

@@ -33,8 +33,9 @@ Gjallarbru will provide:
   capacity, drain, and version coordination across two or more nodes.
 - A tested Fluxheim TCP/TLS load-balancer profile with an honest direct-UDP boundary.
 - Qualified rootless Docker/Podman networking with Wolfi and Debian images.
-- Destination policy, quotas, rate limits, relay-loop prevention, and bounded
-  operational telemetry.
+- A mandatory minimum destination/loop policy, fixed resource ceilings, and
+  pre-authentication work budgets before any relay traffic, followed by
+  configurable policy, hierarchical quotas, rate limits, and bounded telemetry.
 - Portable runtimes for Linux, Windows, BSD, macOS, Android, and iOS.
 - Fixed-capacity interfaces suitable for an eventual Aesynx adapter.
 - Optional Linux acceleration that cannot bypass core authorization.
@@ -196,10 +197,12 @@ The same pattern applies to relay, permission, channel, timer, operation,
 credential, buffer, and fast-path handles. Delayed completions and stale
 timers become harmless generation mismatches.
 
-Monotonic `Tick` and absolute credential time are distinct types. The runtime
-injects both; the core never reads a clock. Absolute time carries trusted,
-uncertain, or unavailable status plus a generation. Untrusted wall time cannot
-mint new credential authority, while rollback, forward correction, and recovery
+Monotonic `Tick` and `AbsoluteTime` are distinct primitive-domain types. The
+runtime injects both; the core never reads a clock. `AbsoluteTime` carries the
+observation, explicit `Trusted`, `Uncertain`, or `Unavailable` status, source
+identity, and source generation from the first public primitive API. Untrusted
+wall time cannot mint new credential authority, while later clock-health,
+rollback, forward-correction, source-replacement, and recovery transitions
 never alter monotonic allocation lifetimes without a separate revocation event.
 
 ## 6. Wire Processing
@@ -248,15 +251,24 @@ leaking through unauthenticated error paths.
 
 ### 6.4 Encoder and stream framer
 
-The transactional encoder builds one sealed immutable encode plan. Sizing,
-prescribed HMAC/CRC range views, prepared fixed-size tags, and final writing all
-derive from that one segment plan, so those views cannot drift. All provider
-finalization completes before direct caller output changes. The plan then
-writes once and publishes the committed length as the final infallible action. A failed
-transactional encode leaves the caller's declared output bytes unchanged.
-Profiles unable to seal final outputs use an explicit fixed caller staging
-region whose expected copy is separately accounted; destructive in-place APIs
-are separately named and typed.
+The transactional encoder exposes an explicit typestate sequence:
+`EncodeDraft -> ValidatedPlan -> FinalizedEncodePlan -> committed output`.
+Draft construction may still fail and validation resolves canonical ordering,
+exact lengths, padding, capacity, borrowed segments, and typed finalizer slots.
+CRC and HMAC finalizers then populate those slots without mutating caller
+output; only `FinalizedEncodePlan` can write caller-visible bytes. Generic
+structural typestates land before protocol-specific FINGERPRINT and integrity
+finalizers, so the API does not claim immutability while tags are still being
+computed.
+
+Sizing, prescribed HMAC/CRC range views, prepared fixed-size tags, and final
+writing derive from the same validated segment plan. Provider finalization
+completes before direct caller output changes, writing occurs once, and the
+committed length is the final infallible publication. A failed transactional
+encode leaves the caller's declared output bytes unchanged. Profiles unable to
+seal final outputs use an explicit fixed caller staging region whose expected
+copy is separately accounted; destructive in-place APIs are separately named
+and typed.
 
 The stream framer accepts arbitrary partial reads and coalesced frames, caps
 retained bytes and frame counts, and applies ChannelData stream padding without
@@ -319,18 +331,31 @@ by an explicit runtime-owned buffer lease.
 The core is a pure reducer: identical initial state, immutable configuration,
 ordered events, supplied monotonic/absolute times, entropy results, and provider
 completions produce byte-identical commands and identical resulting state.
-Every transition receives a pre-reserved command-batch permit covering command
-count, output bytes, retained leases/buffers, authoritative operation slots, and
-class-specific queue capacity. Insufficient capacity or encoding failure leaves
-state and output unchanged. Success consumes the permit and atomically publishes
-the complete batch with its resulting state. Partial batch acceptance is
-prohibited; adversarial adapters can only reject an uncommitted prepared batch.
+Every transition receives a single-use, non-cloneable command-batch permit
+covering command count, output bytes, retained leases/buffers, authoritative
+operation slots, and property-specific queue capacity. Its normalized
+descriptor binds worker, queue, and configuration generations and is an
+explicit reducer input wherever it can affect a decision; excess capacity
+cannot change otherwise identical state or commands. Outstanding permits and
+total reserved slots/bytes are bounded. Failed transitions, cancellation,
+dropped permits, shutdown, queue resize/restart, and worker replacement release
+unused reservations deterministically and make stale permits inert.
 
-Runtime effects are classified. Authoritative effects require semantic
-operation IDs/completions; ownership effects retain and release buffers/leases;
-best-effort delivery may be terminal at runtime acceptance; ordinary metrics
-are bounded/lossy; security audits follow their separately configured durable
-policy. Partial execution after full-batch acceptance and compensation are
+Insufficient capacity or encoding failure leaves state and output unchanged.
+Success consumes the permit and atomically publishes the complete batch with
+its resulting state at one ordered commit point, so neither commands nor state
+can become visible first. Operation IDs are either explicit permit/reducer
+inputs or are generated deterministically by core state. Partial batch
+acceptance is prohibited; adversarial adapters can only reject an uncommitted
+prepared batch.
+
+Runtime effects use a composite envelope rather than mutually exclusive
+classes. Orthogonal properties describe semantic authority, retained-resource
+ownership, delivery guarantee, and durability/audit policy. A best-effort UDP
+send can therefore own a buffer, consume quota, and require bounded audit
+accounting without inventing a semantic delivery completion. Delivery failure,
+cancellation, and shutdown release every retained resource exactly once.
+Partial execution after full-batch acceptance and compensation are
 deterministic ordinary events. State never assumes an authoritative external
 effect succeeded before its matching completion.
 
@@ -466,16 +491,25 @@ instead of inferred from operating-system defaults.
 
 ## 12. Security Policy
 
-Resource accounting is hierarchical: global, listener, relay IP, worker,
+Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
+functional, a non-optional minimum safety profile denies metadata services,
+loopback, listeners, administration endpoints, relay pools, and relay loops.
+It also enforces fixed global/worker/allocation/permission/buffer ceilings plus
+pre-authentication packet, byte, cryptographic-work, and error-response budgets
+with deterministic exhaustion behavior. No placeholder or allow-all policy
+implementation can satisfy the relay command constructors.
+
+Later resource accounting is hierarchical: global, listener, relay IP, worker,
 source address/prefix, realm, tenant, identity, allocation, and peer.
 Authentication attempts, allocations, relay ports, permissions, channels, TCP
 connections, credential lookups, transactions, packets, bytes, handshakes,
 buffers, errors, audits, and admin calls all have limits.
 
-Public-server destination policy denies unsafe special-use destinations,
-control infrastructure, metadata services, listeners, relay pools, and relay
-loops. Private unicast is controlled by explicit public, enterprise, test, or
-custom profiles rather than universally rejected.
+Configurable public-server destination policy extends the mandatory baseline
+with reviewed public, enterprise, test, or custom profiles. Private unicast is
+therefore neither universally rejected nor accidentally enabled, and later
+configuration can narrow but never remove the protected infrastructure and
+relay-loop baseline.
 
 The server starts with least privilege, separates public data and private
 administration paths, drops unnecessary capabilities, restricts syscalls and

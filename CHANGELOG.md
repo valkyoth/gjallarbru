@@ -15,10 +15,14 @@ All notable changes to `gjallarbru` are documented here.
   identity, encoder commit mechanics, external crypto, clock trust, transaction
   invalidation, timer debt, relay entropy/payload ownership, secure-transport
   early data, first-concurrency models, and accelerated quota leases.
-- Made command-batch admission strictly atomic, merged sealed encoder mechanics
-  into the initial encoder release, classified runtime effects, bounded any
-  asynchronous packet-crypto input, and moved clock/early-data/Loom safeguards
-  into the first milestones that depend on them.
+- Made command-batch admission strictly atomic, moved transactional encoder
+  mechanics into the initial typestate release, bounded asynchronous
+  packet-crypto input, and moved clock/early-data/Loom safeguards into the
+  first milestones that depend on them.
+- Added explicit encoder typestates, primitive absolute-time trust/source
+  domains, a linear generation-bound command-permit lifecycle, composable
+  runtime effect properties, and a mandatory minimum relay-safety baseline
+  before any functional Allocate/CreatePermission/Send path.
 
 ## 0.2.0 - 2026-07-14
 
