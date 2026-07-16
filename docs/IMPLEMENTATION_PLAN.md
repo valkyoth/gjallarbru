@@ -248,13 +248,15 @@ leaking through unauthenticated error paths.
 
 ### 6.4 Encoder and stream framer
 
-The transactional encoder sizes and validates first, completes fallible crypto
-preparation, then writes once into caller storage or an explicit caller-provided
-fixed staging region. It reserves integrity fields, computes over the prescribed
-adjusted length, writes FINGERPRINT last, and publishes the committed length as
-the final infallible action. A failed transactional encode leaves the caller's
-declared output bytes unchanged; any destructive in-place API is separately
-named and typed.
+The transactional encoder builds one sealed immutable encode plan. Sizing,
+prescribed HMAC/CRC range views, prepared fixed-size tags, and final writing all
+derive from that one segment plan, so those views cannot drift. All provider
+finalization completes before direct caller output changes. The plan then
+writes once and publishes the committed length as the final infallible action. A failed
+transactional encode leaves the caller's declared output bytes unchanged.
+Profiles unable to seal final outputs use an explicit fixed caller staging
+region whose expected copy is separately accounted; destructive in-place APIs
+are separately named and typed.
 
 The stream framer accepts arbitrary partial reads and coalesced frames, caps
 retained bytes and frame counts, and applies ChannelData stream padding without
@@ -291,6 +293,12 @@ other external cryptographic work uses generation-tagged asynchronous
 command/completion operations, so provider state and nondeterministic results
 become explicit reducer inputs.
 
+Base-profile packet HMAC remains synchronous; asynchronous external services
+normally provision/manage keys rather than retain packet input. Any separately
+admitted asynchronous packet-crypto profile owns the exact immutable segment
+sequence through a generation-tagged bounded message lease or copy with byte,
+operation, timeout, cancellation, and shutdown ceilings.
+
 Pawalyze never embeds a permanent TURN password in browser configuration.
 Its authenticated issuer returns short-lived credentials bound to user,
 tenant, realm, purpose, audience, expiry, and quota. OpenBao holds rotating
@@ -311,17 +319,20 @@ by an explicit runtime-owned buffer lease.
 The core is a pure reducer: identical initial state, immutable configuration,
 ordered events, supplied monotonic/absolute times, entropy results, and provider
 completions produce byte-identical commands and identical resulting state.
-Every transition preflights command count, output bytes, leases, and reservations;
-insufficient capacity or encoding failure leaves state and output unchanged.
-The runtime reserves downstream operation capacity before calling the reducer,
-or synchronously accepts the complete successful command batch. It executes
-commands only after the transition succeeds.
+Every transition receives a pre-reserved command-batch permit covering command
+count, output bytes, retained leases/buffers, authoritative operation slots, and
+class-specific queue capacity. Insufficient capacity or encoding failure leaves
+state and output unchanged. Success consumes the permit and atomically publishes
+the complete batch with its resulting state. Partial batch acceptance is
+prohibited; adversarial adapters can only reject an uncommitted prepared batch.
 
-Every effectful command has an operation ID, dependency and idempotency class,
-completion requirement, cancellation policy, and shutdown obligation. State
-never assumes an external effect succeeded before its completion event. Partial
-execution and compensation are represented as deterministic ordinary events;
-accepted commands are reconciled to one terminal result.
+Runtime effects are classified. Authoritative effects require semantic
+operation IDs/completions; ownership effects retain and release buffers/leases;
+best-effort delivery may be terminal at runtime acceptance; ordinary metrics
+are bounded/lossy; security audits follow their separately configured durable
+policy. Partial execution after full-batch acceptance and compensation are
+deterministic ordinary events. State never assumes an authoritative external
+effect succeeded before its matching completion.
 
 Capability-shaped commands constrain what a conforming adapter can execute and
 are differentially verified against the safe reference runtime. They do not

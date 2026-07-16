@@ -8,7 +8,7 @@ Status: control baseline
 | Parsing | checked cursor, bounded linear work, no unsafe, structural padding/length validation, ignored receive padding values, zero padding on encode |
 | Authentication | RFC ordering, modern SHA-256 preference, explicit legacy profile, constant-time verification, no TLS/DTLS early application data |
 | Nonces/tokens | authenticated, versioned, scoped, expiring, key identified, replay tested |
-| State | generational handles, bounded storage/timer debt, atomic effect lifecycle, deterministic monotonic and trust-qualified absolute time |
+| State | generational handles, bounded storage/timer debt, whole-batch admission permits, classified effect lifecycle, deterministic monotonic and trust-qualified absolute time |
 | Relay | authenticated allocation, unique ownership, unbiased bounded port selection, runtime-owned payload or generation-tagged lease |
 | Permissions | live peer-IP permission in both directions; channel also requires permission |
 | SSRF | destination profiles, special-range denial, metadata/control isolation, relay-loop rejection |

@@ -140,13 +140,17 @@ Current closure decisions are:
 | An opaque synchronous crypto provider could conceal blocking HSM/KMS I/O, allocation, mutable state, ambient entropy, or nondeterministic output. | `v0.17.2` separates bounded deterministic packet crypto from asynchronous external-crypto command/completion operations. |
 | Stale timing-wheel entries and large time jumps could create unbounded expiration debt or accidentally extend authorization. | `v0.36.1` bounds live/dead entries, rescheduling, expiration work, overdue fairness, and time-jump behavior. |
 | Configuration reload and emergency revocation could conflict with transaction retransmission idempotence. | `v0.30.2` pins ordinary transactions to their decision generation and gives every revocation class an explicit replay/error/discard/teardown rule. |
-| TLS/DTLS resumption could admit replayable early application data for state-changing STUN/TURN methods. | `v0.76.2` disables 0-RTT application data by default and requires a future method-level replay-safety proof for any exception. |
-| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, especially after provider failure. | `v0.16.1` fixes sizing, validation, crypto preparation, optional caller staging, and the exact caller-visible commit contract. |
+| TLS/DTLS resumption could admit replayable early application data for state-changing STUN/TURN methods. | Initial rejection is mandatory in `v0.73.0` and `v0.75.0`; `v0.76.2` proves cross-provider/topology closure and requires a future method-level proof for any exception. |
+| “Output uncommitted” could ambiguously mean unchanged bytes or merely no returned length, especially after provider finalization failure. | `v0.16.0` uses one sealed immutable encode plan for sizing, integrity/CRC input, prepared tags, and final writing; optional staging is explicit and separately accounted. |
 | Send/Data relay could transfer borrowed payloads before zero-copy lease ownership is implemented. | `v0.43.1` requires bounded runtime-owned copies for early relay paths; `v0.47.1` later admits generation-tagged zero-copy leases. |
 | Fast-path packet/byte counters could become independently refillable quota authority. | `v0.82.2` models kernel budgets as finite generation-bound leases reconciled by core before renewal. |
 | Relay-port randomness could conflict with deterministic reducer inputs or repeat biased candidates after fork/restart. | `v0.37.1` specifies explicit worker-seed/completion policy, unbiased unique search, seed independence, and deterministic exhaustion. |
 | Absolute-time rollback handling alone could leave forward jumps, uninitialized clocks, and recovery ambiguous. | `v0.25.1` adds trusted/uncertain/unavailable clock state and generation-changing recovery without altering monotonic lifetimes. |
-| Concurrency models could arrive only after cross-worker queues and configuration publication are already entrenched. | `v0.78.1` introduces focused Loom evidence at the first concurrent ownership milestone; `v0.93.0` remains the comprehensive closure. |
+| Concurrency models could arrive only after cross-worker queues and configuration publication are already entrenched. | Initial focused Loom evidence is an exit condition of `v0.78.0`; `v0.78.1` expands the inventory and `v0.93.0` remains comprehensive closure. |
+| Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` requires one pre-reserved whole-batch permit; adversarial partial acceptance proves the transition remains uncommitted, while partial execution is handled only after atomic acceptance. |
+| Treating every output as an authoritative operation could exhaust operation tables on packet sends and metrics. | `v0.23.3` gives authoritative, ownership, delivery, observability, and security-audit effects distinct completion and durability semantics. |
+| Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
+| A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -691,57 +695,40 @@ Exit criteria:
   admitted as ChannelData.
 - Stop: `v0.15.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.16.0 - STUN Caller-Buffer Encoder
+### v0.16.0 - Sealed STUN Caller-Buffer Encoder
 
-Goal: build canonical STUN messages once into caller-provided storage.
+Goal: build canonical STUN messages transactionally from one immutable plan
+whose sizing, integrity/CRC inputs, and final bytes cannot drift.
 
 Deliverables:
 
-- header reservation, attribute writers, padding, length finalization, and
-  transactional output behavior;
-- exact-size, short-buffer, maximum-message, and failed-encode tests.
+- a sealed immutable `EncodePlan` that resolves ordering, exact lengths,
+  capacity, padding, adjusted integrity boundaries, and every borrowed segment;
+- sizing, prescribed HMAC/CRC prefix/range views, and final writing derived
+  from the same immutable segment plan, with fixed prepared integrity/
+  fingerprint outputs stored in the plan;
+- all provider finalization and every other fallible operation completed before
+  caller-visible direct output is modified;
+- byte-for-byte unchanged caller output on transactional failure, commit-length
+  publication as the final infallible action, and no valid partial frame exposure;
+- an explicit fixed caller-provided staging alternative for providers/profiles
+  that cannot seal final outputs before writing, separately named and typed;
+- accounting that distinguishes expected staging copies from the direct
+  sealed-plan path, plus overlap, alias, zeroization, and credential-byte rules.
 
 Verification:
 
 - `cargo test -p gjallarbru-wire encoder`
-- encode/decode canonical round-trip properties
+- sentinel-filled output comparisons after failure injected at every planning,
+  provider-finalization, staging, writing, and commit boundary
+- segment-plan/range equivalence for sizing/HMAC/CRC/write, canonical round trips,
+  exact/short/maximum buffers, overlap, and direct-versus-staged copy counters
 
 Exit criteria:
 
-- Encoding performs no temporary allocation and failure leaves output
-  uncommitted.
+- Sizing, authentication, fingerprinting, and final output are derived from one
+  sealed segment plan; failure cannot change caller-visible transactional bytes.
 - Stop: `v0.16.0 implementation stop reached. Run pentest for this exact commit.`
-
-### v0.16.1 - Encoder Commit Mechanics
-
-Goal: give “uncommitted output” one testable meaning across sizing, provider
-failure, caller buffers, and optional staging.
-
-Deliverables:
-
-- a sizing/validation pass that resolves lengths, ordering, capacity, and every
-  fallible non-output operation before caller-visible bytes are committed;
-- all fallible integrity/fingerprint provider preparation completed before
-  direct output mutation, or an explicit fixed caller-provided staging region;
-- a documented contract choosing byte-for-byte unchanged output on failure for
-  transactional APIs, with any destructive/in-place API separately named and typed;
-- commit-length publication as the final infallible action, and no valid partial
-  frame observable through a failed result;
-- overlap, alias, short-buffer, provider-error, staging-capacity, and zeroization
-  rules for buffers that may temporarily contain credential-derived material.
-
-Verification:
-
-- sentinel-filled output comparisons after failure injected at every sizing,
-  attribute, crypto, fingerprint, staging, and commit step
-- exact-size/short-size, overlapping-region, direct/staged differential, and
-  no-allocation/no-copy accounting tests
-
-Exit criteria:
-
-- Every encoder API states whether failed bytes are unchanged or inaccessible,
-  and transactional callers can prove no partial message became visible.
-- Stop: `v0.16.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.17.0 - FINGERPRINT
 
@@ -823,6 +810,42 @@ Exit criteria:
 - An opaque key handle cannot weaken reducer determinism or conceal an external
   operation inside a packet-path trait call.
 - Stop: `v0.17.2 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.17.3 - External Packet-Crypto Input Ownership
+
+Goal: close message ownership before any asynchronous external provider can
+authenticate packet bytes.
+
+Deliverables:
+
+- the base STUN/TURN profiles keep packet HMAC and digest work in qualified
+  synchronous providers; external HSM/KMS is limited to key provisioning,
+  wrapping, rotation, or management unless a separate packet-crypto profile is enabled;
+- any admitted asynchronous packet-crypto operation retains the exact immutable
+  authenticated segment sequence through a generation-tagged message lease or
+  bounded runtime-owned copy;
+- byte, operation, tenant, worker, timeout, cancellation, retry, and shutdown
+  ceilings for pending packet-crypto input and prepared output;
+- completion bound to message, path, transaction, algorithm, key generation,
+  operation generation, buffer generation, and provider generation;
+- no borrowed receive/input slice escaping a transition, no buffer reuse before
+  completion, and deterministic cleanup on stale, cancelled, timed-out, failed,
+  disconnected, or shutdown operations;
+- copy/lease accounting distinguishes asynchronous provider retention from the
+  synchronous direct packet path.
+
+Verification:
+
+- compile-fail borrow fixtures plus message-buffer reuse, stale completion,
+  timeout, cancellation, retry, provider restart, disconnect, and shutdown models
+- exact-segment differential HMAC tests and byte/operation/copy/lease exhaustion
+  assertions for every admitted asynchronous profile
+
+Exit criteria:
+
+- Base packet authentication remains synchronous, and no asynchronous exception
+  can outlive, alias, or exceed the bounded ownership of its exact message bytes.
+- Stop: `v0.17.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.18.0 - Legacy Message Integrity
 
@@ -1063,38 +1086,73 @@ Exit criteria:
   transition API and differentially verified at runtime boundaries.
 - Stop: `v0.23.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.2 - Runtime Effect Lifecycle
+### v0.23.2 - Atomic Command-Batch Admission
 
-Goal: extend atomic planning through runtime admission and deterministic
-completion without pretending external effects are atomic.
+Goal: make reducer state and runtime command admission one indivisible boundary
+without pretending later operating-system execution is atomic.
 
 Deliverables:
 
-- downstream operation/queue capacity reserved before `step`, or a synchronous
-  acceptance contract guaranteeing every successful command is admitted;
-- an operation ID, completion requirement, idempotency class, cancellation
-  policy, and shutdown obligation for every effectful command;
-- state transitions that record only accepted/pending effects and never assume
-  open/send/close/lookup/crypto success before a matching completion event;
-- explicit command dependency graphs and deterministic outcomes when an earlier
-  effect succeeds but a later effect is rejected or fails;
-- compensation commands/events defined as ordinary generation-tagged effects,
-  with no hidden rollback of already completed operating-system actions;
-- accepted, completed, failed, cancelled, compensated, stale, and abandoned
-  counters reconciled to zero at clean shutdown or a documented forced deadline.
+- a pre-reserved `CommandBatchPermit` covering the maximum command count,
+  encoded bytes, retained leases/buffers, authoritative operation slots, and
+  class-specific queue capacity for one transition;
+- `step` requires and consumes the permit only on success; insufficient permit
+  capacity returns without changing state, output, counters, or runtime queues;
+- successful `step` atomically publishes the full command batch and resulting
+  state to the conforming runtime; partial batch acceptance is prohibited;
+- an adversarial partial-accept adapter can only reject the still-uncommitted
+  prepared batch and is never allowed to expose its state transition;
+- partial execution after full atomic acceptance remains explicit: dependencies,
+  completion events, and compensation are deterministic ordinary effects;
+- cancellation and shutdown eventually account for every command in an
+  accepted batch without inventing rollback of already completed OS actions.
 
 Verification:
 
-- queue-full-before-step, synchronous-reject, partial-accept, partial-execute,
-  duplicate completion, compensation failure, cancellation, and shutdown models
-- fault injection after every accepted command proving state reflects completion
-  truth and every operation reaches exactly one terminal accounting state
+- permit-too-small, queue-race, synchronous rejection, and adversarial
+  partial-accept tests proving state/batch remain entirely uncommitted
+- partial-execute, dependency failure, duplicate completion, compensation
+  failure, cancellation, and shutdown models after full-batch acceptance
 
 Exit criteria:
 
-- A successful reducer transition cannot silently lose commands, and partial
-  external execution has one deterministic event/compensation path.
+- No reducer state is visible unless its complete command batch is admitted,
+  while later partial execution has one deterministic completion/compensation path.
 - Stop: `v0.23.2 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.3 - Runtime Effect Classes
+
+Goal: give each runtime effect only the protocol state, ownership, completion,
+and durability semantics it actually requires.
+
+Deliverables:
+
+- authoritative effects for relay open/close, credential lookup, external
+  crypto, and similar state decisions, each with operation ID and semantic completion;
+- ownership effects for buffers and leases, whose completion/cancellation
+  releases resources without implying delivery or protocol success;
+- delivery effects for best-effort datagram sends, where atomic runtime
+  acceptance may be terminal for core state and delivery failure is accounted
+  without a per-packet authoritative operation record;
+- observability effects for bounded lossy metrics with explicit drop counters
+  and no backpressure on protocol authority;
+- security-audit effects with a separately configured durable/bounded policy,
+  explicit overload behavior, and no silent equivalence to ordinary metrics;
+- per-class idempotency, queue, byte, timeout, cancellation, shutdown, retry,
+  completion, and terminal-accounting rules.
+
+Verification:
+
+- class matrix tests proving only authoritative effects can change semantic
+  pending state and only ownership effects retain/release payload resources
+- packet-flood tests proving delivery/metrics do not exhaust authoritative
+  operation tables; audit overload/durability/fail-closed policy tests
+
+Exit criteria:
+
+- Hot-path sends and metrics do not create unnecessary protocol operations,
+  while authoritative, ownership, and security-audit effects remain fully accounted.
+- Stop: `v0.23.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1123,16 +1181,21 @@ Goal: issue and validate replay-resistant nonces without a nonce database.
 Deliverables:
 
 - versioned source/path/realm/time-bound nonce format with key ID and tag;
-- active/previous/revoked key handling, stale response, tamper, and cross-path tests.
+- absolute-time trust status/generation required for issuance and validation,
+  with uncertain/unavailable time failing closed;
+- active/previous/revoked key handling, stale response, tamper, cross-path,
+  rollback, forward-jump, and uninitialized-clock behavior.
 
 Verification:
 
 - `cargo test -p gjallarbru-crypto nonce`
-- arbitrary nonce decode fuzzing and deterministic time tests
+- arbitrary nonce decode fuzzing and deterministic trusted/uncertain/unavailable
+  time, rollback, forward-jump, and recovery-generation tests
 
 Exit criteria:
 
-- A nonce cannot be replayed across path or realm and key rotation fails closed.
+- A nonce cannot be issued from untrusted wall time or replayed across path,
+  realm, time-trust generation, or key generation.
 - Stop: `v0.25.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.25.1 - Absolute-Clock Trust Model
@@ -2555,18 +2618,23 @@ Goal: integrate TLS without placing certificate or record logic in core.
 Deliverables:
 
 - reviewed provider dependency/feature/license/MSRV decision and plaintext connection adapter;
-- certificate/key loading, handshake/result normalization, session cleanup, and provider substitution tests.
+- certificate/key loading, handshake/result normalization, session cleanup, and
+  mandatory rejection of TLS/provider early application data before framing,
+  authentication, or core processing;
+- provider substitution tests proving the adapter cannot accidentally enable
+  0-RTT through defaults, resumption, tickets, or termination metadata.
 
 Verification:
 
 - `cargo test -p gjallarbru-runtime tls_adapter`
-- two-provider or provider/test-double differential framing tests where practical
+- two-provider or provider/test-double differential framing and replayed
+  early-data rejection tests where practical
 
 Exit criteria:
 
 - Core receives provider-validated decrypted transport data with no TLS implementation
   type; TURN authentication remains authoritative for client identity unless a separate,
-  explicit mTLS profile is configured.
+  explicit mTLS profile is configured, and no early application byte reaches core.
 - Stop: `v0.73.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.74.0 - Hardened TLS Deployment
@@ -2624,16 +2692,20 @@ Deliverables:
 
 - reviewed DTLS provider boundary, session IDs/generations, plaintext datagrams,
   retransmission/timer events, replay handling, and cleanup;
-- migration/rebinding policy distinct from RFC 8016 mobility.
+- migration/rebinding policy distinct from RFC 8016 mobility;
+- mandatory rejection of DTLS/provider early application data before STUN/TURN
+  framing or allocation/authentication state.
 
 Verification:
 
 - `cargo test -p gjallarbru-runtime dtls_adapter`
-- RFC 7350 interoperability, loss/reorder/replay, and session-reuse tests
+- RFC 7350 interoperability, loss/reorder/replay, session-reuse, and replayed
+  early-data rejection tests
 
 Exit criteria:
 
-- DTLS sessions cannot inherit stale allocations or bypass client-path identity.
+- DTLS sessions cannot inherit stale allocations, bypass client-path identity,
+  or deliver early application data to core.
 - Stop: `v0.75.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.76.0 - DTLS Anti-Abuse
@@ -2682,10 +2754,10 @@ Exit criteria:
   cannot weaken path identity, replay defense, or operator policy.
 - Stop: `v0.76.1 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.76.2 - Secure-Transport Early-Data Prohibition
+### v0.76.2 - Cross-Provider Early-Data Closure
 
-Goal: prevent TLS 1.3 or DTLS 1.3 resumption from replaying STUN/TURN
-application operations before handshake confirmation.
+Goal: prove that the early-data rejection already required by the initial TLS
+and DTLS adapters is consistent across every production provider and topology.
 
 Deliverables:
 
@@ -2743,22 +2815,28 @@ Deliverables:
 
 - worker-local stores/timers/buffers/relays, stable flow steering, bounded cross-worker control,
   immutable configuration epochs, and ownership migration prohibition;
-- safe single-worker reference retained for differential tests.
+- safe single-worker reference retained for differential tests;
+- initial focused Loom models for bounded cross-worker queue publication,
+  ownership epochs, immutable configuration publication, cancellation, and
+  shutdown ordering.
 
 Verification:
 
 - `cargo test -p gjallarbru-runtime worker_ownership`
-- concurrency/model tests proving no normal global allocation mutex or cross-worker relay path
+- concurrency/model tests proving no normal global allocation mutex or
+  cross-worker relay path, plus routine small Loom models for the first
+  concurrent structures
 
 Exit criteria:
 
-- Every client path and relay completion reaches exactly one owning worker.
+- Every client path and relay completion reaches exactly one owning worker, and
+  the first cross-worker/publication races have executable model evidence.
 - Stop: `v0.78.0 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.78.1 - First Concurrency-Model Closure
+### v0.78.1 - Expanded Concurrency-Model Closure
 
-Goal: mechanically test concurrency when cross-worker queues and immutable
-configuration publication first enter the architecture.
+Goal: expand the initial v0.78.0 concurrency evidence across the full
+cross-worker configuration and lifecycle surface before acceleration.
 
 Deliverables:
 
@@ -2782,8 +2860,8 @@ Verification:
 
 Exit criteria:
 
-- The first concurrent runtime structures have executable race evidence before
-  batching, `io_uring`, or kernel fast paths build on them.
+- The initial models are expanded to cover every concurrent ownership and
+  publication lifecycle needed before batching, `io_uring`, or kernel fast paths.
 - Stop: `v0.78.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.79.0 - Batched I/O

@@ -52,11 +52,11 @@ The index and detailed contracts are checked together by
 | `0.14.0` | Permission/channel attributes | Peer, channel, data, and ICMP attributes cover every valid and invalid length |
 | `0.15.0` | ChannelData codec | Datagram and stream length/padding boundaries round trip |
 | `0.15.1` | UDP ChannelData alignment closure | Both legal datagram forms are accepted while arbitrary trailing bytes remain rejected |
-| `0.16.0` | Caller-buffer encoder | Failed transactional encodes leave caller-visible bytes unchanged; exact-size and short buffers pass |
-| `0.16.1` | Encoder commit mechanics | Sizing, validation, crypto preparation, staging, and caller-visible commit semantics are explicit and fault-tested |
+| `0.16.0` | Sealed caller-buffer encoder | One immutable encode plan drives sizing, integrity, and final writing; failed transactional encodes leave caller-visible bytes unchanged |
 | `0.17.0` | FINGERPRINT | RFC 5769 and corruption vectors pass with FINGERPRINT last |
 | `0.17.1` | Crypto provider and secret contract | Capability-specific fixed-output providers, opaque keys, redacted secrets, and fail-closed errors are proven |
 | `0.17.2` | Synchronous and external crypto split | Packet crypto is bounded and deterministic; HSM/KMS work is asynchronous and cannot hide I/O or entropy |
+| `0.17.3` | External packet-crypto ownership | Base packet HMAC stays synchronous; any admitted asynchronous profile retains immutable bounded message input through completion |
 | `0.18.0` | Legacy message integrity | HMAC-SHA-1 ranges and long-term legacy derivation pass official/project vectors |
 | `0.19.0` | SHA-256 message integrity | RFC 8489 SHA-256, errata, ordering, and downgrade cases pass |
 | `0.19.1` | Integrity failure closure | Adjusted original-byte ranges, legal truncation, provider failures, mixed algorithms, and response-key uncertainty fail closed |
@@ -72,9 +72,10 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.23.0` | Sans-I/O event/command API | Synthetic events produce bounded commands with no borrowed data escaping |
 | `0.23.1` | Atomic deterministic reducer | Identical explicit inputs produce byte-identical results and capacity failure leaves state and runtime untouched |
-| `0.23.2` | Runtime effect lifecycle | Queue admission, operation IDs, dependencies, partial execution, compensation, cancellation, and shutdown accounting are deterministic |
+| `0.23.2` | Atomic command-batch admission | A pre-reserved permit covers the whole batch; partial acceptance is prohibited and cannot expose committed state |
+| `0.23.3` | Runtime effect classes | Authoritative, ownership, delivery, observability, and security-audit effects receive only the state and completion semantics they require |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
-| `0.25.0` | Stateless authenticated nonces | Source/realm binding, stale handling, tamper rejection, and key overlap pass |
+| `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
 | `0.26.0` | Credential provider boundary | Fixed and asynchronous lookup models fail closed under timeout/capacity |
 | `0.26.1` | Credential timing and provider assurance | Dummy-user work, negative-cache normalization, opaque handles, provider substitution, and leakage tests pass |
@@ -153,16 +154,16 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.71.0` | TURN over TCP | Path identity, framing, disconnect, retransmission, and allocation cleanup pass |
 | `0.72.0` | Stream backpressure | Slow clients cannot exceed frame, byte, or age ceilings |
-| `0.73.0` | TLS provider adapter | Provider-neutral plaintext integration and failure isolation pass |
+| `0.73.0` | TLS provider adapter | Provider-neutral plaintext integration, failure isolation, and pre-semantic early-data rejection pass |
 | `0.74.0` | Hardened TLS deployment | Current BCP 195 policy, handshake quotas, rotation, and interoperability pass |
 | `0.74.1` | TLS identity and termination | ALPN, SNI, certificate/realm mapping, trusted termination, and PROXY-source handling fail closed |
-| `0.75.0` | DTLS provider adapter | Sessions, replay, retransmission, disconnect, and datagram boundaries pass |
+| `0.75.0` | DTLS provider adapter | Sessions, replay, retransmission, early-data rejection, disconnect, and datagram boundaries pass |
 | `0.76.0` | DTLS anti-abuse | Cookie/handshake/time/size/prefix limits resist amplification and exhaustion |
 | `0.76.1` | DTLS 1.3 policy | RFC 9147 applicability, TLS/DTLS version profiles, provider capability, and interop evidence are explicit |
-| `0.76.2` | Secure-transport early-data prohibition | TLS/DTLS 0-RTT application data is disabled unless a future method-level replay-safety proof is admitted |
+| `0.76.2` | Cross-provider early-data closure | Every TLS/DTLS provider, termination topology, resumption path, and node rejects 0-RTT application data consistently |
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
-| `0.78.0` | Per-core ownership | Stable flow steering removes global allocation locks without behavior drift |
-| `0.78.1` | First concurrency-model closure | Loom models cover cross-worker queues, configuration publication, ownership epochs, cancellation, and shutdown ordering |
+| `0.78.0` | Per-core ownership | Stable flow steering and initial Loom models remove global allocation locks without behavior drift |
+| `0.78.1` | Expanded concurrency-model closure | Loom inventory expands across reload, rollback, restart, cancellation, shutdown, and promoted counterexamples |
 | `0.79.0` | Batched portable/Linux I/O | Batching improves measured throughput while fairness and results remain identical |
 | `0.79.1` | Batch completion semantics | Normalized path metadata, partial sends, unsent work, and stale batch results preserve scalar behavior |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
