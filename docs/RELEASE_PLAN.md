@@ -109,7 +109,7 @@ Current closure decisions are:
 | Current STUN/TURN base and IPv6 could be mistaken for RFC 5389/5766/6156 layering. | RFC 8489 and RFC 8656 are the base from `v0.2.0`; IPv6 is native in `v0.48.0` and `v0.49.0`. |
 | Integrity could be described as “MD5 HMAC.” | Separate legacy key derivation/HMAC-SHA-1 in `v0.18.0` and modern SHA-256 in `v0.19.0`. |
 | Resource creation could occur before authentication. | Authentication and two-phase allocation are explicit in `v0.27.0`, `v0.38.0`, and `v0.39.0`. |
-| Private-destination policy could be either universally blocked or accidentally open, while address aliases or mapping changes could retain unintended authority. | `v0.37.2` canonicalizes generation-bound destinations, `v0.37.3` closes translation lifecycle, `v0.37.4` installs mandatory relay defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
+| Private-destination policy could be either universally blocked or accidentally open, while address aliases, mapping changes, or runtime reinterpretation could retain unintended authority. | `v0.37.2` canonicalizes generation-bound destinations, `v0.37.3` closes translation lifecycle, `v0.37.4` seals approved endpoints into typed capabilities, `v0.37.5` installs mandatory relay defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
 | Secure transports and crypto could become home-grown protocol code. | Provider boundaries in `v0.19.0`, `v0.73.0`, and `v0.75.0`; primitives/TLS/DTLS remain reviewed dependencies. |
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
@@ -152,10 +152,13 @@ Current closure decisions are:
 | Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
 | A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
 | A public Binding listener could expose uncharged parse, HMAC, lookup, preparation, or error-response work, or recover capacity through failure refunds. | `v0.30.3` requires one finite linear ingress permit before parsing, with global/listener/worker limits and monotonic token-bucket refill before `v0.31.0`. |
-| Queue occupancy, attempted work, successful completion, and retries could be refunded or charged inconsistently. | `v0.23.6` gives each accounting mode explicit admission, release, completion, retry, and idempotency semantics. |
-| Packet queues could consume the capacity needed to process terminal completions, revocations, shutdown, or ownership releases. | `v0.23.7` reserves bounded non-droppable control-lane progress when authoritative work is admitted. |
+| Queue occupancy, reserved allowance, attempted work, successful completion, and retries could be refunded or charged inconsistently. | `v0.23.6` defines general accounting modes, while `v0.30.3` converts only started ingress stages from reservation to non-refundable attempt charge. |
+| Packet queues could consume the capacity needed for transitive completion, compensation, revocation, shutdown, audit, or ownership-release effects. | `v0.23.7` reserves the complete bounded acyclic control-effect closure and coalesces duplicate/stale terminal events. |
 | A prepared transition or observation snapshot could escape its worker, retain secrets/buffers, or create unbounded reader retention. | `v0.23.2` closes prepared ownership/scrubbing and `v0.23.8` bounds redacted non-authoritative snapshot publication and reclamation. |
 | NAT64 prefix validation could cite RFC 6052 without locking the normative source used for implementation and vectors. | RFC 6052 is checksum-locked in the source baseline and its mapping rules are versioned in `v0.37.3`. |
+| A ready batch could be lost or partly executed across a crash, leaving an opened OS resource, lease, or stale completion unaccounted. | `v0.23.9` defines accepted-batch reconciliation, deterministic cancellation, resource fencing, and old-epoch rejection. |
+| Threaded release/acquire publication could leak atomics or Send/Sync requirements into the portable no_std core. | `v0.23.10` keeps concurrency in runtime adapters and proves local/no-atomic and threaded adapters equivalent. |
+| Policy could approve one canonical peer while a runtime reconstructs or substitutes another raw endpoint. | `v0.37.4` requires typed generation-bound authorized peer/relay capabilities in every policy-sensitive runtime command. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1324,6 +1327,13 @@ Deliverables:
   compensation, shutdown reconciliation, and ownership releases;
 - admission of every authoritative external operation reserves its worst-case
   terminal completion, compensation, cancellation, and resource-release slots;
+- reservation for the complete transitive effect closure: completion-generated
+  commands, compensation of compensation, completion/cancellation races,
+  ownership release, audit consequences, and required terminal error responses;
+- an acyclic effect graph with explicit maximum depth, nodes, commands, bytes,
+  retained resources, and terminal paths calculated at operation admission;
+- one bounded per-operation terminal mailbox/coalescer so duplicate, stale, or
+  racing completion observations do not consume new control slots indefinitely;
 - separate finite control-lane reserves for expiry/revocation progress and
   shutdown, with global, worker, and operation ceilings;
 - packet sends, new client events, metrics, and best-effort delivery forbidden
@@ -1339,14 +1349,15 @@ Verification:
   revocations, expiry, cancellation, compensation, shutdown, and ownership
   release arrive while every ordinary packet/delivery slot is full
 - reserve exhaustion, duplicate/stale completion, nested compensation,
-  operation admission rollback, and fairness properties
+  compensation-of-compensation, completion/cancellation race, terminal mailbox,
+  graph-depth/node/byte limit, operation admission rollback, and fairness properties
 - proof that packet floods cannot consume or indefinitely postpone reserved
   terminal work and that every admitted operation reaches one accounted terminal state
 
 Exit criteria:
 
 - No authoritative operation is admitted without bounded terminal progress
-  capacity, and packet pressure cannot deadlock the cleanup that releases resources.
+  for its complete acyclic effect closure, and packet pressure cannot deadlock cleanup.
 - Stop: `v0.23.7 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.23.8 - Bounded Observation Snapshots
@@ -1383,6 +1394,79 @@ Exit criteria:
 - Observation remains fixed, redacted, stale-detectable, and non-authoritative,
   and no reader can force unbounded state retention or worker cleanup work.
 - Stop: `v0.23.8 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.9 - Post-Publication Crash Reconciliation
+
+Goal: account for every accepted batch and external resource across crashes
+after ready publication, including partial execution and lost completions.
+
+Deliverables:
+
+- an explicit recovery matrix for crash after ready publication but before
+  execution, during partial batch execution, and after an OS resource opens
+  before its completion reaches core;
+- declared queue-survival and queue-loss behavior for worker-thread, worker-
+  process, and whole-process restart boundaries;
+- accepted-batch state tracking sufficient to execute/reconcile idempotent
+  surviving work or emit deterministic cancellation/uncertain-result events;
+- runtime resource fencing and bounded restart inventory for relay sockets,
+  descriptors, provider operations, buffers, leases, and other external ownership;
+- exactly-once buffer/lease cleanup across runtime crash, queue loss, stale
+  completion, restart, cancellation, and reconstructed resource discovery;
+- worker-epoch rejection of stale published batches, correlation IDs,
+  completions, resource handles, and ownership releases;
+- foundational adapter contract only; production supervision and availability
+  SLO implementation remain in `v0.66.1`.
+
+Verification:
+
+- crash injection at every instruction boundary from ready publication through
+  command start, partial execution, OS success, completion enqueue, core receipt,
+  ownership release, and terminal accounting
+- queue survives/queue lost, resource survives/resource lost, worker restart,
+  process restart, stale batch/completion, duplicate inventory, and fencing models
+- differential reference-runtime tests proving every accepted batch ends in
+  execution/reconciliation or deterministic cancellation and complete cleanup
+
+Exit criteria:
+
+- No accepted batch, opened resource, buffer, lease, or old-epoch completion
+  becomes unaccounted after any post-publication crash boundary.
+- Stop: `v0.23.9 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.10 - Portable Publication Adapters
+
+Goal: keep concurrency and memory-order machinery out of the portable core API
+while preserving one publication contract across threaded and local runtimes.
+
+Deliverables:
+
+- `gjallarbru-core` permits, prepared transitions, state, events, commands,
+  capabilities, and snapshots contain no atomics and require neither `Send` nor `Sync`;
+- publication/consumption traits owned by runtime adapters, not the reducer or
+  public no_std core data model;
+- a single-thread/no-atomic adapter committing and consuming locally with no
+  fences, atomic types, threads, tasks, or synchronization dependency;
+- threaded adapters selected behind `target_has_atomic` capability checks with
+  explicit release/acquire ready-marker behavior;
+- compile support for representative targets without pointer-width atomics and
+  clear unsupported accelerated/runtime feature diagnostics;
+- scalar/local versus threaded/atomic differential semantics for acceptance,
+  ordering, crash reconciliation, snapshots, and control-lane progress.
+
+Verification:
+
+- no-atomic target compile fixtures and source/API checks excluding atomics,
+  `Send`/`Sync` bounds, and threading imports from publishable core crates
+- local adapter unit/model tests plus Loom/threaded adapter interleavings
+- identical event/state/command/semantic-ID snapshots across local and threaded
+  adapters, including failure and crash-reconciliation traces
+
+Exit criteria:
+
+- Bare-metal and single-thread consumers need no atomics or thread traits, while
+  threaded runtimes provide equivalent publication and recovery behavior.
+- Stop: `v0.23.10 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1668,6 +1752,11 @@ Deliverables:
   generated error-response packets/bytes;
 - preparation consumes but cannot refill, transfer, split, merge, or reuse the
   permit; every work stage fails before exceeding its remaining allowance;
+- permit acquisition reserves maximum stage allowances without consuming them;
+  beginning parse, HMAC, lookup, response construction/send, or preparation
+  atomically converts only that stage's reservation into an attempt charge;
+- dropping/cancelling the permit releases only unused reservations, while any
+  started stage remains non-refundable through every later failure path;
 - charge points before each expensive stage, with malformed, unauthenticated,
   unknown-user, bad-integrity, stale-nonce, and successful paths accounted;
 - bounded admission/update work, saturating arithmetic, deterministic
@@ -1679,6 +1768,8 @@ Deliverables:
   plus amplification ceilings for unauthenticated responses;
 - integration with `v0.23.6` attempt/occupancy/completion accounting and
   `v0.30.0` transaction caching so retransmissions cannot bypass or double-charge;
+- cached retransmissions still consume packet, parse/classification, and send
+  attempts, while transaction identity prevents recreation of semantic side effects;
 - immutable safe defaults required by production listener construction, with
   later hierarchical/fairness extensions reserved for `v0.58.0`/`v0.59.0`.
 
@@ -1687,6 +1778,8 @@ Verification:
 - `cargo test -p gjallarbru-core ingress_work_permit`
 - compile-time single-use/non-clone checks plus split/merge/transfer/reuse and
   preparation-without-permit rejection fixtures
+- per-stage reserve/start/drop matrices proving unused HMAC/lookup/response
+  reservations release while started stages never refund
 - malformed/valid packet floods across global/listener/worker boundaries,
   HMAC/lookup exhaustion, cached retransmission, error amplification, and
   counter/token-bucket saturation/wrap/refill
@@ -1696,7 +1789,8 @@ Verification:
 Exit criteria:
 
 - No attacker-controlled parse, crypto, lookup, preparation, or error-response
-  work occurs without a finite linear allowance, and failures never refund attempts.
+  work occurs without a finite linear allowance; unused reservations release,
+  started work never refunds, and cached retries cannot recreate side effects.
 - Stop: `v0.30.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
@@ -1710,6 +1804,8 @@ Deliverables:
   completion accounting, and clean shutdown;
 - mandatory `v0.30.3` ingress-permit admission before parse, HMAC, credential
   lookup, preparation workspace, and error-response work;
+- implementation of the `v0.23.9` accepted-batch crash/reconciliation contract
+  through the `v0.23.10` single-thread portable publication adapter;
 - loopback integration harness with no task/timer per request.
 
 Verification:
@@ -1717,6 +1813,8 @@ Verification:
 - `cargo test -p gjallarbru-runtime udp_binding_ipv4`
 - local black-box Binding request/response smoke plus queue-full, partial
   external failure, cancellation, and shutdown reconciliation tests
+- ready-before-execute, partial-send, lost-completion, queue-loss, buffer/lease,
+  restart, and old-worker-epoch crash matrix
 
 Exit criteria:
 
@@ -2035,18 +2133,59 @@ Exit criteria:
   translation is one-step, unambiguous, RFC 6052-valid, and generation-bound.
 - Stop: `v0.37.3 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.37.4 - Minimum Relay Safety Baseline
+### v0.37.4 - Typed Authorized Endpoints
+
+Goal: seal canonical destination and policy approval into a capability so the
+runtime cannot reconstruct, reinterpret, or substitute a different endpoint.
+
+Deliverables:
+
+- an `AuthorizedPeer` capability binding received and effective peer addresses,
+  family, transport, interface/scope, translation/public-map/policy generations,
+  allocation/permission identity, expiry, direction, and exact runtime endpoint;
+- corresponding typed `AuthorizedRelayEndpoint` and fast-path capabilities for
+  relay bind/open and accelerated packet authority where a peer permission is
+  not the applicable identity;
+- non-forgeable constructors available only after canonicalization,
+  translation-generation, permission/allocation, destination-policy, loop,
+  expiry, and quota checks succeed;
+- `SendPeer`, relay-open, relay-send, ChannelData, and fast-path commands accept
+  typed capabilities rather than raw policy-sensitive addresses;
+- the runtime executes the included effective endpoint exactly or rejects the
+  command; address reconstruction, remapping, DNS lookup, family conversion,
+  scope substitution, or endpoint widening is forbidden;
+- capability generation/expiry invalidation across permission refresh/removal,
+  allocation teardown, policy/translation reload, worker restart, and handle reuse.
+
+Verification:
+
+- compile/API tests proving raw addresses cannot construct policy-sensitive
+  commands or authorized endpoint capabilities
+- runtime adversary tests attempting address substitution, remapping, family/
+  scope change, stale generation, expired permission, cross-allocation reuse,
+  and fast-path widening
+- safe-reference differential packet captures proving the runtime endpoint
+  equals the capability endpoint byte-for-byte on every accepted command
+
+Exit criteria:
+
+- Policy approval and runtime use share one typed generation-bound endpoint,
+  and conforming adapters cannot reinterpret or substitute it.
+- Stop: `v0.37.4 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.37.5 - Minimum Relay Safety Baseline
 
 Goal: make the first functional relay methods depend on canonical destination,
-relay-loop, and fixed relay-resource defenses rather than placeholder traits.
+typed authorized endpoints, relay-loop, and fixed relay-resource defenses rather
+than placeholder traits.
 
 Deliverables:
 
 - a mandatory immutable baseline operating on the `v0.37.2` canonical/effective
-  identity under the `v0.37.3` translation lifecycle and denying metadata
-  services, loopback, all Gjallarbru listeners, administration/control
-  endpoints, configured relay pools, same-node/self destinations, and direct or
-  recursive relay loops;
+  identity under the `v0.37.3` translation lifecycle, producing only the
+  `v0.37.4` typed capabilities after denying metadata services, loopback, all
+  Gjallarbru listeners, administration/control endpoints, configured relay
+  pools, same-node/self destinations, and direct or recursive relay loops;
 - fixed global, worker, allocation, relay-port, permission, channel, retained
   buffer, and queued-byte ceilings with atomic reserve/commit/release behavior;
 - mandatory reuse of the `v0.30.3` linear ingress-work permit for every TURN
@@ -2070,8 +2209,8 @@ Verification:
 Exit criteria:
 
 - No later relay command can be constructed without the minimum safety gates,
-  and address aliases cannot bypass their destination or loop decisions.
-- Stop: `v0.37.4 implementation stop reached. Run pentest for this exact commit.`
+  and address aliases/runtime substitution cannot bypass their decisions.
+- Stop: `v0.37.5 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.38.0 - Allocate Semantic Validation
 
@@ -2080,7 +2219,7 @@ Goal: validate Allocate completely before any relay resource is opened.
 Deliverables:
 
 - requested transport/family/lifetime/even-port/reservation/fragment schemas;
-- authentication, existing allocation, mandatory `v0.37.4` quota/policy baseline,
+- authentication, existing allocation, mandatory `v0.37.5` quota/policy baseline,
   and relay availability ordering.
 
 Verification:
@@ -2147,16 +2286,20 @@ Goal: execute exact UDP relay open/close/send commands with safe portable socket
 Deliverables:
 
 - relay bind options, socket registry, peer events, buffer ownership, and error mapping;
+- `AuthorizedRelayEndpoint`/`AuthorizedPeer` consumption with exact endpoint
+  execution and rejection of raw, reconstructed, remapped, or substituted addresses;
 - fixed pool/prebind extension points without changing core commands.
 
 Verification:
 
 - `cargo test -p gjallarbru-runtime relay_socket`
-- real bind conflict, exhaustion, close, stale event, and loopback peer tests
+- real bind conflict, exhaustion, close, stale event, loopback peer, capability
+  substitution, and exact-endpoint packet-capture tests
 
 Exit criteria:
 
-- Runtime socket outcomes map one-to-one to explicit core completions.
+- Runtime socket outcomes map one-to-one to explicit core completions and
+  execute only the endpoint sealed into the authorized capability.
 - Stop: `v0.40.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.40.1 - Relay Address Topology
@@ -2282,17 +2425,20 @@ Goal: relay client datagrams only through live authorized permissions.
 
 Deliverables:
 
-- exact peer/data schema, family/policy/permission/quota checks, and SendPeer command;
+- exact peer/data schema, family/policy/permission/quota checks, and a
+  `SendPeer` command carrying `AuthorizedPeer` rather than a raw address;
 - RFC-required silent discard with no permission refresh or response oracle.
 
 Verification:
 
 - `cargo test -p gjallarbru-core send_indication`
-- missing/expired permission, forbidden destination, zero/maximum data tests
+- missing/expired permission, forbidden destination, zero/maximum data,
+  stale-capability, cross-allocation, and runtime-substitution tests
 
 Exit criteria:
 
-- No SendPeer command exists without current allocation and permission authority.
+- No SendPeer command exists without current allocation/permission authority or
+  with a runtime endpoint different from its sealed `AuthorizedPeer`.
 - Stop: `v0.44.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.45.0 - Peer-to-Client Data Indication
@@ -2340,13 +2486,15 @@ Goal: relay ChannelData in both directions with no hidden lifetime refresh.
 
 Deliverables:
 
-- client channel lookup plus peer exact-address channel selection;
+- client channel lookup plus peer exact-address channel selection producing the
+  same `AuthorizedPeer` capability used by Send indications;
 - permission recheck, rate/byte limits, headroom/scatter plans, and stream padding.
 
 Verification:
 
 - `cargo test -p gjallarbru-core channel_data_relay`
-- UDP/stream round trips and expiry-with-active-traffic tests
+- UDP/stream round trips, expiry-with-active-traffic, stale-capability, and
+  endpoint-substitution tests
 
 Exit criteria:
 
@@ -2669,21 +2817,27 @@ Exit criteria:
 
 ### v0.59.0 - Deterministic Rate Limiting
 
-Goal: bound ongoing work and traffic with injected monotonic time.
+Goal: extend the exact `v0.30.3` monotonic token-bucket primitive from ingress
+admission to hierarchical ongoing work and traffic.
 
 Deliverables:
 
-- token buckets for auth, allocation, errors, packets, bytes, lookups, and admin work;
+- reuse of the same saturating refill, reserve-to-attempt conversion, burst,
+  wrap, and non-refundable charge semantics defined by `v0.30.3`;
+- additional token-bucket scopes for auth, allocation, errors, packets, bytes,
+  lookups, relay traffic, tenants, identities, peers, and admin work;
 - burst/fairness classes, spoofable-source policy, saturation arithmetic, and clock-jump handling.
 
 Verification:
 
 - `cargo test -p gjallarbru-core rate_limit`
-- deterministic burst, fairness, wrap, and prolonged-overload simulations
+- ingress-versus-hierarchical primitive equivalence plus deterministic burst,
+  fairness, wrap, clock-jump, and prolonged-overload simulations
 
 Exit criteria:
 
-- Rate limiting cannot be bypassed by time anomalies or one quota dimension.
+- One token-bucket model governs ingress and later rate limits; time anomalies,
+  failure refunds, or one quota dimension cannot bypass it.
 - Stop: `v0.59.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.60.0 - Credential Cache and Revocation
@@ -2866,6 +3020,9 @@ Deliverables:
   attempt to use `catch_unwind` as isolation in an aborting release build;
 - listener/relay ownership, port-pool partition, stale-generation fencing, allocation-loss,
   client recovery, and platform/service-manager responsibilities after worker death;
+- production implementation of the foundational `v0.23.9` accepted-batch,
+  queue-survival/loss, runtime-resource inventory, fencing, cancellation, and
+  cleanup matrix under supervisor-controlled worker/process restart;
 - documented single-process development limitation and production minimum redundancy for
   native, container, cluster, and future Aesynx deployment profiles.
 
@@ -2875,6 +3032,8 @@ Verification:
   proving process abort, supervisor detection, cleanup/fencing, and restart within the SLO
 - repeated crash, simultaneous worker crash, crash loop, supervisor death, partial startup,
   secret/core-dump inspection, stale socket/completion, and healthy-worker continuity tests
+- cross-checks proving every `v0.23.9` reconciliation outcome is implemented
+  rather than replaced by supervisor restart assumptions
 - Linux, Windows, BSD, macOS, container, service-manager, and cluster fault-injection matrix
   with explicit capability exclusions where a platform cannot provide a claimed control
 
@@ -3355,13 +3514,17 @@ Goal: accelerate only traffic already authorized by live core state.
 Deliverables:
 
 - ingress filtering/steering and optional rules containing allocation generation,
-  endpoints, direction, channel, expiry, policy epoch, and byte/packet budgets;
+  the exact `v0.37.4` authorized endpoint fields, direction, channel, expiry,
+  policy epoch, and byte/packet budgets;
+- install commands derived from typed fast-path capabilities, with kernel/user
+  adapters forbidden from reconstructing or widening raw endpoints;
 - install/remove ordering, map-capacity, fail-closed miss, and reconciliation checks.
 
 Verification:
 
-- core-rule subset property, stale/expired/epoch mismatch tests, XDP-disabled differential suite,
-  verifier/load/eviction tests, and performance report
+- core-rule subset property, stale/expired/epoch mismatch, endpoint-substitution/
+  widening tests, XDP-disabled differential suite, verifier/load/eviction tests,
+  and performance report
 
 Exit criteria:
 

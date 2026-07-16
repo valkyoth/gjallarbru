@@ -384,6 +384,24 @@ through the worker epoch; recovery never treats either side as committed.
 Partial batch acceptance is prohibited, while later OS execution remains
 explicitly non-atomic and completion-driven.
 
+Publication is a runtime-adapter responsibility, not part of the portable core
+data model. `gjallarbru-core` permits, transitions, state, events, commands, and
+capabilities contain no atomics and do not require `Send` or `Sync`. A
+single-thread adapter commits and consumes locally without atomics. Threaded
+adapters select `target_has_atomic`-appropriate release/acquire machinery and
+must remain differentially equivalent; targets without pointer-width atomics
+compile and use the local adapter.
+
+After ready publication, every batch is tracked until execution/reconciliation
+or deterministic cancellation. The recovery matrix distinguishes: published
+but unexecuted batches; partial execution; an OS resource opened before core
+received completion; surviving versus lost queues; retained buffers/leases;
+and stale batches/completions from the prior worker epoch. Runtime resources
+are generation-fenced and inventoried on restart. Surviving accepted work is
+replayed/reconciled only when its idempotency contract permits it; otherwise
+core receives bounded cancellation/uncertain-result events and cleanup owns
+every buffer, lease, socket, and operation exactly once.
+
 Events are classified as droppable ingress or authoritative control events.
 When a command creates authoritative external work, admission reserves a
 separate control lane for its worst-case terminal completion, compensation,
@@ -392,6 +410,14 @@ revocation progress have their own finite reserve. Packet delivery, metrics,
 and new ingress cannot consume these slots. The reserve is bounded globally
 and per worker/operation, and its use/refill is deterministic, so a full packet
 queue cannot block the completion needed to release resources.
+
+The reservation covers the complete transitive bounded control-effect closure:
+completion-generated commands, compensation of compensation, completion versus
+cancellation races, ownership release, security-audit consequences, and any
+required terminal error response. The effect graph is acyclic with an explicit
+maximum depth and node/byte count. Each operation owns one bounded terminal
+mailbox that coalesces duplicate/stale completion observations without
+allocating new control slots indefinitely.
 
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
@@ -563,8 +589,12 @@ lookup admission, error-response bytes, and preparation workspace. Preparation
 consumes but cannot refill or transfer those allowances; permit failure occurs
 before attacker-controlled parsing or authentication work.
 
-Attempt charges are never restored by malformed input, preparation/command
-failure, cancellation, or dropped response. Capacity recovers only through
+Permit acquisition reserves the maximum allowed stage capacity. Starting
+parse, HMAC, lookup, response construction/send, or preparation converts only
+that stage's reservation into a non-refundable attempt charge. Dropping the
+permit releases unused reservations; started work is never refunded. Cached
+retransmissions still pay packet, parse/classification, and send charges but do
+not recreate semantic side effects. Capacity recovers only through
 deterministic saturating monotonic token-bucket refill with explicit burst and
 rate ceilings. This includes spoofed-source and amplification-safe policy, so
 Binding never ships as an unbudgeted internet-facing CPU or response path.
@@ -585,6 +615,16 @@ either pin the exact mapping generation for their lifetime or follow an
 explicit invalidation/teardown rule when mappings change; they can never be
 silently reinterpreted under a replacement mapping.
 
+Successful destination/policy evaluation produces a sealed typed capability,
+not a raw address for later reconstruction. `AuthorizedPeer` binds received and
+effective peer addresses, address family, transport, interface/scope,
+translation/public-map/policy generations, allocation and permission identity,
+expiry, direction, and the exact runtime endpoint. Relay-open and fast-path
+authority use corresponding typed endpoint capabilities. Commands accept these
+capabilities rather than raw policy-sensitive addresses; the runtime executes
+the included endpoint exactly or rejects the command, and cannot reinterpret
+or substitute an address after authorization.
+
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,
 relay pools, and relay loops. It enforces fixed global/worker/allocation/
@@ -597,6 +637,9 @@ source address/prefix, realm, tenant, identity, allocation, and peer.
 Authentication attempts, allocations, relay ports, permissions, channels, TCP
 connections, credential lookups, transactions, packets, bytes, handshakes,
 buffers, errors, audits, and admin calls all have limits.
+Later hierarchical rate limiting extends the exact ingress token-bucket
+primitive: the same monotonic refill, saturation, reserve-to-attempt
+conversion, non-refundable work, and wrap behavior applies at every added scope.
 
 Configurable public-server destination policy extends the mandatory baseline
 with reviewed public, enterprise, test, or custom profiles. Private unicast is

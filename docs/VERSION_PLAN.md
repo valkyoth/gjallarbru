@@ -79,6 +79,8 @@ The index and detailed contracts are checked together by
 | `0.23.6` | Chargeable-work accounting | Occupancy, attempt, completion, and retry charges have explicit non-refundable and exactly-once semantics |
 | `0.23.7` | Authoritative control-lane progress | Admitted operations reserve terminal completion, compensation, cancellation, shutdown, and ownership-release capacity unavailable to packet traffic |
 | `0.23.8` | Bounded observation snapshots | Redacted worker snapshots have fixed size/frequency/retention and can never become protocol authority |
+| `0.23.9` | Post-publication crash reconciliation | Every accepted batch is executed, reconciled, or deterministically cancelled across queue/resource/worker failure boundaries |
+| `0.23.10` | Portable publication adapters | Core APIs require no atomics or Send/Sync; single-thread and atomic runtime adapters remain behaviorally equivalent |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -109,7 +111,8 @@ The index and detailed contracts are checked together by
 | `0.37.1` | Relay-port entropy profile | Explicit worker seeds or completions, unbiased unique candidates, fork/restart handling, and deterministic exhaustion are proven |
 | `0.37.2` | Canonical effective destinations | IPv4-mapped, NAT64, scoped IPv6, translated local, multicast, broadcast, and special destinations classify with translation generations |
 | `0.37.3` | Translation-generation lifecycle | RFC 6052 mappings are unambiguous, one-step, generation-bound, and safely pin or invalidate dependent authority |
-| `0.37.4` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
+| `0.37.4` | Typed authorized endpoints | Runtime commands carry generation-bound approved peer/relay capabilities and never reconstruct raw policy endpoints |
+| `0.37.5` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
@@ -142,7 +145,7 @@ The index and detailed contracts are checked together by
 | `0.56.0` | Destination policy profiles | Public, enterprise, custom, and test profiles pass special-prefix tests |
 | `0.57.0` | SSRF and relay-loop prevention | Metadata, control, listener, relay-pool, and self-loop cases fail closed |
 | `0.58.0` | Hierarchical quotas | Every global-to-peer capacity dimension remains within configured limits |
-| `0.59.0` | Deterministic rate limiting | Token buckets, fairness, spoofable-source, and clock-jump tests pass |
+| `0.59.0` | Deterministic rate limiting | The v0.30.3 token-bucket primitive extends hierarchically with fairness, spoofable-source, and clock-jump tests |
 | `0.60.0` | Credential cache/revocation | Bounded cache, timeout, negative result, revoke, and allocation teardown pass |
 | `0.61.0` | Key lifecycle | Credential, nonce, reservation, mobility, and ticket keys rotate independently |
 | `0.62.0` | Metrics and audit sinks | Cardinality, redaction, sampling, backpressure, and sink-failure tests pass |

@@ -31,6 +31,10 @@ All notable changes to `gjallarbru` are documented here.
   authoritative control progress, strict prepared-transition ownership and
   scrubbing, bounded non-authoritative snapshots, and generation-safe
   translation lifecycle rules backed by a checksum-locked RFC 6052 source.
+- Added reservation-versus-attempt ingress accounting, transitive control-effect
+  closure, post-publication crash reconciliation, no-atomic publication
+  adapters, typed authorized endpoint capabilities, and one shared token-bucket
+  model from ingress through hierarchical rate limiting.
 
 ## 0.2.0 - 2026-07-14
 
