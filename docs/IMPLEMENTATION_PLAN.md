@@ -468,6 +468,25 @@ generations, so a narrowly scoped permission revocation does not invalidate
 unrelated commands unless the configured execution domain deliberately uses a
 coarser documented blast radius.
 
+Fence acknowledgement is only an ordering fact: no command at or below the
+acknowledged watermark remains capable of a new handoff in that lane. An
+already-handed-off command may still be externally in flight. Its buffer,
+descriptor, lease, provider storage, operation slot, and other physically
+reachable ownership remain pinned until a generation-valid terminal result or
+deterministic reconciliation proves release. Semantic identifiers may advance
+to a disjoint generation after the fence, but their backing storage cannot be
+reused or aliased while the old external operation could still access it.
+
+Unresolved recovery is also bounded. Each operation type declares maximum
+cancellation attempts, reconciliation rounds, unresolved age, and fixed
+global/worker/provider counts. Exhaustion transitions the mailbox to
+`Uncertain`, quarantines or destroys the affected provider/execution domain,
+and keeps externally reachable storage non-aliasing until inventory or domain
+destruction proves it unreachable. Logical admission capacity may be replaced
+only from a separate bounded reserve/disjoint generation; another unresolved
+operation is never silently evicted. Recovery from saturation is explicit and
+cannot depend on a provider eventually responding.
+
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
 capability-bearing handles; are bound to worker epoch and configuration
@@ -638,6 +657,17 @@ TLS and DTLS early application data is disabled for STUN/TURN. Resumption begins
 application processing only after handshake confirmation; any future method-level
 exception requires a separate replay-safety contract and release.
 
+Secure-transport providers are memory-qualified before production activation.
+Each adapter declares lifecycle versus established-session allocation behavior,
+maximum provider-owned plaintext/ciphertext/pending-record/session bytes, and
+deterministic backpressure on exhaustion. Bounded connection/handshake
+allocation is permitted by profile; established record/frame hot paths must be
+instrumented and allocation-free for hardened/accelerated profiles, or the
+provider is explicitly excluded from those profiles. Accepted plaintext cannot
+trigger hidden growable buffering. Failure, disconnect, timeout, and provider
+replacement release and best-effort zeroize provider-owned plaintext and key-
+adjacent storage within documented limits.
+
 Every client transport converges on the same normalized ingress-work contract.
 UDP datagrams, complete TCP/TLS frames, DTLS plaintext datagrams after
 handshake/replay admission, trusted-termination frames, and shared-port demux
@@ -760,6 +790,16 @@ connection handle. Disconnect, revocation, path replacement, or fence advance
 invalidates queued client delivery before reuse. Incoming peer sources are
 canonicalized with the same address/mapping-generation rules used for outbound
 peers before permission or channel lookup.
+
+Peer-to-client relay media uses live authority at final client handoff, not a
+permission snapshot. Its client-delivery capability additionally binds the
+canonical received/effective peer, translation/public-map generations,
+permission identity/generation/expiry, and, for ChannelData, channel identity/
+generation/expiry. Permission refresh creates a new generation; queued media
+under the older generation must be revalidated and replaced by new authority or
+dropped. Expiry, revocation, rebinding, mapping change, or allocation teardown
+before final handoff makes the queued packet inert. Once bytes are actually
+handed off, only the declared bounded in-flight rules apply.
 
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,

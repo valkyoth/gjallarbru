@@ -85,6 +85,8 @@ The index and detailed contracts are checked together by
 | `0.23.12` | Acknowledged authority fences | Monotonic authority sequences are acknowledged by every execution lane before identifiers, endpoints, or buffers can be reused |
 | `0.23.13` | Bounded fence watermarks | Repeated revocations coalesce into fixed per-lane high-water marks with precise acknowledgement and membership semantics |
 | `0.23.14` | Nonterminal timeout observations | Local deadline expiry initiates cancellation/reconciliation but never proves external failure or blocks policy-valid late success |
+| `0.23.15` | Fence and ownership separation | Fence acknowledgement prevents new handoff but never releases storage still reachable by an in-flight external operation |
+| `0.23.16` | Bounded unresolved recovery | Timeout/cancellation recovery has fixed rounds, ages, counts, escalation, quarantine, and non-aliasing capacity rules |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -131,6 +133,7 @@ The index and detailed contracts are checked together by
 | `0.42.0` | Refresh and delete | Identity match, lifetime changes, zero-delete, and cleanup are atomic |
 | `0.43.0` | CreatePermission | Multi-peer atomicity, peer-IP identity, policy denial, and 300-second expiry pass |
 | `0.43.1` | Relay payload ownership baseline | Send/Data paths use runtime-owned bounded copies until generation-tagged zero-copy leases are admitted |
+| `0.43.2` | Client-bound relay media authority | Data and ChannelData delivery bind canonical peer and live permission/channel generations through final client handoff |
 | `0.44.0` | Send indication | Authorized relay works; invalid/missing permission paths silently discard |
 | `0.45.0` | Peer Data indication | Permission filtering, zero-length data, and rate limits pass |
 | `0.46.0` | ChannelBind | Channel/peer uniqueness, refresh, reuse block, and permission coupling pass |
@@ -175,6 +178,7 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.71.0` | TURN over TCP | Path identity, framing, disconnect, retransmission, and allocation cleanup pass |
 | `0.72.0` | Stream backpressure | Slow clients cannot exceed frame, byte, or age ceilings |
+| `0.72.1` | Secure-transport memory contract | Provider lifecycle/hot-path allocation, retained bytes, exhaustion, cleanup, and zeroization gates exist before TLS/DTLS activation |
 | `0.73.0` | TLS provider adapter | Provider-neutral plaintext integration, failure isolation, and pre-semantic early-data rejection pass |
 | `0.74.0` | Hardened TLS deployment | Current BCP 195 policy, handshake quotas, rotation, and interoperability pass |
 | `0.74.1` | TLS identity and termination | ALPN, SNI, certificate/realm mapping, trusted termination, and PROXY-source handling fail closed |
@@ -182,6 +186,7 @@ The index and detailed contracts are checked together by
 | `0.76.0` | DTLS anti-abuse | Cookie/handshake/time/size/prefix limits resist amplification and exhaustion |
 | `0.76.1` | DTLS 1.3 policy | RFC 9147 applicability, TLS/DTLS version profiles, provider capability, and interop evidence are explicit |
 | `0.76.2` | Cross-provider early-data closure | Every TLS/DTLS provider, termination topology, resumption path, and node rejects 0-RTT application data consistently |
+| `0.76.3` | Cross-provider secure-transport memory closure | Every selected TLS/DTLS provider and platform passes the v0.72.1 memory qualification and differential accounting suite |
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
 | `0.77.1` | Common transport ingress accounting | UDP, TCP, TLS, DTLS, trusted termination, and shared-port paths all charge the same normalized per-frame semantic work permit |
 | `0.78.0` | Per-core ownership | Stable flow steering and initial Loom models remove global allocation locks without behavior drift |

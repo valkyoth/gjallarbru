@@ -46,6 +46,9 @@ All notable changes to `gjallarbru` are documented here.
 - Added bounded coalesced fence watermarks, nonterminal timeout observations,
   charged cached-retransmission substates, and TCP/TLS partial-frame
   completion-or-close semantics with exact provider handoff boundaries.
+- Added strict fence-versus-physical-ownership separation, bounded unresolved
+  provider recovery, live peer/permission/channel authority for client-bound
+  relay media, and pre-activation TLS/DTLS provider memory qualification.
 
 ## 0.2.0 - 2026-07-14
 
