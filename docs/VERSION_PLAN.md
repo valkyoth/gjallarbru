@@ -81,6 +81,7 @@ The index and detailed contracts are checked together by
 | `0.23.8` | Bounded observation snapshots | Redacted worker snapshots have fixed size/frequency/retention and can never become protocol authority |
 | `0.23.9` | Post-publication crash reconciliation | Every accepted batch is executed, reconciled, or deterministically cancelled across queue/resource/worker failure boundaries |
 | `0.23.10` | Portable publication adapters | Core APIs require no atomics or Send/Sync; single-thread and atomic runtime adapters remain behaviorally equivalent |
+| `0.23.11` | Terminal mailbox race semantics | Cancellation requests, late success, duplicate terminals, and conflicting observations follow one deterministic fail-closed state machine |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -93,6 +94,7 @@ The index and detailed contracts are checked together by
 | `0.30.1` | Transaction identity and byte budgets | Keyed strong identity prevents collision confusion and cached responses obey explicit byte ceilings |
 | `0.30.2` | Transaction invalidation semantics | Normal reloads pin decisions while revocation explicitly defines replay, error, discard, teardown, and path termination |
 | `0.30.3` | Linear ingress work permits | Cheap admission grants finite parse, HMAC, lookup, response, and preparation allowances with monotonic non-refundable refill |
+| `0.30.4` | Ingress reservation fairness | Permits are acquired just in time, retained briefly, bounded per listener/worker, and never batch-reserved into starvation |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -112,7 +114,8 @@ The index and detailed contracts are checked together by
 | `0.37.2` | Canonical effective destinations | IPv4-mapped, NAT64, scoped IPv6, translated local, multicast, broadcast, and special destinations classify with translation generations |
 | `0.37.3` | Translation-generation lifecycle | RFC 6052 mappings are unambiguous, one-step, generation-bound, and safely pin or invalidate dependent authority |
 | `0.37.4` | Typed authorized endpoints | Runtime commands carry generation-bound approved peer/relay capabilities and never reconstruct raw policy endpoints |
-| `0.37.5` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
+| `0.37.5` | Execution-time endpoint authority | Queued endpoint capabilities are single-use, deadline-bound, command-bound, charged exactly, and fenced before authority reuse |
+| `0.37.6` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
@@ -174,6 +177,7 @@ The index and detailed contracts are checked together by
 | `0.76.1` | DTLS 1.3 policy | RFC 9147 applicability, TLS/DTLS version profiles, provider capability, and interop evidence are explicit |
 | `0.76.2` | Cross-provider early-data closure | Every TLS/DTLS provider, termination topology, resumption path, and node rejects 0-RTT application data consistently |
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
+| `0.77.1` | Common transport ingress accounting | UDP, TCP, TLS, DTLS, trusted termination, and shared-port paths all charge the same normalized per-frame semantic work permit |
 | `0.78.0` | Per-core ownership | Stable flow steering and initial Loom models remove global allocation locks without behavior drift |
 | `0.78.1` | Expanded concurrency-model closure | Loom inventory expands across reload, rollback, restart, cancellation, shutdown, and promoted counterexamples |
 | `0.79.0` | Batched portable/Linux I/O | Batching improves measured throughput while fairness and results remain identical |

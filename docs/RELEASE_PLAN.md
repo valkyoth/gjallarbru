@@ -109,7 +109,7 @@ Current closure decisions are:
 | Current STUN/TURN base and IPv6 could be mistaken for RFC 5389/5766/6156 layering. | RFC 8489 and RFC 8656 are the base from `v0.2.0`; IPv6 is native in `v0.48.0` and `v0.49.0`. |
 | Integrity could be described as “MD5 HMAC.” | Separate legacy key derivation/HMAC-SHA-1 in `v0.18.0` and modern SHA-256 in `v0.19.0`. |
 | Resource creation could occur before authentication. | Authentication and two-phase allocation are explicit in `v0.27.0`, `v0.38.0`, and `v0.39.0`. |
-| Private-destination policy could be either universally blocked or accidentally open, while address aliases, mapping changes, or runtime reinterpretation could retain unintended authority. | `v0.37.2` canonicalizes generation-bound destinations, `v0.37.3` closes translation lifecycle, `v0.37.4` seals approved endpoints into typed capabilities, `v0.37.5` installs mandatory relay defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
+| Private-destination policy could be either universally blocked or accidentally open, while address aliases, mapping changes, runtime reinterpretation, or queued stale authority could retain unintended authority. | `v0.37.2` canonicalizes generation-bound destinations, `v0.37.3` closes translation lifecycle, `v0.37.4` seals approved endpoints into typed capabilities, `v0.37.5` bounds their execution-time authority, `v0.37.6` installs mandatory relay defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
 | Secure transports and crypto could become home-grown protocol code. | Provider boundaries in `v0.19.0`, `v0.73.0`, and `v0.75.0`; primitives/TLS/DTLS remain reviewed dependencies. |
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
@@ -159,6 +159,11 @@ Current closure decisions are:
 | A ready batch could be lost or partly executed across a crash, leaving an opened OS resource, lease, or stale completion unaccounted. | `v0.23.9` defines accepted-batch reconciliation, deterministic cancellation, resource fencing, and old-epoch rejection. |
 | Threaded release/acquire publication could leak atomics or Send/Sync requirements into the portable no_std core. | `v0.23.10` keeps concurrency in runtime adapters and proves local/no-atomic and threaded adapters equivalent. |
 | Policy could approve one canonical peer while a runtime reconstructs or substitutes another raw endpoint. | `v0.37.4` requires typed generation-bound authorized peer/relay capabilities in every policy-sensitive runtime command. |
+| Cancellation request, OS success, failure, and duplicate terminal observations could race without one authoritative outcome. | `v0.23.11` defines a bounded terminal-mailbox state machine where cancellation is intent, identical terminals coalesce, and conflicts enter deterministic uncertainty/reconciliation. |
+| A whole-process restart could mistakenly adopt prior node-local allocations or replay non-idempotent delivery with unknown status. | `v0.23.9` limits reconciliation to surviving authority, fences and closes old resources after process loss, preserves attempt charges, and forbids base-profile adoption. |
+| Maximum-stage reservations could be pre-acquired for queued or batched packets and starve other listeners or authenticated traffic. | `v0.30.4` requires just-in-time, short-lived, per-packet permits with bounded outstanding reservations and deterministic listener/work-class fairness. |
+| A valid endpoint capability could wait in a queue past permission expiry or revocation and become indefinite runtime authority. | `v0.37.5` makes delivery capabilities single-use, execution-deadline/queue-age/command/charge bound, generation-checked, and revocation-fenced before reuse. |
+| TCP, TLS, DTLS, trusted termination, or shared-port dispatch could bypass the UDP ingress work budget. | Initial transport milestones inherit `v0.30.4`; `v0.77.1` proves every admitted plaintext frame uses one normalized ingress permit after transport-specific handshake/framing admission. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1409,6 +1414,18 @@ Deliverables:
   process, and whole-process restart boundaries;
 - accepted-batch state tracking sufficient to execute/reconcile idempotent
   surviving work or emit deterministic cancellation/uncertain-result events;
+- reconciliation/cancellation events only when authoritative core state
+  survives a thread or worker-runtime restart and can consume those events;
+- whole-process base-profile restart explicitly loses all prior allocation,
+  permission, channel, transaction, relay, and delivery authority rather than
+  adopting or reconstructing it;
+- surviving relay sockets, provider operations, descriptors, buffers, and
+  leases fenced, quarantined, inventoried, and closed after process loss;
+- non-idempotent datagram delivery with unknown execution status never replayed,
+  attempt charges kept consumed, and no delivery success inferred;
+- any future persistent accepted-batch journal classified as runtime
+  infrastructure requiring a separate durable-authority release profile, never
+  as a requirement of the portable no_std engine;
 - runtime resource fencing and bounded restart inventory for relay sockets,
   descriptors, provider operations, buffers, leases, and other external ownership;
 - exactly-once buffer/lease cleanup across runtime crash, queue loss, stale
@@ -1425,13 +1442,18 @@ Verification:
   ownership release, and terminal accounting
 - queue survives/queue lost, resource survives/resource lost, worker restart,
   process restart, stale batch/completion, duplicate inventory, and fencing models
+- process-death tests proving old allocation/relay authority is never adopted,
+  unknown non-idempotent sends are not replayed, surviving resources close, and
+  consumed attempt charges are not refunded or converted into success
 - differential reference-runtime tests proving every accepted batch ends in
-  execution/reconciliation or deterministic cancellation and complete cleanup
+  execution/reconciliation or deterministic cancellation while authority
+  survives, or fenced cleanup without adoption after whole-process loss
 
 Exit criteria:
 
 - No accepted batch, opened resource, buffer, lease, or old-epoch completion
-  becomes unaccounted after any post-publication crash boundary.
+  becomes unaccounted after any post-publication crash boundary, and whole-
+  process restart cannot inherit node-local authority from the dead process.
 - Stop: `v0.23.9 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.23.10 - Portable Publication Adapters
@@ -1467,6 +1489,47 @@ Exit criteria:
 - Bare-metal and single-thread consumers need no atomics or thread traits, while
   threaded runtimes provide equivalent publication and recovery behavior.
 - Stop: `v0.23.10 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.11 - Terminal Mailbox Race Semantics
+
+Goal: give every cancellation/completion race one bounded deterministic
+terminal outcome without treating cancellation intent as OS cancellation proof.
+
+Deliverables:
+
+- a mailbox state machine with `Pending`, `CancelRequested`, `Succeeded`,
+  `Failed`, `Cancelled`, and `Uncertain` states plus an explicit legal
+  transition table for every external-operation class;
+- cancellation request records intent, blocks forbidden new handoff, and emits
+  cancellation work where supported, but never alone proves that OS/provider
+  execution stopped;
+- per-operation policy declaring whether a generation-valid success after
+  `CancelRequested` wins, becomes uncertain, or is rejected as impossible;
+- identical duplicate terminal observations coalesced without new slots,
+  charges, cleanup, audit, or state transitions;
+- conflicting generation-valid terminal observations fail closed into one
+  deterministic `Uncertain` reconciliation path rather than first-arrival wins;
+- exact ownership release, attempt/completion accounting, response, audit,
+  compensation, and late-event behavior for every legal and illegal transition;
+- terminal state immutable except through an explicitly modeled reconciliation
+  result that cannot revive expired/revoked semantic authority.
+
+Verification:
+
+- exhaustive state/transition table tests for every operation class and
+  permutation of cancel request, OS handoff, success, failure, cancellation,
+  timeout, duplicate, stale, and contradictory observations
+- model checking of cancellation/success races proving one cleanup, one audit,
+  no false cancellation, no false success, no attempt refund, and bounded slots
+- crash/restart and control-lane saturation tests integrating `v0.23.7` and
+  `v0.23.9` uncertainty/reconciliation behavior
+
+Exit criteria:
+
+- Cancellation intent is never confused with external cancellation, duplicate
+  terminals are inert, and conflicting valid evidence reaches one bounded
+  fail-closed reconciliation outcome.
+- Stop: `v0.23.11 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1793,6 +1856,48 @@ Exit criteria:
   started work never refunds, and cached retries cannot recreate side effects.
 - Stop: `v0.30.3 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.4 - Ingress Reservation Fairness
+
+Goal: retain maximum-stage reservation guarantees without allowing queued,
+batched, or cheap traffic to hoard scarce future-work capacity.
+
+Deliverables:
+
+- just-in-time permit acquisition immediately before preparation of one packet
+  or complete frame, never while input waits in a socket/runtime/core queue;
+- fixed maximum outstanding permit count, total reserved stage capacity, and
+  reservation lifetime per listener and worker, with deterministic expiry;
+- batched receive represented as independently admitted packets: batch size
+  never grants batch-wide permits or reserves aggregate HMAC/lookup capacity;
+- unused stage reservations released at packet completion/drop and before the
+  next packet is prepared where the runtime can do so without violating ordering;
+- deterministic weighted/fair admission between listeners and between cheap
+  Binding/classification traffic and authenticated TURN work;
+- no fairness class can bypass its packet, parse, HMAC, lookup, preparation,
+  response, byte, or attempt charges, and spoofable identity cannot create an
+  unbounded class;
+- queue, shutdown, cancellation, worker replacement, and permit-lifetime
+  handling integrated with `v0.23.3`, `v0.23.6`, and `v0.30.3`.
+
+Verification:
+
+- `cargo test -p gjallarbru-core ingress_reservation_fairness`
+- adversarial multi-listener mixes of malformed Binding, valid Binding,
+  authentication failures, authenticated TURN, and retransmissions under every
+  outstanding-permit/reservation/deadline limit
+- scalar and batched receive tests proving one permit per packet/frame, no
+  pre-acquisition for queued work, prompt unused-reservation release, bounded
+  wait, and identical non-refundable attempt accounting
+- model/property tests for starvation, spoofed-class explosion, cancellation,
+  shutdown, stale permit, monotonic wrap, and worker/listener replacement
+
+Exit criteria:
+
+- Reservation strengthens admission without becoming a starvation mechanism:
+  no queued/batched packet hoards future stage capacity and every admitted work
+  class makes bounded progress under its declared fairness policy.
+- Stop: `v0.30.4 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -1802,8 +1907,8 @@ Deliverables:
 - safe single-worker portable UDP listener, fixed buffer pool, path conversion,
   full-batch operation-queue reservation/acceptance, command execution, exact
   completion accounting, and clean shutdown;
-- mandatory `v0.30.3` ingress-permit admission before parse, HMAC, credential
-  lookup, preparation workspace, and error-response work;
+- mandatory `v0.30.3`/`v0.30.4` just-in-time ingress-permit admission before
+  parse, HMAC, credential lookup, preparation workspace, and error-response work;
 - implementation of the `v0.23.9` accepted-batch crash/reconciliation contract
   through the `v0.23.10` single-thread portable publication adapter;
 - loopback integration harness with no task/timer per request.
@@ -1815,6 +1920,8 @@ Verification:
   external failure, cancellation, and shutdown reconciliation tests
 - ready-before-execute, partial-send, lost-completion, queue-loss, buffer/lease,
   restart, and old-worker-epoch crash matrix
+- receive-queue and multi-listener tests proving permits are not pre-acquired,
+  retained beyond their lifetime, or batch-reserved across packets
 
 Exit criteria:
 
@@ -2173,23 +2280,69 @@ Exit criteria:
   and conforming adapters cannot reinterpret or substitute it.
 - Stop: `v0.37.4 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.37.5 - Minimum Relay Safety Baseline
+### v0.37.5 - Execution-Time Endpoint Authority
+
+Goal: ensure a capability valid during planning cannot become indefinite queued
+authority after expiry, revocation, teardown, policy change, or identifier reuse.
+
+Deliverables:
+
+- every delivery capability carries a maximum execution `Tick` no later than
+  allocation/permission/capability expiry plus an independently bounded maximum
+  queue age measured from command publication;
+- binding to exactly one semantic command ID, accepted batch ID, operation
+  generation, direction, packet length, byte charge, and packet attempt charge;
+- single-use consumption for delivery commands, with duplicate handoff,
+  split/merge, charge substitution, and cross-batch reuse rejected;
+- runtime pre-handoff validation of execution tick, queue age, allocation/
+  permission/policy/translation/public-map/worker generations, command/batch
+  identity, buffer generation, and exact endpoint;
+- a non-droppable control-lane revocation fence that prevents older queued
+  capabilities from reaching the OS before identifier, endpoint, permission,
+  allocation slot, policy generation, or buffer generation reuse;
+- bounded in-flight semantics after OS handoff: recall/cancellation is never
+  assumed, attempt/byte charges remain consumed, and each possible late result
+  follows the `v0.23.11` terminal-mailbox contract;
+- explicit behavior for send syscalls/provider operations that complete after
+  authority deadline without treating delayed execution as lifetime extension.
+
+Verification:
+
+- compile/API tests for single-use command/batch/charge binding and rejection of
+  cloning, replay, split, merge, packet/byte substitution, and cross-batch use
+- deterministic queue-delay tests crossing permission/allocation expiry,
+  revocation, policy/translation reload, teardown, worker restart, and every
+  identifier/endpoint/buffer reuse boundary
+- fence-order model tests proving no pre-fence capability is handed off after
+  reuse becomes visible, even with full packet queues and racing completions
+- syscall/provider fault tests for already-in-flight success, failure,
+  cancellation, and uncertain status with exact non-refundable accounting
+
+Exit criteria:
+
+- Endpoint authorization remains valid at the final runtime handoff, every
+  delivery capability is consumed once for its exact command and charge, and
+  revocation/reuse cannot leave older queued authority executable.
+- Stop: `v0.37.5 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.37.6 - Minimum Relay Safety Baseline
 
 Goal: make the first functional relay methods depend on canonical destination,
-typed authorized endpoints, relay-loop, and fixed relay-resource defenses rather
-than placeholder traits.
+execution-bounded typed authorized endpoints, relay-loop, and fixed relay-
+resource defenses rather than placeholder traits.
 
 Deliverables:
 
 - a mandatory immutable baseline operating on the `v0.37.2` canonical/effective
   identity under the `v0.37.3` translation lifecycle, producing only the
-  `v0.37.4` typed capabilities after denying metadata services, loopback, all
-  Gjallarbru listeners, administration/control endpoints, configured relay
-  pools, same-node/self destinations, and direct or recursive relay loops;
+  `v0.37.4` typed capabilities with `v0.37.5` execution authority after denying
+  metadata services, loopback, all Gjallarbru listeners, administration/control
+  endpoints, configured relay pools, same-node/self destinations, and direct
+  or recursive relay loops;
 - fixed global, worker, allocation, relay-port, permission, channel, retained
   buffer, and queued-byte ceilings with atomic reserve/commit/release behavior;
-- mandatory reuse of the `v0.30.3` linear ingress-work permit for every TURN
-  request before relay-specific admission begins;
+- mandatory reuse of the `v0.30.3`/`v0.30.4` just-in-time linear ingress-work
+  permit for every TURN request before relay-specific admission begins;
 - deterministic silent-discard, authenticated error, retry-later, or admission
   refusal behavior for every exhausted or denied path without amplification;
 - capability-shaped policy/quota gates required by Allocate, CreatePermission,
@@ -2210,7 +2363,7 @@ Exit criteria:
 
 - No later relay command can be constructed without the minimum safety gates,
   and address aliases/runtime substitution cannot bypass their decisions.
-- Stop: `v0.37.5 implementation stop reached. Run pentest for this exact commit.`
+- Stop: `v0.37.6 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.38.0 - Allocate Semantic Validation
 
@@ -2219,7 +2372,7 @@ Goal: validate Allocate completely before any relay resource is opened.
 Deliverables:
 
 - requested transport/family/lifetime/even-port/reservation/fragment schemas;
-- authentication, existing allocation, mandatory `v0.37.5` quota/policy baseline,
+- authentication, existing allocation, mandatory `v0.37.6` quota/policy baseline,
   and relay availability ordering.
 
 Verification:
@@ -2288,6 +2441,8 @@ Deliverables:
 - relay bind options, socket registry, peer events, buffer ownership, and error mapping;
 - `AuthorizedRelayEndpoint`/`AuthorizedPeer` consumption with exact endpoint
   execution and rejection of raw, reconstructed, remapped, or substituted addresses;
+- `v0.37.5` execution-tick, queue-age, command/batch/charge, single-use, and
+  revocation-fence validation immediately before socket/provider handoff;
 - fixed pool/prebind extension points without changing core commands.
 
 Verification:
@@ -2295,6 +2450,8 @@ Verification:
 - `cargo test -p gjallarbru-runtime relay_socket`
 - real bind conflict, exhaustion, close, stale event, loopback peer, capability
   substitution, and exact-endpoint packet-capture tests
+- expired/over-age/revoked/reused capability and already-in-flight completion
+  tests with exact attempt/byte accounting
 
 Exit criteria:
 
@@ -2427,13 +2584,16 @@ Deliverables:
 
 - exact peer/data schema, family/policy/permission/quota checks, and a
   `SendPeer` command carrying `AuthorizedPeer` rather than a raw address;
+- a `v0.37.5` single-use execution deadline, command/batch identity, exact
+  packet/byte charge, queue-age limit, and revocation fence on every send;
 - RFC-required silent discard with no permission refresh or response oracle.
 
 Verification:
 
 - `cargo test -p gjallarbru-core send_indication`
 - missing/expired permission, forbidden destination, zero/maximum data,
-  stale-capability, cross-allocation, and runtime-substitution tests
+  stale/over-age capability, cross-allocation, runtime-substitution, revocation-
+  fence, duplicate consumption, and already-in-flight completion tests
 
 Exit criteria:
 
@@ -2488,13 +2648,15 @@ Deliverables:
 
 - client channel lookup plus peer exact-address channel selection producing the
   same `AuthorizedPeer` capability used by Send indications;
+- the same `v0.37.5` single-use execution deadline, command/batch/charge
+  binding, queue-age, runtime-generation checks, and revocation fence;
 - permission recheck, rate/byte limits, headroom/scatter plans, and stream padding.
 
 Verification:
 
 - `cargo test -p gjallarbru-core channel_data_relay`
-- UDP/stream round trips, expiry-with-active-traffic, stale-capability, and
-  endpoint-substitution tests
+- UDP/stream round trips, expiry-with-active-traffic, stale/over-age capability,
+  endpoint substitution, duplicate use, revocation fence, and in-flight tests
 
 Exit criteria:
 
@@ -3133,12 +3295,17 @@ Deliverables:
 
 - accepted connection generations, incremental framing, path identity, command writes,
   disconnect cleanup, and reliable-transport transaction behavior;
+- bounded framing-byte/partial-frame occupancy before semantic admission and
+  one `v0.30.3`/`v0.30.4` just-in-time ingress permit for each complete frame;
+- coalesced frames admitted and charged independently without connection-wide
+  or read-batch permit reservation;
 - no allocation migration between connections with reused endpoints.
 
 Verification:
 
 - `cargo test -p gjallarbru-runtime turn_tcp`
-- fragmented/coalesced frames, reconnect reuse, and real TCP interoperability tests
+- fragmented/coalesced frames, per-frame permit/charge, reservation-lifetime,
+  reconnect reuse, and real TCP interoperability tests
 
 Exit criteria:
 
@@ -3153,6 +3320,8 @@ Deliverables:
 
 - queued frame/byte/age limits, partial-frame ceilings, read suspension, fair writes,
   hard-close thresholds, and peer-data drop policy;
+- occupancy/work accounting for stream framing bytes and retained partial
+  frames before a complete frame can acquire semantic ingress authority;
 - allocation/global accounting of queued bytes and leased buffers.
 
 Verification:
@@ -3175,6 +3344,8 @@ Deliverables:
 - certificate/key loading, handshake/result normalization, session cleanup, and
   mandatory rejection of TLS/provider early application data before framing,
   authentication, or core processing;
+- dedicated handshake budgets followed by one common `v0.30.3`/`v0.30.4`
+  ingress permit for every handshake-confirmed plaintext STUN/TURN frame;
 - provider substitution tests proving the adapter cannot accidentally enable
   0-RTT through defaults, resumption, tickets, or termination metadata.
 
@@ -3222,6 +3393,8 @@ Deliverables:
   to-realm mapping, certificate-name rules, reload, and mismatch rejection;
 - direct TLS and explicitly trusted termination topologies with authenticated PROXY
   protocol, bounded headers, peer allowlists, rotation, and source-data provenance;
+- trusted termination inputs normalized into the same per-frame ingress permit
+  and charge path as direct TLS, without granting bypass authority to the proxy;
 - TLS 1.2/1.3 policy and port-443 deployment choices that preserve five-tuple identity
   and never accept identity metadata from an untrusted peer.
 
@@ -3246,6 +3419,8 @@ Deliverables:
 
 - reviewed DTLS provider boundary, session IDs/generations, plaintext datagrams,
   retransmission/timer events, replay handling, and cleanup;
+- dedicated cookie/handshake/replay admission budgets followed by one common
+  `v0.30.3`/`v0.30.4` ingress permit per accepted plaintext datagram;
 - migration/rebinding policy distinct from RFC 8016 mobility;
 - mandatory rejection of DTLS/provider early application data before STUN/TURN
   framing or allocation/authentication state.
@@ -3349,6 +3524,8 @@ Deliverables:
 
 - RFC 7983 and RFC 9443 range table, STUN/ChannelData/DTLS/QUIC classification,
   ambiguous/invalid handling, and configuration collision checks;
+- bounded demultiplexing work followed by transport-specific admission that
+  cannot skip the common plaintext ingress permit;
 - docs explicitly separating shared port from transport encapsulation.
 
 Verification:
@@ -3360,6 +3537,47 @@ Exit criteria:
 
 - Shared listeners route only standardized ranges and make no proprietary TURN claim.
 - Stop: `v0.77.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.77.1 - Common Transport Ingress Accounting
+
+Goal: prove every client transport reaches semantic STUN/TURN processing through
+one normalized work-permit model with no alternate-transport budget bypass.
+
+Deliverables:
+
+- one normalized ingress descriptor for UDP datagrams, complete TCP/TLS frames,
+  DTLS plaintext datagrams, trusted-termination frames, and shared-port dispatch;
+- mandatory just-in-time `v0.30.3`/`v0.30.4` permit acquisition after required
+  transport handshake/replay/framing admission but before semantic parsing;
+- separate bounded occupancy/work charges for TCP/TLS framing bytes and retained
+  partial frames, with one semantic permit and charge lifecycle per complete frame;
+- TLS/DTLS cookie, handshake, record, replay, and retransmission work kept under
+  their dedicated budgets; accepted plaintext then pays common packet/parse,
+  HMAC, credential-lookup, preparation, response, and send charges;
+- coalesced frames, batched datagrams, and shared-port classifications admitted
+  independently, never through one aggregate permit or batch reservation;
+- trusted termination metadata may establish reviewed path provenance but
+  cannot waive, refill, refund, or alter semantic ingress accounting;
+- transport-independent accounting/event snapshots and failure outcomes suitable
+  for scalar/batched/provider differential comparison.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime common_transport_ingress`
+- identical valid/malformed/authentication/retransmission corpora across UDP,
+  TCP, TLS, DTLS, trusted termination, and shared-port configurations
+- fragmented and coalesced stream frames, replayed DTLS datagrams, handshake
+  failure/success, demux ambiguity, queue delay, permit expiry, and overload tests
+- differential ledgers proving equal semantic work receives equal charges,
+  each frame has one permit, dedicated handshake charges do not replace semantic
+  charges, and no transport path refunds or bypasses started attempts
+
+Exit criteria:
+
+- Every admitted plaintext STUN/TURN frame uses the same bounded semantic-work
+  authority, while transport framing and secure-handshake work remain separately
+  bounded and cannot create accounting gaps.
+- Stop: `v0.77.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.78.0 - Per-Core Ownership
 
@@ -3426,11 +3644,13 @@ Deliverables:
 
 - portable batch abstraction plus Linux `recvmmsg`/`sendmmsg`, fairness budget,
   partial-send/error handling, and worker-local registries;
+- per-packet just-in-time permit acquisition: receive batching never reserves
+  permits or HMAC/lookup capacity for the batch as a whole;
 - benchmarks against safe one-packet reference behavior.
 
 Verification:
 
-- differential packet/result suite and batch-size fairness/load benchmarks
+- differential packet/result/ingress-ledger suite and batch-size fairness/load benchmarks
 - syscall/error fault injection
 
 Exit criteria:

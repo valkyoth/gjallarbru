@@ -402,6 +402,16 @@ replayed/reconciled only when its idempotency contract permits it; otherwise
 core receives bounded cancellation/uncertain-result events and cleanup owns
 every buffer, lease, socket, and operation exactly once.
 
+That reconciliation authority exists only while the authoritative core state
+survives a thread or worker-runtime restart. Whole-process loss destroys the
+base profile's allocation and relay authority: a replacement process never
+adopts old allocations, sockets, leases, or provider operations. Survivors are
+fenced, quarantined, and closed; non-idempotent datagram delivery with unknown
+execution status is never replayed; attempt charges remain consumed; and no
+delivery success is inferred. A future persistent accepted-batch journal would
+be runtime infrastructure behind a separately reviewed durable-authority
+profile, not part of the base no_std engine.
+
 Events are classified as droppable ingress or authoritative control events.
 When a command creates authoritative external work, admission reserves a
 separate control lane for its worst-case terminal completion, compensation,
@@ -418,6 +428,17 @@ required terminal error response. The effect graph is acyclic with an explicit
 maximum depth and node/byte count. Each operation owns one bounded terminal
 mailbox that coalesces duplicate/stale completion observations without
 allocating new control slots indefinitely.
+
+The terminal mailbox follows an explicit state machine:
+`Pending -> CancelRequested -> Succeeded | Failed | Cancelled | Uncertain`,
+with direct `Pending` transitions to valid terminal states where applicable.
+A cancellation request records intent and blocks forbidden new work but never
+proves that an OS operation was cancelled. Operation-specific contracts decide
+whether a generation-valid success observed after cancellation request wins.
+Identical terminal observations coalesce; conflicting valid observations enter
+the deterministic `Uncertain` reconciliation path. Terminal ownership,
+attempt/completion accounting, cleanup, audit, and late-event behavior are
+defined for every transition.
 
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
@@ -567,6 +588,16 @@ TLS and DTLS early application data is disabled for STUN/TURN. Resumption begins
 application processing only after handshake confirmation; any future method-level
 exception requires a separate replay-safety contract and release.
 
+Every client transport converges on the same normalized ingress-work contract.
+UDP datagrams, complete TCP/TLS frames, DTLS plaintext datagrams after
+handshake/replay admission, trusted-termination frames, and shared-port demux
+results each acquire one just-in-time permit before semantic parsing. Stream
+framing bytes and retained partial frames have bounded occupancy/work charges;
+coalesced frames pay semantic charges separately. TLS/DTLS handshake work uses
+its dedicated handshake budgets first, then each admitted plaintext STUN/TURN
+frame pays the common parse, HMAC, lookup, preparation, and response charges.
+Demultiplexing and batching cannot create a transport-specific accounting bypass.
+
 Windows, BSD, and macOS use platform event and batching facilities behind the
 same runtime command contract. Android and iOS embed the portable runtime
 without assuming service-manager, filesystem, or privileged-socket behavior.
@@ -599,6 +630,16 @@ deterministic saturating monotonic token-bucket refill with explicit burst and
 rate ceilings. This includes spoofed-source and amplification-safe policy, so
 Binding never ships as an unbudgeted internet-facing CPU or response path.
 
+Permits are acquired just in time immediately before preparation and are never
+retained while a packet waits in an input queue. Outstanding permit count,
+reserved stage capacity, and reservation lifetime are bounded per listener and
+worker. Receive batching does not grant batch-wide reservation: each packet is
+admitted independently, and unused stage reservations are released before the
+next packet where practical. Deterministic fairness prevents one listener or a
+large class of cheap Binding traffic from reserving all HMAC/lookup capacity
+needed by authenticated TURN work, without allowing expensive traffic to evade
+its own charges.
+
 Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
 functional, every received destination becomes one canonical and effective
 destination identity. IPv4-mapped IPv6 normalizes to IPv4; configured NAT64
@@ -624,6 +665,17 @@ authority use corresponding typed endpoint capabilities. Commands accept these
 capabilities rather than raw policy-sensitive addresses; the runtime executes
 the included endpoint exactly or rejects the command, and cannot reinterpret
 or substitute an address after authorization.
+
+Delivery capabilities also carry a maximum execution tick no later than their
+allocation/permission expiry, maximum queue age, one command/batch identity,
+and the exact packet/byte attempt charge. They are single-use for delivery.
+Before OS handoff, runtime verifies the deadline and every bound generation.
+Revocation publishes a control-lane fence that invalidates older queued
+capabilities before an identifier, endpoint, permission, allocation slot, or
+buffer can be reused. Commands already handed to the OS have explicit bounded
+in-flight semantics: recall is never assumed, their attempt charge stays
+consumed, and late completion enters the terminal-mailbox contract rather than
+silently extending authority.
 
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,

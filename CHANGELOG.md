@@ -35,6 +35,10 @@ All notable changes to `gjallarbru` are documented here.
   closure, post-publication crash reconciliation, no-atomic publication
   adapters, typed authorized endpoint capabilities, and one shared token-bucket
   model from ingress through hierarchical rate limiting.
+- Added deterministic terminal-mailbox races, whole-process authority-loss
+  semantics, just-in-time ingress reservation fairness, execution-time endpoint
+  capability fences, and common per-frame work accounting across every client
+  transport.
 
 ## 0.2.0 - 2026-07-14
 
