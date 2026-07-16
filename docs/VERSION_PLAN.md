@@ -26,10 +26,14 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.1.0` | Repository foundation | Workspace, licenses, policies, CI, RFC tooling, and all foundation checks pass |
 | `0.2.0` | RFC requirement-ledger schema | Every section of RFC 8489 and RFC 8656 is indexed with no silent gaps |
+| `0.2.1` | Deterministic architecture contract | Reducer inputs, output atomicity, time, entropy, storage, capability, lease, and protocol-name rules are frozen before APIs |
+| `0.2.2` | Executed requirement evidence | Semantic requirements can become verified only when CI resolves their real symbol and observes their named test |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
 | `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, time, limits, and errors have boundary tests |
 | `0.5.0` | Checked cursors | Exhaustive read/write bounds and arbitrary-slice no-panic tests pass |
+| `0.5.1` | Hostile-input parser foundation | Progress, termination, checked padding, complexity, size, and early fuzz obligations are executable |
 | `0.6.0` | Generational storage | Fixed slab rejects stale handles and capacity overflow under model/Kani tests |
+| `0.6.1` | Freestanding and storage qualification | No-allocator downstream fixtures and bounded storage contracts pass without OS assumptions |
 
 ## Phase B: First-Party Wire Protocol
 
@@ -37,6 +41,7 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.7.0` | STUN header decoder | Type bits, cookie, length, alignment, transaction, truncation, and trailing-byte cases pass |
 | `0.8.0` | Borrowed attribute iterator | Padding, duplicates, unknowns, offsets, and truncation pass without allocation |
+| `0.8.1` | Authenticated attribute boundary | Nonzero receive padding is accepted structurally and post-integrity attributes cannot affect authenticated semantics |
 | `0.9.0` | Frame classifier | STUN/ChannelData/impossible-prefix classification is deterministic across transports |
 | `0.10.0` | Address attributes | IPv4/IPv6 mapped and XOR address vectors round trip |
 | `0.11.0` | Raw text attributes | USERNAME, REALM, NONCE, SOFTWARE, and ERROR-CODE stay byte-oriented and bounded |
@@ -45,28 +50,36 @@ The index and detailed contracts are checked together by
 | `0.13.0` | Allocation attributes | Transport, lifetime, families, even-port, reservation, and fragmentation cases pass |
 | `0.14.0` | Permission/channel attributes | Peer, channel, data, and ICMP attributes cover every valid and invalid length |
 | `0.15.0` | ChannelData codec | Datagram and stream length/padding boundaries round trip |
+| `0.15.1` | UDP ChannelData alignment closure | Both legal datagram forms are accepted while arbitrary trailing bytes remain rejected |
 | `0.16.0` | Caller-buffer encoder | Failed encodes leave output uncommitted; exact-size and short buffers pass |
 | `0.17.0` | FINGERPRINT | RFC 5769 and corruption vectors pass with FINGERPRINT last |
+| `0.17.1` | Crypto provider and secret contract | Capability-specific fixed-output providers, opaque keys, redacted secrets, and fail-closed errors are proven |
 | `0.18.0` | Legacy message integrity | HMAC-SHA-1 ranges and long-term legacy derivation pass official/project vectors |
 | `0.19.0` | SHA-256 message integrity | RFC 8489 SHA-256, errata, ordering, and downgrade cases pass |
+| `0.19.1` | Integrity failure closure | Adjusted original-byte ranges, legal truncation, provider failures, mixed algorithms, and response-key uncertainty fail closed |
 | `0.20.0` | USERHASH and text preparation | Reviewed PRECIS boundary, canonicalization, and rejection vectors pass |
 | `0.20.1` | RFC 8265 PRECIS closure | Current username/password profiles, Unicode versions, migration, and rejection behavior have normative evidence |
 | `0.21.0` | Incremental stream framer | Every split/coalescing pattern and bounded partial-frame case passes |
 | `0.22.0` | Wire assurance milestone | All wire fuzzers, properties, RFC vectors, MSRV builds, and requirement links pass |
+| `0.22.1` | Wire resource and typestate closure | Linear scans, operation ceilings, allocation/copy counters, and authenticated typestate transitions are enforced |
 
 ## Phase C: STUN Server Core
 
 | Version | Primary outcome | Completion gate |
 | --- | --- | --- |
 | `0.23.0` | Sans-I/O event/command API | Synthetic events produce bounded commands with no borrowed data escaping |
+| `0.23.1` | Atomic deterministic reducer | Identical explicit inputs produce byte-identical results and capacity failure leaves state and runtime untouched |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm binding, stale handling, tamper rejection, and key overlap pass |
 | `0.26.0` | Credential provider boundary | Fixed and asynchronous lookup models fail closed under timeout/capacity |
+| `0.26.1` | Credential timing and provider assurance | Dummy-user work, negative-cache normalization, opaque handles, provider substitution, and leakage tests pass |
 | `0.27.0` | Long-term authentication | 401, 438, success, bad integrity, realm, nonce, and identity ordering pass |
 | `0.28.0` | Password negotiation profiles | Hardened SHA-256 and legacy interoperability profiles resist downgrade |
 | `0.29.0` | Unknown/invalid attribute ordering | Authenticated 420 and method-schema errors match RFC ordering |
 | `0.30.0` | Transaction cache | Exact retransmission is idempotent; digest mismatch and exhaustion are safe |
+| `0.30.1` | Transaction identity and byte budgets | Keyed strong identity prevents collision confusion and cached responses obey explicit byte ceilings |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
+| `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
 | `0.33.0` | STUN error and retransmission closure | Error construction, UDP caching, reliable transport, and amplification tests pass |
 | `0.33.1` | Alternate routing and security negotiation | 300 Try Alternate, ALTERNATE-SERVER/DOMAIN, loops, trust, and security-feature downgrade cases pass |
@@ -81,6 +94,7 @@ The index and detailed contracts are checked together by
 | `0.37.0` | Relay-port allocator | Randomized bounded search, collision, exhaustion, and atomic pair tests pass |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
+| `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
 | `0.40.0` | Portable relay socket adapter | Exact bind success/failure/close behavior matches synthetic runtime results |
 | `0.40.1` | Relay address topology | Bind/public addresses, one-to-one NAT, multi-homing, and public relay-IP pools validate and advertise correctly |
 | `0.41.0` | Allocate completion | Success/error responses, actual lifetime, mapped/relayed addresses, and caching pass |
@@ -90,6 +104,7 @@ The index and detailed contracts are checked together by
 | `0.45.0` | Peer Data indication | Permission filtering, zero-length data, and rate limits pass |
 | `0.46.0` | ChannelBind | Channel/peer uniqueness, refresh, reuse block, and permission coupling pass |
 | `0.47.0` | ChannelData relay | Both directions, no lifetime refresh, quotas, and stream padding pass |
+| `0.47.1` | Relay buffer-lease ownership | Generation-tagged receive leases and scatter transmit plans cannot outlive or alias reused buffers |
 | `0.48.0` | IPv6 relays | IPv4/IPv6 allocation and family mismatch behavior interoperates |
 | `0.49.0` | Additional address family | One allocation safely owns two relay families and independent permissions |
 | `0.50.0` | EVEN-PORT and reservation tokens | Adjacent reservation, expiry, atomic consume, replay, and tamper tests pass |
@@ -138,9 +153,11 @@ The index and detailed contracts are checked together by
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
 | `0.78.0` | Per-core ownership | Stable flow steering removes global allocation locks without behavior drift |
 | `0.79.0` | Batched portable/Linux I/O | Batching improves measured throughput while fairness and results remain identical |
+| `0.79.1` | Batch completion semantics | Normalized path metadata, partial sends, unsent work, and stale batch results preserve scalar behavior |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
 | `0.81.0` | `io_uring` backend | Differential, cancellation, stale completion, fallback, and overload tests pass |
 | `0.82.0` | Optional eBPF/AF_XDP fast path | Installed rules remain a verified subset of live core authority and fail closed |
+| `0.82.1` | Fast-path revocation closure | Revocation, expiry, map loss, reuse, and reconciliation cannot leave kernel authority broader or longer-lived than core state |
 
 ## Phase G: Extensions and Final Assurance
 

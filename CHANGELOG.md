@@ -4,7 +4,13 @@ All notable changes to `gjallarbru` are documented here.
 
 ## Unreleased
 
-No changes yet.
+- Expanded the pre-1.0 plan with deterministic reducer, parser-safety,
+  freestanding, cryptographic-provider, resource-accounting, model-assurance,
+  buffer-ownership, batching, and fast-path revocation closure milestones.
+- Added a requirement-evidence milestone that permits `verified` status only
+  for semantically refined rules with resolved symbols and tests observed by CI.
+- Corrected the design contract for receive-side STUN padding and legal UDP
+  ChannelData alignment before wire implementation begins.
 
 ## 0.2.0 - 2026-07-14
 

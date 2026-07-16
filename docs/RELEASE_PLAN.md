@@ -125,6 +125,16 @@ Current closure decisions are:
 | Future readiness could be a one-time standards review. | API/config evolution, scheduled standards review, extension policy, and first-party provenance gates are `v0.108.0` through `v0.110.0`. |
 | Formal, fuzz, packaging, operations, specification closure, and external audit could be postponed past 1.0. | Assigned to `v0.93.0`, `v0.94.0`, and `v0.111.0` through `v0.115.0`. |
 | Separate public crates could leave users without a coherent `gjallarbru::` entry point or allow facade documentation to drift. | `v0.55.1` admits a no_std facade, stable namespaced re-exports, root-README parity, and facade-last publication. |
+| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the pure-reducer contract; `v0.23.1` proves its implementation with byte-identical replay and all-or-nothing transitions. |
+| A protocol or credential name without a standard or project specification could silently acquire authority. | `v0.2.1` requires a reviewed mechanism registry; names such as `STUN-DEREF` remain unsupported until a threat model, key domain, wire assignment, and requirement evidence exist. |
+| `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds freestanding no-allocator downstream fixtures, stack evidence, feature-matrix checks, and qualified bounded storage contracts. |
+| Receive padding, post-integrity attributes, repeated scans, or ChannelData datagram alignment could be implemented with subtly incorrect semantics. | `v0.5.1`, `v0.8.1`, `v0.15.1`, and `v0.22.1` close parser progress, nonzero receive padding, authenticated views, legal UDP forms, complexity, and operation ceilings. |
+| Broad crypto traits or ordinary secret types could hide allocation, key export, variable output, timing, or provider-failure behavior. | `v0.17.1`, `v0.19.1`, and `v0.26.1` define capability-specific providers, secret wrappers, scatter integrity, fail-closed errors, opaque handles, and timing qualification. |
+| Transaction equality or response caching could rely on a weak digest or item count while ignoring collision and byte-exhaustion risk. | `v0.30.1` requires keyed cryptographic-strength identity and independent cached-response byte budgets. |
+| Allocation/copy/task accounting and formal state evidence could arrive only after the first real packet and relay paths. | `v0.31.1` instruments the first runtime hot path; `v0.39.1` moves reference-model and bounded model checking into two-phase allocation work. |
+| Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
+| Batching or kernel acceleration could treat partial sends, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes batch completion semantics and `v0.82.1` closes fast-path revocation, reuse, expiry, and reconciliation. |
+| Keyword anchors could be marked verified by plausible-looking strings without semantic refinement, a real symbol, or an executed test. | `v0.2.2` adds semantic child requirements and a CI evidence manifest that resolves implementation symbols and records observed test execution. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -172,6 +182,71 @@ Exit criteria:
 - No normative base section is silently absent or marked complete without a
   test and implementation reference.
 - Stop: `v0.2.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.1 - Deterministic Architecture Contract
+
+Goal: freeze every input, side-effect, ownership, and failure boundary required
+for a deterministic sans-I/O reducer before protocol APIs become compatibility
+constraints.
+
+Deliverables:
+
+- an ADR defining identical output/state for identical initial state,
+  immutable configuration, ordered events, supplied monotonic/absolute times,
+  entropy completions, and provider completions;
+- all-or-nothing command and encoded-output preflight, explicit equal-tick,
+  duplicate/decreasing/wrapping time rules, and wall-clock rollback isolation;
+- generation-tagged entropy request/completion, buffer-lease, provider, and
+  runtime-operation contracts with purpose and length domains;
+- synchronous bounded callback-free storage requirements, complexity/capacity
+  guarantees, capability-shaped runtime commands, and typestate boundaries;
+- a mechanism-admission register requiring a specification, threat model, key
+  domain, wire identifier, and requirement entries before an internal name can
+  acquire protocol authority; `STUN-DEREF` is explicitly unsupported/unassigned.
+
+Verification:
+
+- executable reducer examples replayed twice for byte-identical command/state output
+- ADR review matrix covering capacity failure, equal/decreasing time, entropy
+  failure, stale completion, lease reuse, storage misbehavior, and unknown names
+
+Exit criteria:
+
+- No core API can hide time, entropy, blocking work, allocation, partial side
+  effects, buffer lifetime, or an unspecified protocol mechanism.
+- Stop: `v0.2.1 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.2 - Executed Requirement Evidence
+
+Goal: ensure `verified` means a semantically reviewed rule is connected to
+real implementation and test execution, not merely populated metadata.
+
+Deliverables:
+
+- a refinement format linking extracted keyword anchors to one or more semantic,
+  independently testable requirements without losing source-line provenance;
+- repository symbol resolution for every implemented/verified requirement and
+  rejection of missing, private-to-the-wrong-component, generated-only, or stale symbols;
+- a deterministic CI evidence manifest recording the exact named tests observed
+  in the release run, with profile, feature, target, and toolchain context;
+- status-transition rules requiring reviewed semantic scope, real symbol,
+  executed positive/negative tests, and applicable RFC/errata evidence before
+  `verified`, while exclusions retain explicit decision evidence;
+- negative fixtures for invented symbols, unexecuted/renamed tests, duplicate
+  semantic children, orphan anchors, and evidence from a different profile.
+
+Verification:
+
+- `scripts/validate-requirements.sh` against synthetic real/missing/stale symbol
+  and executed/unexecuted test manifests
+- a fixture test intentionally removed from execution must prevent its
+  requirement from becoming or remaining `verified`
+
+Exit criteria:
+
+- No requirement can claim verification unless CI for the exact candidate
+  resolves its implementation and observes its declared tests in the right profile.
+- Stop: `v0.2.2 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.3.0 - IANA Snapshot Tooling
 
@@ -234,6 +309,34 @@ Exit criteria:
 - Protocol code has no unchecked direct indexing or wrapping offset math.
 - Stop: `v0.5.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.5.1 - Hostile-Input Parser Foundation
+
+Goal: make linear progress, termination, and resource ceilings executable
+properties before higher-level wire parsing begins.
+
+Deliverables:
+
+- one checked offset/length/padding implementation with structural padding
+  validation, receive-side padding-value ignorance, and zero-only encoding;
+- fused failure behavior, minimum successful progress, no recursion or
+  attacker-controlled backtracking, and explicit message/attribute ceilings;
+- fixed scan and cryptographic-operation budgets plus an admission rule against
+  repeated attribute rescans that create attacker-controlled quadratic work;
+- first-change fuzz smoke harnesses, no-panic boundary corpus, and allocation/
+  copy counters available to every later wire milestone.
+
+Verification:
+
+- arbitrary byte and offset/length/padding property tests, including nonzero padding
+- fuzz smoke proving success advances, failure terminates, and configured work
+  ceilings cannot be exceeded
+
+Exit criteria:
+
+- Later parsers have one bounded mechanical foundation and cannot reinterpret
+  padding-value bytes as a receive-side validity condition.
+- Stop: `v0.5.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.6.0 - Generational Bounded Storage
 
 Goal: make fixed capacity and stale-handle rejection foundational.
@@ -253,6 +356,34 @@ Exit criteria:
 
 - No reusable core object can be addressed by an unversioned index.
 - Stop: `v0.6.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.1 - Freestanding and Storage Qualification
+
+Goal: prove that `no_std` means usable without an operating system or global
+allocator, not merely compilable for a hosted target.
+
+Deliverables:
+
+- a freestanding downstream fixture with no global allocator, no OS imports,
+  caller-owned stores/command buffers, in-place initialization, and fixed panic handling;
+- `--no-default-features`, every supported feature combination, and representative
+  bare-metal target builds with measured stack/static-memory footprints;
+- qualified storage implementations whose operations are synchronous, bounded,
+  callback-free, non-blocking, and documented with maximum complexity/capacity;
+- construction rules preventing large fixed arrays from being copied through the
+  stack and production-claim gates excluding unqualified custom storage.
+
+Verification:
+
+- compile/link fixture with allocator symbols forbidden and OS imports scanned
+- stack-size, in-place construction, capacity/exhaustion, feature-matrix, and
+  malicious storage-contract fixture tests
+
+Exit criteria:
+
+- The portable core can be integrated with caller-owned memory on a freestanding
+  target, and production claims name only qualified storage implementations.
+- Stop: `v0.6.1 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 
@@ -282,7 +413,8 @@ Goal: iterate exact attribute ranges without allocation or semantic loss.
 Deliverables:
 
 - borrowed raw attributes with header/value/padded ranges;
-- duplicate/unknown preservation and truncated/padding error reporting.
+- duplicate/unknown preservation and structural truncation/padding reporting
+  without rejecting nonzero receive padding octets.
 
 Verification:
 
@@ -294,6 +426,38 @@ Exit criteria:
 - Unknown and duplicate attributes remain available to later RFC-ordered
   semantic validation.
 - Stop: `v0.8.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.8.1 - Authenticated Attribute Boundary
+
+Goal: separate byte-preserving diagnostics from the attributes permitted to
+influence authenticated STUN semantics.
+
+Deliverables:
+
+- structural padding presence/length validation that accepts arbitrary receive
+  padding octets while retaining original covered bytes and emitting zeros;
+- a fused iterator whose success always advances by at least one attribute
+  header and whose first failure permanently terminates iteration;
+- one bounded inventory/pass for duplicates, unknowns, method validation, and
+  integrity positions rather than repeated attacker-controlled rescans;
+- raw diagnostic visibility for attributes after MESSAGE-INTEGRITY, while the
+  authenticated semantic view ignores them except for the RFC-permitted later
+  integrity and FINGERPRINT attributes;
+- typestate transitions from raw frame through basic STUN and authenticated
+  request, preventing unauthenticated values from acquiring method authority.
+
+Verification:
+
+- nonzero padding, truncation, duplicate, post-integrity, and permitted-later-
+  attribute corpora with exact original-byte assertions
+- iterator progress/fusion properties and scan-count instrumentation at maximum
+  attribute count
+
+Exit criteria:
+
+- Diagnostic bytes remain observable without allowing ignored or unauthenticated
+  attributes to affect 420 responses, method schemas, policy, or state.
+- Stop: `v0.8.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.9.0 - STUN and ChannelData Classifier
 
@@ -445,7 +609,8 @@ Goal: encode and decode ChannelData correctly on datagram and stream transports.
 Deliverables:
 
 - borrowed channel/payload views and caller-buffer encoder;
-- channel range, declared length, datagram exactness, and stream padding rules.
+- channel range, declared length, both legal UDP datagram lengths, and stream
+  padding rules.
 
 Verification:
 
@@ -456,6 +621,33 @@ Exit criteria:
 
 - Stream padding is consumed correctly and never counted as peer payload.
 - Stop: `v0.15.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.15.1 - UDP ChannelData Alignment Closure
+
+Goal: implement RFC 8656 datagram alignment without confusing legal optional
+padding with arbitrary trailing data.
+
+Deliverables:
+
+- transport-aware datagram decoding that accepts exactly the declared frame or
+  its legal four-byte-aligned padded form;
+- byte-preserving diagnostics for legal datagram padding, zero-padding encoding,
+  and strict rejection of every other excess length;
+- stream behavior kept distinct so mandatory stream alignment cannot leak into
+  UDP exactness or payload length.
+
+Verification:
+
+- exhaustive payload-length modulo-four tests for unpadded UDP, padded UDP,
+  stream padding, nonzero received padding, and every short/excess length
+- datagram/stream differential properties proving payload bytes and consumed
+  lengths remain transport-correct
+
+Exit criteria:
+
+- Both RFC-legal UDP encodings interoperate and no arbitrary trailing octet is
+  admitted as ChannelData.
+- Stop: `v0.15.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.16.0 - STUN Caller-Buffer Encoder
 
@@ -498,6 +690,37 @@ Exit criteria:
 - FINGERPRINT is calculated over the exact required bytes and can only be last.
 - Stop: `v0.17.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.17.1 - Crypto Provider and Secret Contract
+
+Goal: define narrow, allocation-free cryptographic capabilities and secret
+ownership before integrity algorithms become public APIs.
+
+Deliverables:
+
+- separate fixed-output traits for HMAC-SHA-1, HMAC-SHA-256, MD5, SHA-256, and
+  entropy, with fixed-size contexts/outputs and incremental fixed-segment input;
+- opaque key-handle support plus explicit `Unsupported`, `InvalidKey`,
+  `Unavailable`, and `InternalFailure` outcomes that always fail closed;
+- provider verification or mandatory first-party constant-time comparison for
+  public valid tag lengths, with no callback access to protocol policy/state;
+- non-Copy/non-Clone-by-default secret wrappers with redacted formatting,
+  tightly scoped byte exposure, no ordinary equality, and documented
+  best-effort zeroization limits;
+- provider qualification rules covering internal allocation, blocking,
+  key-copying, logging, output length, and constant-time claims.
+
+Verification:
+
+- compile-time secret trait assertions, redaction/log tests, provider
+  substitution, fixed-output mismatch, unavailable/failure, and opaque-key tests
+- no_std/MSRV checks plus allocation instrumentation for every first-party provider path
+
+Exit criteria:
+
+- Protocol code cannot select arbitrary algorithms through one broad enum,
+  export secrets by convenience, or treat provider failure as authentication.
+- Stop: `v0.17.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.18.0 - Legacy Message Integrity
 
 Goal: support legacy long-term credentials without making them the modern core.
@@ -536,6 +759,37 @@ Exit criteria:
 
 - SHA-256 is the hardened profile and legacy fallback is never implicit.
 - Stop: `v0.19.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.19.1 - Integrity Failure Closure
+
+Goal: make every integrity range, truncation, provider, and response-key
+uncertainty explicit and fail closed.
+
+Deliverables:
+
+- scatter input over original header bytes, synthetic adjusted length, and
+  original bytes through the exact integrity boundary without packet mutation/copy;
+- MESSAGE-INTEGRITY-SHA256 length policy admitting only usage-permitted
+  16-to-32-byte values in four-byte increments;
+- mixed legacy/modern attribute, ordering, algorithm, key-generation, key-ID,
+  output-length, and downgrade rejection matrices;
+- mandatory failure when a required response-integrity key cannot be selected
+  or a provider returns unsupported, unavailable, stale, or internal failure;
+- constant-time comparison claims scoped to valid public lengths and backed by
+  provider review rather than inferred from a trait signature.
+
+Verification:
+
+- original-byte scatter versus reference-copy differential vectors, including
+  adjusted header lengths and post-integrity bytes
+- every truncation length, provider error, stale key, mixed-integrity ordering,
+  downgrade, and missing-response-key negative fixture
+
+Exit criteria:
+
+- No malformed length, provider ambiguity, or key-selection failure can produce
+  an authenticated request or an unauthenticated success response.
+- Stop: `v0.19.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.20.0 - USERHASH and Text Preparation
 
@@ -623,6 +877,34 @@ Exit criteria:
   ready for independent crates.io API review.
 - Stop: `v0.22.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.22.1 - Wire Resource and Typestate Closure
+
+Goal: close algorithmic, allocation, copy, and validation-stage hazards before
+stateful server work consumes the wire APIs.
+
+Deliverables:
+
+- enforced message, attribute, scan, cryptographic-operation, recursion, and
+  backtracking ceilings with linear-work evidence for admitted frames;
+- fail-after-startup allocator and copy counters covering errors, unknown lists,
+  stream retention, integrity, Unicode adapters, and response construction;
+- fixed-size unknown/duplicate inventories and typed transitions from
+  `FrameView` through basic, authenticated, and method-valid views;
+- fuzz targets promoted from every parser milestone plus corpora for nonzero
+  padding, post-integrity attributes, truncated tags, and all boundary lengths.
+
+Verification:
+
+- maximum-size work counters and adversarial repeated-attribute complexity tests
+- fail-allocator/copy-count tests, typestate compile-fail fixtures, fuzz smoke,
+  Miri-safe borrowed-view tests, and guaranteed iterator termination
+
+Exit criteria:
+
+- Wire APIs expose only bounded validation stages, and claimed no-allocation/
+  zero-copy paths have executable evidence rather than convention.
+- Stop: `v0.22.1 implementation stop reached. Run pentest for this exact commit.`
+
 ## Phase C: STUN Server Core
 
 ### v0.23.0 - Sans-I/O Event and Command API
@@ -643,6 +925,38 @@ Exit criteria:
 
 - Core processing performs no I/O, clock read, heap allocation, or escaping borrow.
 - Stop: `v0.23.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.1 - Atomic Deterministic Reducer
+
+Goal: implement the v0.2.1 reducer contract so a transition is either fully
+planned or observationally absent.
+
+Deliverables:
+
+- byte-identical command and resulting-state replay for identical configuration,
+  events, supplied times, entropy results, and provider completions;
+- preflight of command count, encoded bytes, leases, and reservations before
+  mutation, with `OutputCapacity` leaving state and outputs unchanged;
+- runtime execution rule forbidding command consumption until `step` succeeds,
+  including rollback-free response encoding failure;
+- explicit ordered time events with equal/decreasing/wrap behavior and separation
+  of monotonic lifetimes from absolute credential validity;
+- purpose-bound entropy request/completion and generation-tagged lease/operation
+  events that make duplicate, delayed, and stale results inert;
+- capability command types whose adapters cannot widen endpoints, lifetime,
+  quota, key domain, or other core-authorized fields.
+
+Verification:
+
+- snapshot/replay properties across event sequences and every capacity boundary
+- fault injection at each preflight/encode/entropy/provider/lease stage proving
+  state, counters, command sinks, and runtime side effects remain unchanged
+
+Exit criteria:
+
+- Partial command emission, implicit randomness/time, and adapter-widened
+  authority are unrepresentable through the core transition API.
+- Stop: `v0.23.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -702,6 +1016,37 @@ Exit criteria:
 
 - Credential sources cannot mutate allocations or expose plaintext passwords.
 - Stop: `v0.26.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.26.1 - Credential Timing and Provider Assurance
+
+Goal: minimize identity-dependent timing leakage and qualify credential
+providers without overstating what a trait can guarantee.
+
+Deliverables:
+
+- known-user and unknown-user paths performing equivalent derivation/HMAC work
+  with a per-domain dummy derived key and normalized failure ordering;
+- bounded positive/negative caches with equivalent lookup, timeout, retry, and
+  eviction policy where security permits;
+- opaque key handles, provider substitution, stale-generation, cancellation,
+  output-size, unavailable, and internal-failure behavior;
+- a qualification profile distinguishing first-party constant-time comparison
+  from provider/database/network latency that cannot be guaranteed constant;
+- logging/metrics tests ensuring identities, keys, dummy-path distinctions, and
+  provider timing classes are not exposed.
+
+Verification:
+
+- statistical known/unknown-user leakage tests under controlled providers plus
+  deterministic work-counter equality
+- provider differential, HSM-style opaque-handle, cache hit/miss/negative,
+  timeout, stale completion, cancellation, and failure-path matrices
+
+Exit criteria:
+
+- Unknown identity handling performs equivalent cryptographic work, provider
+  failure never authenticates, and timing claims state their measured boundary.
+- Stop: `v0.26.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.27.0 - Long-Term Authentication Pipeline
 
@@ -782,6 +1127,35 @@ Exit criteria:
 - One transaction can trigger each external side effect at most once.
 - Stop: `v0.30.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.1 - Transaction Identity and Byte Budgets
+
+Goal: prevent digest collision or response-byte exhaustion from confusing
+transaction equality and replay behavior.
+
+Deliverables:
+
+- per-process keyed cryptographic-strength request identity with sufficient
+  width, domain separation, and method/path/transaction binding;
+- exact-byte or collision-resolving semantic evidence sufficient to distinguish
+  same-key different-request input without trusting a collision-prone digest;
+- independent item, retained-request-byte, and cached-response-byte ceilings
+  with deterministic admission, eviction, and reconstructable-response policy;
+- cached response identity bound to authentication/profile/configuration
+  generation so stale policy cannot be replayed after change.
+
+Verification:
+
+- forced-collision test provider, same-key/different-byte corpus, digest-domain,
+  configuration-generation, eviction, and expiry properties
+- response-size/exhaustion tests proving byte ceilings hold independently of
+  record count and no mismatched response is replayed
+
+Exit criteria:
+
+- Transaction idempotence never relies solely on a weak/colliding digest, and
+  cached bytes cannot exceed their explicit resource budget.
+- Stop: `v0.30.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -801,6 +1175,34 @@ Exit criteria:
 
 - Real socket behavior matches synthetic core vectors and remains bounded.
 - Stop: `v0.31.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.31.1 - First Hot-Path Resource Baseline
+
+Goal: instrument allocation, copying, tasks, descriptors, and retained bytes
+from the first real packet path instead of retrofitting evidence after tuning.
+
+Deliverables:
+
+- fail-after-startup allocator mode and allocation/copy counters around receive,
+  parse, core transition, encode, queue, send, error, and drop paths;
+- proof that no task, future, timer object, external lookup, or growable stream/
+  response buffer is created per packet;
+- file-descriptor, buffer-lease, queue-item, transaction-response-byte, and
+  shutdown reconciliation counters with stable metrics;
+- baseline latency/throughput/copy reports retained for later scalar/batched/
+  accelerated differential comparison.
+
+Verification:
+
+- successful, malformed, output-capacity, queue-full, send-failure, and shutdown
+  tests under fail-after-startup allocation
+- copy/task/descriptor/byte-counter assertions plus sustained loopback churn
+
+Exit criteria:
+
+- The first production-shaped UDP path has executable resource evidence, and
+  later acceleration cannot redefine the baseline semantics.
+- Stop: `v0.31.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.32.0 - IPv6 and Dual-Stack Binding Runtime
 
@@ -986,6 +1388,34 @@ Exit criteria:
 - Duplicate Allocate cannot create two relays and failed opens leak no state.
 - Stop: `v0.39.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.39.1 - Early State-Model Assurance
+
+Goal: move mechanical state assurance into the first external-resource
+transition rather than waiting for the late whole-project assurance milestone.
+
+Deliverables:
+
+- a simple executable allocation reference model covering provisional,
+  committed, failed, timed-out, disconnected, and released states;
+- generated traces containing duplicate, reordered, delayed, stale-generation,
+  capacity-failed, entropy-failed, and output-capacity-failed events;
+- bounded Kani/model harnesses for small slabs, timers, reservations, operation
+  generations, counters, and command atomicity;
+- promoted counterexamples as ordinary regression tests and a reusable model
+  harness required by later permission/channel/TCP state milestones.
+
+Verification:
+
+- model-versus-core differential sequences across every small-capacity state
+- Kani/property checks for uniqueness, rollback completeness, counter bounds,
+  stale-event inertness, and at-most-once external side effects
+
+Exit criteria:
+
+- Two-phase allocation invariants have executable model evidence before the
+  portable relay runtime becomes the reference for later features.
+- Stop: `v0.39.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.40.0 - Portable Relay Socket Adapter
 
 Goal: execute exact UDP relay open/close/send commands with safe portable sockets.
@@ -1167,6 +1597,35 @@ Exit criteria:
 
 - ChannelData never outlives either its channel binding or peer-IP permission.
 - Stop: `v0.47.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.47.1 - Relay Buffer-Lease Ownership
+
+Goal: make zero-copy relay output safe across asynchronous runtime completion
+and receive-buffer reuse.
+
+Deliverables:
+
+- generation-tagged runtime-owned receive leases with explicit retain/release
+  commands and no ordinary borrowed slice escaping a core transition;
+- scatter/gather transmit plans combining generated headers/padding with
+  immutable payload segments and exact completion ownership;
+- operation, allocation, worker-epoch, and buffer-generation binding for every
+  delayed send completion, cancellation, retry, drop, and shutdown path;
+- bounded fallback-copy policy for platforms/providers that cannot retain a
+  lease, with separate copy accounting and no semantic drift.
+
+Verification:
+
+- Miri and model tests for reuse, aliasing, double release, stale completion,
+  partial send, cancellation, queue failure, disconnect, and shutdown
+- scatter output differential tests against canonical contiguous encoding plus
+  lease/copy/exhaustion counter assertions
+
+Exit criteria:
+
+- No relay command can observe reused receive storage, and a lease remains live
+  exactly until its final runtime completion or explicit cancellation.
+- Stop: `v0.47.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.48.0 - IPv6 Relays
 
@@ -1985,6 +2444,35 @@ Exit criteria:
 - Batching measurably improves target workloads and never changes authorization decisions.
 - Stop: `v0.79.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.79.1 - Batch Completion Semantics
+
+Goal: prove that syscall batching changes amortization only, including partial
+success and stale-result behavior.
+
+Deliverables:
+
+- normalized receive events retaining remote address, local destination,
+  transport, truncation state, buffer generation, operation ID, and worker epoch;
+- scalar core invocation for every admitted packet with bounded per-batch
+  fairness and no batch-wide authorization shortcut;
+- send completion plans distinguishing sent, unsent, retryable, permanently
+  failed, cancelled, and stale packets without reporting unsent work as success;
+- deterministic queue/retry ordering and reconciliation counters across
+  `recvmmsg`, `sendmmsg`, and portable fallback.
+
+Verification:
+
+- scalar-versus-batched differential traces for all batch sizes, partial-send
+  positions, error mixes, truncation, stale buffers, and worker epochs
+- syscall fault injection plus accounting proving each packet is completed,
+  retried, or dropped exactly once
+
+Exit criteria:
+
+- Batch boundaries and partial syscalls cannot alter path identity, core
+  decisions, lease ownership, counters, or completion truth.
+- Stop: `v0.79.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.80.0 - Buffer Pools and Scatter/Gather
 
 Goal: prove zero allocator calls and avoid unnecessary payload copies on the hot path.
@@ -2044,6 +2532,35 @@ Exit criteria:
 
 - Kernel rules cannot create, refresh, broaden, or outlive core authorization.
 - Stop: `v0.82.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.82.1 - Fast-Path Revocation Closure
+
+Goal: make revocation, expiry, reuse, and reconciliation authoritative even
+when packets bypass the ordinary userspace relay path.
+
+Deliverables:
+
+- remove-or-invalidate-before-reuse ordering for allocation/channel/policy
+  generations and emergency revocation;
+- kernel expiry that is never later than core expiry, with bounded clock/
+  epoch translation and fail-closed uncertainty;
+- map loss, eviction, reload, worker restart, reconciliation failure, and
+  partial update behavior that drops or returns traffic to the slow path;
+- rules binding generation, direction, endpoints, policy epoch, quotas, expiry,
+  and worker ownership, plus complete install/remove/reconcile audit evidence.
+
+Verification:
+
+- revoke/reuse races, expiry boundary, clock skew, map loss/eviction, partial
+  update, restart, stale epoch, and reconciliation-failure model tests
+- fast-path-disabled/slow-path differential traffic and authorization suite
+  with rule/core inventory reconciliation under load
+
+Exit criteria:
+
+- No kernel rule survives authority revocation or identifier reuse, and any
+  uncertain fast-path state becomes inert before traffic is admitted.
+- Stop: `v0.82.1 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase G: Extended TURN Profiles and Assurance Foundations
 

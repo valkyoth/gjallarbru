@@ -201,8 +201,10 @@ injects both; the core never reads a clock.
 ### 6.1 Checked cursor
 
 A small internal cursor owns all length and offset arithmetic. It uses checked
-addition, bounds-checked slice methods, exact 4-byte padding rules, and stable
-parse errors. No generic parser or serialization framework is used.
+addition, bounds-checked slice methods, exact structural 4-byte padding rules,
+and stable parse errors. Receivers validate that calculated padding is present
+but ignore its octet values; encoders always write zero padding. No generic
+parser or serialization framework is used.
 
 ### 6.2 Borrowed views
 
@@ -215,6 +217,12 @@ unknown methods and negotiation bits remain bounded and inert until an extension
 profile explicitly assigns semantics. ALTERNATE-SERVER, ALTERNATE-DOMAIN, 300
 Try Alternate, and security-feature negotiation have explicit loop, trust,
 realm, and downgrade policy.
+
+The raw view can retain attributes after MESSAGE-INTEGRITY for diagnostics, but
+the authenticated semantic view ignores them except for integrity/fingerprint
+attributes explicitly permitted there by RFC 8489. Attribute iteration is
+fused, always advances on success, terminates on failure, and feeds one bounded
+inventory so later validation cannot repeatedly rescan attacker-controlled input.
 
 ### 6.3 Validation stages
 
@@ -241,6 +249,10 @@ returns a length without partially committing a failed message.
 The stream framer accepts arbitrary partial reads and coalesced frames, caps
 retained bytes and frame counts, and applies ChannelData stream padding without
 including it in the ChannelData length.
+
+UDP ChannelData accepts either the exact declared datagram length or its legal
+four-byte-aligned padded form. Every other trailing length is rejected. Received
+padding values are ignored and generated padding is zero.
 
 ## 7. Authentication and Cryptography
 
@@ -279,6 +291,20 @@ caller-provided command sink allows one event to emit several bounded actions.
 Borrowed packet data must be consumed before event handling returns or replaced
 by an explicit runtime-owned buffer lease.
 
+The core is a pure reducer: identical initial state, immutable configuration,
+ordered events, supplied monotonic/absolute times, entropy results, and provider
+completions produce byte-identical commands and identical resulting state.
+Every transition preflights command count, output bytes, leases, and reservations;
+insufficient capacity or encoding failure leaves state and output unchanged.
+The runtime executes commands only after the transition succeeds.
+
+Entropy is explicit asynchronous authority, not a hidden synchronous callback.
+The core emits purpose/length-bound entropy requests and consumes
+generation-tagged completion events. Equal, duplicate, decreasing, delayed, and
+wrapping monotonic observations have specified ordering behavior; wall-clock
+rollback can affect credential validity only through its separate absolute-time
+policy and never extends monotonic allocation lifetimes.
+
 Required invariants include:
 
 - one live owner per relay address;
@@ -308,9 +334,12 @@ channels, reuse blocks, transactions, reservations, nonces, credentials,
 pending operations, TCP connections, mobility overlap, and fast-path rules.
 Stale timer entries are ignored by generation rather than searched and removed.
 
-The transaction cache records a request digest and pending/completed outcome.
-An exact retransmission repeats no side effect and reuses the prior response;
-the same transaction key with different bytes is treated as suspicious.
+The transaction cache records a per-process keyed cryptographic-strength request
+identity and pending/completed outcome. An exact retransmission repeats no side
+effect and reuses the prior response; the same transaction key with different
+bytes is treated as suspicious. Collision resolution retains enough original
+byte/semantic evidence to avoid trusting the digest alone, while request and
+cached-response bytes have ceilings independent of record count.
 
 ## 10. TURN Processing
 
@@ -343,6 +372,13 @@ scatter-gather buffers, then `io_uring` only after measurement. Optional eBPF
 and AF_XDP can filter or accelerate already-authorized plaintext UDP paths but
 cannot authenticate, create state, refresh lifetimes, or independently decide
 policy.
+
+Batched receives preserve remote address, local destination, transport,
+truncation, operation, worker epoch, and buffer generation for every scalar core
+transition. Partial sends report unsent packets truthfully. Fast-path rules are
+removed or invalidated before authority reuse, never expire later than core
+authority, and drop or return to the slow path on map loss or reconciliation
+uncertainty.
 
 Windows, BSD, and macOS use platform event and batching facilities behind the
 same runtime command contract. Android and iOS embed the portable runtime
