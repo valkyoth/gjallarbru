@@ -27,6 +27,10 @@ All notable changes to `gjallarbru` are documented here.
   IDs, a portable release/acquire publication model, pre-listener internet
   ingress budgets, canonical/effective destination handling, exact charge
   lifecycles, and plan-bound finalizer dependency slots.
+- Added linear ingress-work permits with monotonic refill, reserved
+  authoritative control progress, strict prepared-transition ownership and
+  scrubbing, bounded non-authoritative snapshots, and generation-safe
+  translation lifecycle rules backed by a checksum-locked RFC 6052 source.
 
 ## 0.2.0 - 2026-07-14
 

@@ -3,6 +3,7 @@
 5769 https://www.rfc-editor.org/rfc/rfc5769.txt test-vectors
 5780 https://www.rfc-editor.org/rfc/rfc5780.txt behavior-discovery
 5928 https://www.rfc-editor.org/rfc/rfc5928.txt turn-dns-resolution
+6052 https://www.rfc-editor.org/rfc/rfc6052.txt ipv6-embedded-ipv4
 6062 https://www.rfc-editor.org/rfc/rfc6062.txt tcp-relay
 6679 https://www.rfc-editor.org/rfc/rfc6679.txt ecn-check
 7064 https://www.rfc-editor.org/rfc/rfc7064.txt stun-uri

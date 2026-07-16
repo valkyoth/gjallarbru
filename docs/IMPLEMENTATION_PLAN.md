@@ -54,6 +54,7 @@ encoding, authentication ordering, validation, state, and relay authority.
 | `turn-stream` | RFC 8656 | TCP and TLS client transports and stream framing |
 | `endpoint-uri` | RFC 7064, RFC 7065 | Standard STUN/STUNS and TURN/TURNS endpoint URIs |
 | `turn-discovery` | RFC 5928, RFC 8155 | DNS resolution and auto-discovery deployment behavior |
+| `ip-translation` | RFC 6052 | IPv4-embedded IPv6 formats and validated NAT64 prefix handling |
 | `auth-text` | RFC 7376, RFC 8265 | Authentication threat analysis and current PRECIS profiles |
 | `turn-tls` | RFC 7443, RFC 9325 | ALPN identity and current TLS deployment policy |
 | `turn-dtls` | RFC 7350, RFC 9147, RFC 9325 | DTLS 1.2 transport, DTLS 1.3 disposition, and secure policy |
@@ -343,15 +344,27 @@ workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds
 the event, state revision, configuration generation, and worker epoch.
 Preparation performs parsing, authentication, policy scans, encoding planning,
-and other attacker-controlled work at most once.
+and other attacker-controlled work at most once. Client-ingress preparation
+requires the linear finite ingress-work permit defined before the public UDP
+runtime; authoritative control events instead consume their reserved control lane.
+
+`PreparedTransition` is single-consume, worker-local, and normally `!Send` and
+`!Sync`. It cannot survive an await, callback return, receive-buffer reuse, or
+the synchronous prepare/acquire/commit scope unless an explicit bounded,
+generation-tagged lease owns every referenced input and output. Its identity
+includes input-buffer, derived-key, output-plan, configuration, and worker
+generations. Discard scrubs derived keys, integrity tags, nonces, and
+credential-derived response material in the workspace. Stack/static footprint
+and alignment have explicit ceilings, and no implicit copy of the workspace is
+allowed. The no-escaping-borrow rule applies to this intermediate object.
 
 The runtime acquires one exact single-use command-batch permit from those
 requirements. Acquisition has bounded constant/declared work, limits
 outstanding permits and total reserved slots/bytes, and cannot retry
 preparation, incrementally hoard queue capacity, or expose excess capacity to
 the reducer. A too-old prepared transition or insufficient capacity is
-discarded without mutation and may be retried only as a new external event
-under its ordinary work budget.
+discarded without mutation. Only droppable client ingress may be retried as a
+new external event under a newly acquired ingress-work permit.
 
 The permit binds worker, queue, and configuration generations. Failed commit,
 cancellation, dropped permit, shutdown, queue resize/restart, and worker
@@ -370,6 +383,24 @@ A crash before publication invalidates the prepared state and reserved slots
 through the worker epoch; recovery never treats either side as committed.
 Partial batch acceptance is prohibited, while later OS execution remains
 explicitly non-atomic and completion-driven.
+
+Events are classified as droppable ingress or authoritative control events.
+When a command creates authoritative external work, admission reserves a
+separate control lane for its worst-case terminal completion, compensation,
+cancellation, shutdown reconciliation, and any ownership release. Expiry and
+revocation progress have their own finite reserve. Packet delivery, metrics,
+and new ingress cannot consume these slots. The reserve is bounded globally
+and per worker/operation, and its use/refill is deterministic, so a full packet
+queue cannot block the completion needed to release resources.
+
+Owner-generated snapshots are fixed-size, redacted, versioned observations.
+They contain no keys, credentials, packet bodies, raw tenant identities, or
+capability-bearing handles; are bound to worker epoch and configuration
+generation; and cannot authorize, validate a completion, or drive recovery.
+Publication frequency, retained generations, reader leases, and reclamation
+work are bounded. Slow readers receive an explicit stale/overrun result after
+reload, restart, ownership replacement, or retention expiry rather than
+pinning unbounded historical state.
 
 Runtime effects use a composite envelope rather than mutually exclusive
 classes. Orthogonal properties describe semantic authority, retained-resource
@@ -523,12 +554,20 @@ instead of inferred from operating-system defaults.
 
 ## 12. Security Policy
 
-Before the first public UDP listener becomes functional, global, listener, and
-worker ingress budgets limit packets, bytes, parsing work, HMAC attempts,
-credential lookups, and error-response bytes. Charges occur before expensive
-work, use deterministic exhaustion behavior, and include spoofed-source and
-amplification-safe policies. Binding therefore never ships as an unbudgeted
-internet-facing CPU or response-amplification path.
+Before the first public UDP listener becomes functional, a cheap admission
+transition uses only listener identity, datagram length, trusted receive
+metadata, and injected monotonic time to acquire one linear
+`IngressWorkPermit`. The permit carries finite global/listener/worker
+allowances for packet and parse bytes/operations, HMAC attempts, credential
+lookup admission, error-response bytes, and preparation workspace. Preparation
+consumes but cannot refill or transfer those allowances; permit failure occurs
+before attacker-controlled parsing or authentication work.
+
+Attempt charges are never restored by malformed input, preparation/command
+failure, cancellation, or dropped response. Capacity recovers only through
+deterministic saturating monotonic token-bucket refill with explicit burst and
+rate ceilings. This includes spoofed-source and amplification-safe policy, so
+Binding never ships as an unbudgeted internet-facing CPU or response path.
 
 Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
 functional, every received destination becomes one canonical and effective
@@ -537,6 +576,14 @@ prefixes are de-embedded and checked as both IPv6 and effective IPv4;
 unspecified, multicast, broadcast, and inappropriate link-local/scope forms are
 rejected; IPv6 equality includes interface/scope where required; and local
 listener/control comparisons occur after bind/public-address translation.
+
+The canonical result includes translation-profile and public-address-map
+generations. NAT64 prefixes accept only RFC 6052-supported lengths, overlapping
+or ambiguous matches fail closed, and at most one configured translation step
+is applied. Permission, channel, transaction, and cached policy decisions
+either pin the exact mapping generation for their lifetime or follow an
+explicit invalidation/teardown rule when mappings change; they can never be
+silently reinterpreted under a replacement mapping.
 
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,

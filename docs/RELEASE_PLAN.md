@@ -109,7 +109,7 @@ Current closure decisions are:
 | Current STUN/TURN base and IPv6 could be mistaken for RFC 5389/5766/6156 layering. | RFC 8489 and RFC 8656 are the base from `v0.2.0`; IPv6 is native in `v0.48.0` and `v0.49.0`. |
 | Integrity could be described as “MD5 HMAC.” | Separate legacy key derivation/HMAC-SHA-1 in `v0.18.0` and modern SHA-256 in `v0.19.0`. |
 | Resource creation could occur before authentication. | Authentication and two-phase allocation are explicit in `v0.27.0`, `v0.38.0`, and `v0.39.0`. |
-| Private-destination policy could be either universally blocked or accidentally open, while address aliases or early relay releases could bypass placeholder gates. | `v0.37.2` canonicalizes received/effective destinations, `v0.37.3` installs mandatory protected-destination, loop, and relay-resource defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
+| Private-destination policy could be either universally blocked or accidentally open, while address aliases or mapping changes could retain unintended authority. | `v0.37.2` canonicalizes generation-bound destinations, `v0.37.3` closes translation lifecycle, `v0.37.4` installs mandatory relay defenses, and `v0.56.0`/`v0.57.0` add configurable profiles and comprehensive SSRF controls. |
 | Secure transports and crypto could become home-grown protocol code. | Provider boundaries in `v0.19.0`, `v0.73.0`, and `v0.75.0`; primitives/TLS/DTLS remain reviewed dependencies. |
 | Linux acceleration could become protocol authority. | Differential portable/accelerated gates in `v0.78.0` through `v0.82.0`. |
 | RFC 6062, RFC 7635, RFC 8016, REST compatibility, and RFC 5780 could be left “later.” | Each has a concrete release in `v0.83.0` through `v0.92.0`. |
@@ -151,8 +151,11 @@ Current closure decisions are:
 | Treating every output as one mutually exclusive effect class could exhaust operation tables or lose ownership/audit duties on a best-effort send. | `v0.23.5` composes semantic authority, resource ownership, delivery guarantee, and durability/audit properties in one effect envelope. |
 | Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
 | A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
-| A public Binding listener could expose parse, HMAC, lookup, or error-response work before TURN-specific safety milestones. | `v0.30.3` installs global/listener/worker internet-ingress budgets before the first real UDP runtime in `v0.31.0`. |
+| A public Binding listener could expose uncharged parse, HMAC, lookup, preparation, or error-response work, or recover capacity through failure refunds. | `v0.30.3` requires one finite linear ingress permit before parsing, with global/listener/worker limits and monotonic token-bucket refill before `v0.31.0`. |
 | Queue occupancy, attempted work, successful completion, and retries could be refunded or charged inconsistently. | `v0.23.6` gives each accounting mode explicit admission, release, completion, retry, and idempotency semantics. |
+| Packet queues could consume the capacity needed to process terminal completions, revocations, shutdown, or ownership releases. | `v0.23.7` reserves bounded non-droppable control-lane progress when authoritative work is admitted. |
+| A prepared transition or observation snapshot could escape its worker, retain secrets/buffers, or create unbounded reader retention. | `v0.23.2` closes prepared ownership/scrubbing and `v0.23.8` bounds redacted non-authoritative snapshot publication and reclamation. |
+| NAT64 prefix validation could cite RFC 6052 without locking the normative source used for implementation and vectors. | RFC 6052 is checksum-locked in the source baseline and its mapping rules are versioned in `v0.37.3`. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1129,6 +1132,15 @@ Deliverables:
 - one bounded preparation pass into caller-provided fixed workspace producing a
   non-`Clone` `PreparedTransition` with immutable planned state changes, commands,
   and exact `TransitionRequirements`;
+- single-consume, worker-local, normally `!Send`/`!Sync` ownership that cannot
+  survive an await, callback return, receive-buffer reuse, or synchronous
+  prepare/acquire/commit scope without an explicit bounded message/workspace lease;
+- binding to input-buffer, derived-key, output-plan, state, configuration, and
+  worker generations, with stale/reused generations unable to commit;
+- deterministic scrubbing of derived keys, integrity tags, nonces, and
+  credential-derived response material on discard, failure, cancellation, or commit;
+- explicit stack/static footprint and alignment ceilings with compile-time
+  non-copy/non-clone assertions for large preparation workspaces;
 - preparation bound to event identity, state revision, configuration generation,
   and worker epoch so stale plans cannot commit after any relevant change;
 - exact requirements for command count, encoded bytes, retained leases/buffers,
@@ -1145,13 +1157,15 @@ Verification:
 - instrumentation proving each parser, integrity, policy, lookup-planning,
   encoder-planning, and requirement calculation runs at most once per event
 - exact-requirement properties across every event kind and capacity boundary
+- compile-fail escape/Send/Sync/Copy fixtures plus buffer-reuse, await/callback,
+  derived-key/output-plan generation, scrubbing, stack-size, and lease tests
 - stale-plan, queue-race, insufficient-permit, oversized-workspace, and
   adversarial partial-accept tests leaving state and queues unchanged
 
 Exit criteria:
 
-- Every permit is sized from one immutable prepared transition, and admission
-  never repeats attacker-controlled work or guesses capacity by retry.
+- Every permit is sized from one worker-local single-consume prepared transition;
+  admission never repeats attacker work, leaks a borrow/secret, or guesses by retry.
 - Stop: `v0.23.2 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.23.3 - Linear Permit and Operation-ID Authority
@@ -1297,6 +1311,78 @@ Exit criteria:
 - Every charge has one declared lifecycle, and failures or retries cannot refund
   attacker-driven work, bypass quota, or double-count valid usage.
 - Stop: `v0.23.6 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.7 - Authoritative Control-Lane Progress
+
+Goal: guarantee bounded terminal progress for admitted authoritative work even
+when hostile packet traffic fills ordinary delivery and ingress capacity.
+
+Deliverables:
+
+- event classification separating droppable client ingress/delivery from
+  authoritative completions, revocations, expiries, cancellations,
+  compensation, shutdown reconciliation, and ownership releases;
+- admission of every authoritative external operation reserves its worst-case
+  terminal completion, compensation, cancellation, and resource-release slots;
+- separate finite control-lane reserves for expiry/revocation progress and
+  shutdown, with global, worker, and operation ceilings;
+- packet sends, new client events, metrics, and best-effort delivery forbidden
+  from consuming control-lane capacity;
+- deterministic reserve consume/release/refill, stale/duplicate event handling,
+  and fail-closed operation admission when terminal progress cannot be reserved;
+- fairness among control event kinds without an unbounded priority queue or
+  starvation of cleanup needed to free ordinary queues.
+
+Verification:
+
+- queue-saturation models where relay/credential/crypto completions,
+  revocations, expiry, cancellation, compensation, shutdown, and ownership
+  release arrive while every ordinary packet/delivery slot is full
+- reserve exhaustion, duplicate/stale completion, nested compensation,
+  operation admission rollback, and fairness properties
+- proof that packet floods cannot consume or indefinitely postpone reserved
+  terminal work and that every admitted operation reaches one accounted terminal state
+
+Exit criteria:
+
+- No authoritative operation is admitted without bounded terminal progress
+  capacity, and packet pressure cannot deadlock the cleanup that releases resources.
+- Stop: `v0.23.7 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.8 - Bounded Observation Snapshots
+
+Goal: expose cross-thread operational state without granting authority or
+creating unbounded RCU-style retention under slow readers.
+
+Deliverables:
+
+- fixed maximum snapshot bytes, item counts, publication frequency, and
+  generation count per worker/listener/tenant observation domain;
+- redaction excluding keys, credentials, packet bodies, raw tenant identities,
+  capability-bearing handles, and other authorization/completion material;
+- binding to schema, configuration generation, and worker epoch, with explicit
+  stale/overrun results after reload, restart, ownership replacement, or retention expiry;
+- bounded reader leases/references, reclamation work, and stalled-reader policy
+  that cannot pin unbounded snapshot generations or worker resources;
+- snapshots forbidden as authorization, reducer input, completion validation,
+  recovery input, or proof of current allocation/resource existence;
+- owner-only construction and immutable release/acquire publication compatible
+  with the `v0.23.4` memory model.
+
+Verification:
+
+- size/frequency/cardinality/redaction tests plus secret/capability scanning of
+  serialized and in-memory snapshot fixtures
+- stalled/crashed/slow reader, generation rollover, reload, restart, ownership
+  transfer, and reclamation-budget models
+- compile/API tests proving snapshots cannot be passed where live authority,
+  semantic IDs, capabilities, or completion evidence are required
+
+Exit criteria:
+
+- Observation remains fixed, redacted, stale-detectable, and non-authoritative,
+  and no reader can force unbounded state retention or worker cleanup work.
+- Stop: `v0.23.8 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -1565,20 +1651,30 @@ Exit criteria:
   cannot replay a success that falsely represents revoked live authority.
 - Stop: `v0.30.2 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.30.3 - Internet-Ingress Work Budgets
+### v0.30.3 - Linear Ingress Work Permits
 
-Goal: bound unauthenticated and pre-authentication work before the first public
-UDP Binding listener exposes the core to internet traffic.
+Goal: charge unauthenticated work through one cheap linear permit before the
+first public UDP Binding listener parses attacker-controlled bytes.
 
 Deliverables:
 
+- a cheap admission transition using only listener identity, datagram length,
+  trusted receive metadata, and injected monotonic time, before frame parsing;
+- a single-use non-cloneable `IngressWorkPermit` carrying finite allowances for
+  packet/parse bytes and operations, HMAC attempts, credential-lookup admission,
+  error-response bytes, and preparation-workspace bytes/operations;
 - fixed global, listener, and worker budgets for received packets/bytes, parse
   operations/bytes, integrity/HMAC attempts, credential-lookup admissions, and
   generated error-response packets/bytes;
+- preparation consumes but cannot refill, transfer, split, merge, or reuse the
+  permit; every work stage fails before exceeding its remaining allowance;
 - charge points before each expensive stage, with malformed, unauthenticated,
   unknown-user, bad-integrity, stale-nonce, and successful paths accounted;
-- bounded acquisition/update work, saturating arithmetic, deterministic
-  exhaustion outcomes, and no attacker-controlled retry/refund loop;
+- bounded admission/update work, saturating arithmetic, deterministic
+  exhaustion outcomes, and no parsing/retry/refund path before a permit exists;
+- non-refundable attempt capacity replenished only by deterministic injected
+  monotonic token-bucket refill with explicit rate/burst ceilings, never by
+  malformed input, failed preparation, queue exhaustion, cancellation, or send failure;
 - spoofable-source policy that does not depend solely on per-source identity,
   plus amplification ceilings for unauthenticated responses;
 - integration with `v0.23.6` attempt/occupancy/completion accounting and
@@ -1588,17 +1684,19 @@ Deliverables:
 
 Verification:
 
-- `cargo test -p gjallarbru-core ingress_budgets`
+- `cargo test -p gjallarbru-core ingress_work_permit`
+- compile-time single-use/non-clone checks plus split/merge/transfer/reuse and
+  preparation-without-permit rejection fixtures
 - malformed/valid packet floods across global/listener/worker boundaries,
   HMAC/lookup exhaustion, cached retransmission, error amplification, and
-  counter saturation/wrap
-- model tests proving bounded work per datagram, deterministic recovery, and
-  no refund/retry/double-charge bypass
+  counter/token-bucket saturation/wrap/refill
+- model tests proving bounded work per datagram, deterministic monotonic
+  recovery, and no failure-refund/retry/double-charge/workspace bypass
 
 Exit criteria:
 
-- The first real UDP listener cannot perform unbounded parse, crypto, lookup,
-  or error-response work for unauthenticated traffic.
+- No attacker-controlled parse, crypto, lookup, preparation, or error-response
+  work occurs without a finite linear allowance, and failures never refund attempts.
 - Stop: `v0.30.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
@@ -1610,8 +1708,8 @@ Deliverables:
 - safe single-worker portable UDP listener, fixed buffer pool, path conversion,
   full-batch operation-queue reservation/acceptance, command execution, exact
   completion accounting, and clean shutdown;
-- mandatory `v0.30.3` ingress-budget admission before parse, HMAC, credential
-  lookup, and error-response work;
+- mandatory `v0.30.3` ingress-permit admission before parse, HMAC, credential
+  lookup, preparation workspace, and error-response work;
 - loopback integration harness with no task/timer per request.
 
 Verification:
@@ -1873,6 +1971,8 @@ Deliverables:
   before equality, indexing, permission, policy, quota, logging, or loop checks;
 - configured NAT64 prefix de-embedding that retains both the received IPv6 and
   effective IPv4 destination and requires both to pass policy;
+- translation-profile and public-address-map generations included in the
+  canonical result and all equality/cache/permission/policy keys that consume it;
 - rejection of unspecified, multicast, IPv4 broadcast, and inappropriate
   link-local/interface/scope combinations before relay command construction;
 - interface/scope-aware IPv6 equality and canonical hashing where zone identity
@@ -1888,16 +1988,54 @@ Verification:
 - cross-representation properties for IPv4, IPv4-mapped IPv6, configured NAT64,
   scoped/link-local IPv6, translated bind/public addresses, multicast,
   broadcast, unspecified, metadata, loopback, listener, and relay-pool targets
+- same-received-address tests across translation/public-map generations proving
+  equality, caching, and authority never silently cross generations
 - alias-bypass tests proving all encodings of an effective protected
   destination receive the same or stricter denial
 
 Exit criteria:
 
-- No alternate address representation, NAT64 form, scope, or public/bind
-  translation can change the security classification of one effective destination.
+- No alternate representation or stale translation/public-map generation can
+  silently change or inherit the security identity of an effective destination.
 - Stop: `v0.37.2 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.37.3 - Minimum Relay Safety Baseline
+### v0.37.3 - Translation-Generation Lifecycle
+
+Goal: make NAT64 and public-address translation unambiguous, bounded, and safe
+across configuration changes affecting existing protocol authority.
+
+Deliverables:
+
+- RFC 6052 validation accepting only supported NAT64 prefix lengths and
+  rejecting malformed host-bit/layout configurations;
+- deterministic failure for overlapping, equally applicable, or otherwise
+  ambiguous translation-prefix/public-address-map matches;
+- maximum translation depth of one configured mapping step, with recursive,
+  chained, or re-embedded translation rejected;
+- an explicit per-object decision for permissions, channels, transactions,
+  cached policy results, and relevant allocation indexes: pin the exact
+  translation generation until normal expiry or invalidate/teardown on change;
+- atomic mapping publication with old/new generation overlap ceilings and no
+  request evaluated against a mixed mapping set;
+- reload, rollback, removal, replacement, and worker-restart semantics for
+  translation generations and their dependent cached/stateful objects.
+
+Verification:
+
+- `cargo test -p gjallarbru-core translation_generation`
+- RFC 6052 prefix-length vectors plus overlapping/ambiguous/recursive/depth
+  negative configurations
+- same received IPv6 address mapping to different effective IPv4 destinations
+  across generations, covering permission, channel, transaction, cache, reload,
+  rollback, expiry, invalidation, teardown, and restart
+
+Exit criteria:
+
+- A mapping change never silently retargets existing authority, and every
+  translation is one-step, unambiguous, RFC 6052-valid, and generation-bound.
+- Stop: `v0.37.3 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.37.4 - Minimum Relay Safety Baseline
 
 Goal: make the first functional relay methods depend on canonical destination,
 relay-loop, and fixed relay-resource defenses rather than placeholder traits.
@@ -1905,12 +2043,13 @@ relay-loop, and fixed relay-resource defenses rather than placeholder traits.
 Deliverables:
 
 - a mandatory immutable baseline operating on the `v0.37.2` canonical/effective
-  identity and denying metadata services, loopback, all Gjallarbru listeners,
-  administration/control endpoints, configured relay pools, same-node/self
-  destinations, and direct or recursive relay loops;
+  identity under the `v0.37.3` translation lifecycle and denying metadata
+  services, loopback, all Gjallarbru listeners, administration/control
+  endpoints, configured relay pools, same-node/self destinations, and direct or
+  recursive relay loops;
 - fixed global, worker, allocation, relay-port, permission, channel, retained
   buffer, and queued-byte ceilings with atomic reserve/commit/release behavior;
-- mandatory reuse of the `v0.30.3` internet-ingress budgets for every TURN
+- mandatory reuse of the `v0.30.3` linear ingress-work permit for every TURN
   request before relay-specific admission begins;
 - deterministic silent-discard, authenticated error, retry-later, or admission
   refusal behavior for every exhausted or denied path without amplification;
@@ -1926,13 +2065,13 @@ Verification:
 - generated canonical/effective metadata, loopback, listener, admin, relay-pool,
   same-allocation, same-node, and two-relay loop fixtures
 - model/property tests for every fixed relay ceiling, reserve/rollback path,
-  inherited ingress-budget gate, and deterministic exhaustion result
+  inherited ingress-permit gate, and deterministic exhaustion result
 
 Exit criteria:
 
 - No later relay command can be constructed without the minimum safety gates,
   and address aliases cannot bypass their destination or loop decisions.
-- Stop: `v0.37.3 implementation stop reached. Run pentest for this exact commit.`
+- Stop: `v0.37.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.38.0 - Allocate Semantic Validation
 
@@ -1941,7 +2080,7 @@ Goal: validate Allocate completely before any relay resource is opened.
 Deliverables:
 
 - requested transport/family/lifetime/even-port/reservation/fragment schemas;
-- authentication, existing allocation, mandatory `v0.37.3` quota/policy baseline,
+- authentication, existing allocation, mandatory `v0.37.4` quota/policy baseline,
   and relay availability ordering.
 
 Verification:

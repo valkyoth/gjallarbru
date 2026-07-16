@@ -27,6 +27,7 @@ They bind back to these checksum-locked bytes and never modify them.
 | RFC 5769 | Official STUN test vectors |
 | RFC 5780 | Experimental NAT behavior discovery profile |
 | RFC 5928 | TURN DNS resolution procedures |
+| RFC 6052 | IPv4-embedded IPv6 address format and supported NAT64 prefix lengths |
 | RFC 6062 | TURN TCP peer relaying |
 | RFC 6679 | ECN check attributes and procedures; explicit profile disposition required |
 | RFC 7064 | STUN and STUNS URI syntax |

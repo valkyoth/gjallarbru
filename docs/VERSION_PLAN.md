@@ -77,6 +77,8 @@ The index and detailed contracts are checked together by
 | `0.23.4` | Atomic publication memory model | Worker-owned state and reserved command slots become visible through one release/acquire batch-ready publication |
 | `0.23.5` | Composable runtime effect envelope | Semantic authority, resource ownership, delivery guarantee, and durability combine orthogonally without false completions |
 | `0.23.6` | Chargeable-work accounting | Occupancy, attempt, completion, and retry charges have explicit non-refundable and exactly-once semantics |
+| `0.23.7` | Authoritative control-lane progress | Admitted operations reserve terminal completion, compensation, cancellation, shutdown, and ownership-release capacity unavailable to packet traffic |
+| `0.23.8` | Bounded observation snapshots | Redacted worker snapshots have fixed size/frequency/retention and can never become protocol authority |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -88,7 +90,7 @@ The index and detailed contracts are checked together by
 | `0.30.0` | Transaction cache | Exact retransmission is idempotent; digest mismatch and exhaustion are safe |
 | `0.30.1` | Transaction identity and byte budgets | Keyed strong identity prevents collision confusion and cached responses obey explicit byte ceilings |
 | `0.30.2` | Transaction invalidation semantics | Normal reloads pin decisions while revocation explicitly defines replay, error, discard, teardown, and path termination |
-| `0.30.3` | Internet-ingress work budgets | Global/listener/worker packet, byte, parse, HMAC, lookup, and error budgets gate the first public UDP listener |
+| `0.30.3` | Linear ingress work permits | Cheap admission grants finite parse, HMAC, lookup, response, and preparation allowances with monotonic non-refundable refill |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -105,8 +107,9 @@ The index and detailed contracts are checked together by
 | `0.36.1` | Timing-wheel debt and jump closure | Stale debt, reschedule policy, expiration work, backlog fairness, and large time jumps remain bounded and cannot extend authority |
 | `0.37.0` | Relay-port allocator | Randomized bounded search, collision, exhaustion, and atomic pair tests pass |
 | `0.37.1` | Relay-port entropy profile | Explicit worker seeds or completions, unbiased unique candidates, fork/restart handling, and deterministic exhaustion are proven |
-| `0.37.2` | Canonical effective destinations | IPv4-mapped, NAT64, scoped IPv6, translated local, multicast, broadcast, and special destinations classify without alias bypass |
-| `0.37.3` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
+| `0.37.2` | Canonical effective destinations | IPv4-mapped, NAT64, scoped IPv6, translated local, multicast, broadcast, and special destinations classify with translation generations |
+| `0.37.3` | Translation-generation lifecycle | RFC 6052 mappings are unambiguous, one-step, generation-bound, and safely pin or invalidate dependent authority |
+| `0.37.4` | Minimum relay safety baseline | Canonical destination/loop denials and fixed relay resource ceilings exist before relay methods |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
