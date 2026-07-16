@@ -49,6 +49,9 @@ All notable changes to `gjallarbru` are documented here.
 - Added strict fence-versus-physical-ownership separation, bounded unresolved
   provider recovery, live peer/permission/channel authority for client-bound
   relay media, and pre-activation TLS/DTLS provider memory qualification.
+- Added typed execution-domain quiescence evidence, an explicit cache-timing
+  threat model, core-only queued-media reauthorization, and pre-plaintext
+  TLS/DTLS control-work budgets with cross-provider closure.
 
 ## 0.2.0 - 2026-07-14
 

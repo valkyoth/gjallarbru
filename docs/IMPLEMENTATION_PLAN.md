@@ -473,19 +473,25 @@ acknowledged watermark remains capable of a new handoff in that lane. An
 already-handed-off command may still be externally in flight. Its buffer,
 descriptor, lease, provider storage, operation slot, and other physically
 reachable ownership remain pinned until a generation-valid terminal result or
-deterministic reconciliation proves release. Semantic identifiers may advance
-to a disjoint generation after the fence, but their backing storage cannot be
-reused or aliased while the old external operation could still access it.
+deterministic reconciliation proves release. Domain destruction counts only
+through a typed, generation-bound adapter quiescence proof covering the exact
+resource inventory and showing every kernel operation, registered buffer,
+DMA/UMEM reference, provider thread, and provider-owned buffer unreachable. A
+closed descriptor, dropped handle, timeout, or Boolean is insufficient. An
+adapter unable to prove in-process quiescence retains storage until confirmed
+process death or uses supervised process isolation. Semantic identifiers may
+advance to a disjoint generation after the fence, but their backing storage
+cannot be reused or aliased while the old external operation could still access it.
 
 Unresolved recovery is also bounded. Each operation type declares maximum
 cancellation attempts, reconciliation rounds, unresolved age, and fixed
 global/worker/provider counts. Exhaustion transitions the mailbox to
 `Uncertain`, quarantines or destroys the affected provider/execution domain,
 and keeps externally reachable storage non-aliasing until inventory or domain
-destruction proves it unreachable. Logical admission capacity may be replaced
-only from a separate bounded reserve/disjoint generation; another unresolved
-operation is never silently evicted. Recovery from saturation is explicit and
-cannot depend on a provider eventually responding.
+quiescence proof establishes it unreachable. Logical admission capacity may be
+replaced only from a separate bounded reserve/disjoint generation; another
+unresolved operation is never silently evicted. Recovery from saturation is
+explicit and cannot depend on a provider eventually responding.
 
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
@@ -567,6 +573,16 @@ effect and reuses the prior response; the same transaction key with different
 bytes is treated as suspicious. Collision resolution retains enough original
 byte/semantic evidence to avoid trusting the digest alone, while request and
 cached-response bytes have ceilings independent of record count.
+
+Cache timing follows an explicit observer and secrecy threat model rather than
+claiming identical full-path runtime. Lookup and secret-bearing identity
+comparison stay bounded and constant-time where secrets are involved; hit,
+miss, collision, invalidation, and error latency stay within measured profile
+envelopes. Response content, amplification, accounting, and audit behavior do
+not create a new membership oracle beyond protocol semantics. Gjallarbru never
+performs dummy HMAC, credential lookup, policy, or mutation work merely to
+equalize a hit. A profile that classifies membership as sensitive uses a fixed,
+bounded response-release schedule with explicit overload behavior.
 
 Ordinary configuration reload pins a live transaction to its original decision
 generation until expiry. Security revocation is a separate invalidation event;
@@ -667,6 +683,17 @@ provider is explicitly excluded from those profiles. Accepted plaintext cannot
 trigger hidden growable buffering. Failure, disconnect, timeout, and provider
 replacement release and best-effort zeroize provider-owned plaintext and key-
 adjacent storage within documented limits.
+
+Secure-transport control traffic is charged before common plaintext ingress.
+TLS 1.2 renegotiation and TLS 1.3 post-handshake client authentication are
+disabled. KeyUpdate and reciprocal updates, ticket/control-record generation,
+and DTLS acknowledgements, retransmissions, key updates, connection-ID work,
+and migration attempts consume fixed per-connection and global operation/byte/
+rate budgets. Providers expose normalized pre-work events/counters or enforce
+reviewed equivalent internal limits; an opaque provider that cannot demonstrate
+the bound is unavailable for that profile. Exhaustion suppresses, rejects, or
+closes according to the transport contract without reaching STUN processing,
+refreshing authority, or generating unbounded control output.
 
 Every client transport converges on the same normalized ingress-work contract.
 UDP datagrams, complete TCP/TLS frames, DTLS plaintext datagrams after
@@ -795,11 +822,18 @@ Peer-to-client relay media uses live authority at final client handoff, not a
 permission snapshot. Its client-delivery capability additionally binds the
 canonical received/effective peer, translation/public-map generations,
 permission identity/generation/expiry, and, for ChannelData, channel identity/
-generation/expiry. Permission refresh creates a new generation; queued media
-under the older generation must be revalidated and replaced by new authority or
-dropped. Expiry, revocation, rebinding, mapping change, or allocation teardown
-before final handoff makes the queued packet inert. Once bytes are actually
-handed off, only the declared bounded in-flight rules apply.
+generation/expiry. Authorization-revocation generation is distinct from the
+timer/lifetime revision used to reject stale expiry work. An ordinary same-
+identity refresh can advance only the lifetime revision and does not rotate the
+revocation generation, but an existing capability keeps its original expiry
+and gains no extended lifetime. Revocation, rebinding, mapping/policy change,
+or allocation teardown rotates authority and makes queued media inert. Stale
+media drops by default. A runtime never inspects snapshots or reconstructs
+authority; an optional single bounded reauthorization returns the exact owned
+packet/lease to core with its original command, buffer, charge, enqueue time,
+and queue-age deadline, and only core may issue one replacement capability.
+Once bytes are handed off, reauthorization is forbidden and only the declared
+bounded in-flight rules apply.
 
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,

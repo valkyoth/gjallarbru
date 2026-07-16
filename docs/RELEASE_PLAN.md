@@ -176,6 +176,10 @@ Current closure decisions are:
 | A silent provider could leave `DeadlineExceeded`/`CancelRequested` operations and terminal mailboxes unresolved forever. | `v0.23.16` bounds attempts, rounds, age, counts, escalation, quarantine, non-aliasing storage, and saturation recovery. |
 | Client-bound Data or ChannelData could bind only the client path while peer permission/channel authority changes before final handoff. | `v0.43.2` chooses live final-handoff semantics before relay media activates and binds canonical peer plus permission/channel generations, expiry, refresh, revoke, and rebind behavior. |
 | TLS/DTLS adapters could hide unbounded provider buffers or per-record allocations despite precise protocol handoff semantics. | `v0.72.1` gates every adapter before activation; `v0.76.3` closes lifecycle/hot-path allocation, provider byte ceilings, backpressure, cleanup, and zeroization across all selected providers. |
+| An adapter could claim execution-domain destruction without proving kernel, DMA, provider-thread, or registered-memory quiescence. | `v0.23.17` requires typed generation-bound adapter evidence before quarantined physical ownership is released. |
+| Cache hit/miss latency could be specified as impossible constant-time equality, encouraging artificial authentication work and a new DoS cost. | `v0.30.8` defines cache-membership secrecy, bounded envelopes, secret comparisons, semantic equivalence, and optional release scheduling without repeated expensive work. |
+| A runtime could inspect snapshots or reconstruct authority when queued relay-media permission/channel generations become stale. | `v0.43.3` makes stale-drop mandatory by default and permits replacement only through one bounded core-owned reauthorization event. |
+| TLS/DTLS control records that never become STUN frames could consume uncharged post-handshake crypto, output, timers, or state. | `v0.72.2` defines pre-plaintext control budgets and disabled features; `v0.76.4` closes equivalent enforcement across all selected providers. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -1565,7 +1569,8 @@ Deliverables:
   and fence generations, with duplicate/stale/forged/wrong-lane results inert;
 - missing, timed-out, lost, or uncertain acknowledgement destroys/quarantines
   the old execution domain or advances to a disjoint generation whose identity
-  space cannot alias the unacknowledged domain;
+  space cannot alias the unacknowledged domain; physical release after
+  destruction requires `v0.23.17` typed quiescence evidence;
 - no safety dependence on FIFO ordering, best-effort cancellation, queue drain,
   provider convention, or wall-clock delay;
 - portable core fence values and state require no atomics; local and threaded
@@ -1579,8 +1584,9 @@ Verification:
   generation wrap, restart, and identifier/buffer reuse
 - local versus threaded adapter differential traces plus Loom models proving
   reuse is never visible while an older execution lane may retain authority
-- fault tests proving missing acknowledgement causes domain destruction or
-  disjoint-generation replacement, never optimistic continuation
+- fault tests proving missing acknowledgement causes quarantine plus typed
+  quiescence/domain destruction or disjoint-generation replacement, never
+  optimistic continuation or storage reuse
 
 Exit criteria:
 
@@ -1609,7 +1615,8 @@ Deliverables:
 - a lane added during a pending fence starts beyond the captured watermark and
   cannot receive commands from the older authority interval;
 - lane removal requires acknowledgement/drain or destruction/quarantine of its
-  execution domain before its identity or resources can be reused;
+  execution domain before semantic identity reuse, while physical resources
+  additionally require `v0.23.17` typed quiescence evidence;
 - ordering `FenceId` separated from allocation, permission, channel, path,
   policy, buffer, and other semantic object generations;
 - explicit fence scope and blast radius per execution-domain type, with coarse
@@ -1692,8 +1699,8 @@ Deliverables:
   operation slots, registered files/buffers, and kernel references remain
   pinned while an old external operation may read, write, complete, or cancel;
 - physical release occurs only after a generation-valid terminal result,
-  deterministic reconciliation/inventory proof, or destruction of the external
-  domain establishes that the resource is unreachable;
+  deterministic reconciliation/inventory proof, or a `v0.23.17` typed
+  quiescence proof establishes that the external domain is unreachable;
 - semantic identifiers may advance to a disjoint generation after ordering is
   fenced, but backing storage, descriptor numbers, pointer-bearing leases, and
   provider slots cannot alias old externally reachable objects;
@@ -1742,7 +1749,7 @@ Deliverables:
   unresolved operation;
 - deterministic admission failure when unresolved/emergency capacity is full,
   plus operator/audit signals and recovery only through terminal reconciliation,
-  inventory proof, or domain destruction;
+  inventory proof, or `v0.23.17` typed quiescence proof;
 - no LRU/age eviction, forced false terminal result, counter reset, or mailbox
   overwrite used to regain capacity.
 
@@ -1763,6 +1770,56 @@ Exit criteria:
 - Every unresolved operation reaches bounded `Uncertain` escalation and domain
   containment; silence cannot retain unbounded state or force unsafe reuse.
 - Stop: `v0.23.16 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.23.17 - Typed Execution-Domain Quiescence Proof
+
+Goal: make external-domain destruction an executable, generation-bound proof
+that no kernel, DMA engine, provider thread, or registered object can still
+access quarantined physical storage.
+
+Deliverables:
+
+- sealed `QuiescenceProof`/`DomainDestroyed` completion types constructible
+  only by a reviewed runtime adapter and bound to execution-domain, adapter,
+  worker, provider, resource-inventory, shutdown-attempt, and fence generations;
+- an adapter-specific proof taxonomy covering ordinary socket operations,
+  provider worker threads, asynchronous cryptography, `io_uring` queues and
+  registered files/buffers, eBPF/AF_XDP maps and UMEM/DMA frames, and secure-
+  transport provider-owned plaintext/ciphertext storage;
+- explicit distinction between closing a descriptor/provider handle and
+  proving drain, unregister, thread join/process death, queue teardown, DMA
+  cessation, completion consumption, and loss of every external reference;
+- a fixed manifest of resources covered by each proof; omitted, extra,
+  duplicated, already-reused, or generation-mismatched resources fail closed;
+- stale, duplicate, forged, wrong-adapter, wrong-domain, partial, or reordered
+  destruction evidence is inert and cannot release ownership or capacity;
+- adapters unable to prove in-process quiescence retain storage in bounded
+  quarantine until process termination, or run the external provider inside a
+  supervised isolation boundary whose confirmed death supplies the proof;
+- proof acceptance atomically transitions the covered `v0.23.15` physical-
+  ownership ledger exactly once and is the only domain-destruction path that
+  replenishes `v0.23.16` quarantined/emergency capacity;
+- portable no-OS core representation plus first-party adapter evidence
+  contracts; a Boolean, closed descriptor, dropped object, timeout, or fence
+  acknowledgement alone can never satisfy the type.
+
+Verification:
+
+- `cargo test -p gjallarbru-core execution_domain_quiescence`
+- compile/API tests proving runtime code cannot forge a proof from a handle,
+  fence acknowledgement, local timeout, provider drop, or free-form snapshot
+- adapter/test-double matrices for late kernel completion, live provider thread,
+  failed unregister, pending DMA, partial inventory, process death, and clean drain
+- stale/duplicate/wrong-domain/wrong-generation proof tests with exact physical-
+  ownership and emergency-capacity counters
+- model tests proving storage becomes reusable exactly once only after terminal
+  completion, deterministic inventory reconciliation, or valid complete quiescence
+
+Exit criteria:
+
+- No claim of domain destruction can release physical storage unless typed,
+  adapter-specific evidence proves every declared external accessor quiescent.
+- Stop: `v0.23.17 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
 
@@ -2251,8 +2308,9 @@ Deliverables:
 - cache miss, digest/byte mismatch, deliberately colliding transaction IDs,
   evicted entries, invalidated entries, and stale generations continue/reject
   under the ordinary method budget without a cheaper repeatable lookup path;
-- hit/miss/error timing, response size, amplification, audit, and rate-limit
-  behavior cannot reveal cache existence beyond the protocol-visible response;
+- hit/miss/error response content, amplification, audit, and rate-limit behavior
+  cannot create a cache-membership oracle beyond protocol semantics; timing
+  follows the explicit `v0.30.8` threat model rather than claimed full-path equality;
 - cached response delivery still requires `v0.30.6` live client-path authority
   and cannot recreate allocation or other semantic side effects.
 
@@ -2275,6 +2333,54 @@ Exit criteria:
   class, and cache hits cannot refund performed work or reproduce side effects.
 - Stop: `v0.30.7 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.8 - Cache Timing Threat Model
+
+Goal: prevent useful transaction-cache oracles without pretending that a cache
+hit and an authenticated miss perform identical work or adding attacker-driven
+expensive work solely for timing equalization.
+
+Deliverables:
+
+- an explicit deployment/profile decision on whether cache membership is
+  public protocol-correlated state or classified sensitive state, including
+  remote, co-resident, authenticated, and cross-tenant observer capabilities;
+- identical protocol-semantic error class, response bytes, amplification cap,
+  audit redaction, retry/rate-limit accounting, and delivery authorization for
+  equivalent hit/miss/error outcomes where the RFC permits equivalence;
+- bounded fixed-probe lookup and keyed identity comparison, with constant-time
+  comparison for secret-bearing digests/tags and no early secret-byte oracle;
+- measured, documented hit, miss, collision, invalidation, and error latency
+  envelopes per runtime/profile; envelopes need not be identical when cache
+  membership is not secret and natural bounded work differs;
+- prohibition on dummy HMAC, credential lookup, policy execution, response
+  construction, or semantic mutation performed only to make a cache hit as
+  expensive as a miss;
+- profiles that classify membership as sensitive use a fixed bounded response-
+  release schedule with finite delay slots, jitter policy, overload behavior,
+  and no repeated authentication/provider work;
+- schedule saturation fails or degrades according to documented profile policy
+  without creating an unbounded delay queue, amplification change, or priority bypass;
+- timing reports and threat-model decisions are release evidence and rechecked
+  when cache identity, crypto provider, runtime, hardware, or profile changes.
+
+Verification:
+
+- `cargo test -p gjallarbru-core cache_timing_policy`
+- response/error/amplification/audit/charge differential tests across hit, miss,
+  collision, digest mismatch, stale, invalidated, evicted, and exhausted entries
+- constant-time secret-comparison tests and instrumentation proving no dummy
+  HMAC, credential lookup, or policy work occurs on a cache hit
+- statistically reviewed timing-envelope benchmarks on maintained reference
+  systems, treated as regression evidence rather than a universal constant-time claim
+- sensitive-profile release-schedule tests for boundaries, overload, fairness,
+  cancellation, clock anomalies, and cross-tenant isolation
+
+Exit criteria:
+
+- Cache timing has an explicit observer/secrecy model and bounded measured
+  behavior; no semantic oracle or artificial expensive equalization path exists.
+- Stop: `v0.30.8 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -2287,6 +2393,8 @@ Deliverables:
 - mandatory `v0.30.3`-`v0.30.5` two-stage just-in-time ingress admission before
   class-specific parse, HMAC, lookup, preparation, and response work;
 - `v0.30.7` charged cache lookup/substate behavior for exact retransmissions;
+- `v0.30.8` cache timing/secrecy profile, measured envelopes, and prohibition
+  on dummy expensive work used only to equalize hit and miss paths;
 - `v0.30.6` authorized client delivery for every Binding/error response, with
   final path/deadline/fence validation immediately before socket handoff;
 - implementation of the `v0.23.9` accepted-batch crash/reconciliation contract
@@ -2299,6 +2407,8 @@ Deliverables:
   state, semantic generation retirement, and physical buffer/descriptor release;
 - `v0.23.16` fixed unresolved-operation budgets and local execution-domain
   replacement when cancellation/reconciliation cannot establish terminal truth;
+- `v0.23.17` portable socket-adapter quiescence evidence before quarantined
+  descriptors/buffers are returned to reusable pools;
 - loopback integration harness with no task/timer per request.
 
 Verification:
@@ -2314,6 +2424,9 @@ Verification:
   and duplicate client-delivery capability tests
 - silent-socket/test-provider, unresolved-budget saturation, quarantined-buffer,
   descriptor-alias, and execution-domain replacement tests
+- cache hit/miss/error semantic differential and timing-envelope smoke tests
+- closed-descriptor versus outstanding-operation proof tests demonstrating that
+  handle close alone cannot release a quarantined buffer
 
 Exit criteria:
 
@@ -2716,7 +2829,8 @@ Verification:
 - fence-order model tests proving no pre-fence capability is handed off after
   reuse becomes visible, even with full packet queues and racing completions
 - missing/uncertain acknowledgement tests proving the old execution domain is
-  destroyed or replaced by a disjoint non-aliasing generation
+  quarantined and quiescence-proven under `v0.23.17`, or replaced by a disjoint
+  non-aliasing generation without physical-storage reuse
 - syscall/provider fault tests for already-in-flight success, failure,
   cancellation, and uncertain status with exact non-refundable accounting
 
@@ -2851,6 +2965,8 @@ Deliverables:
 - `v0.23.15` physical descriptor/buffer/provider ownership retained after fence
   acknowledgement until terminal reconciliation and `v0.23.16` bounded
   quarantine/escalation for a socket/provider operation that never completes;
+- `v0.23.17` socket-adapter proof covering outstanding operations, descriptor
+  close/drain, worker termination, and the exact quarantined resource inventory;
 - fixed pool/prebind extension points without changing core commands.
 
 Verification:
@@ -2860,6 +2976,8 @@ Verification:
   substitution, and exact-endpoint packet-capture tests
 - expired/over-age/revoked/reused capability and already-in-flight completion
   tests with exact attempt/byte accounting
+- close-with-late-completion, partial inventory, stale proof, and clean socket-
+  worker quiescence tests before descriptor/buffer reuse
 
 Exit criteria:
 
@@ -2994,17 +3112,25 @@ ChannelData require exact live peer/permission/channel authority at handoff.
 Deliverables:
 
 - an explicit live-authority policy: Data and peer-to-client ChannelData must
-  revalidate applicable permission/channel authority immediately before final
-  client runtime handoff rather than relying on an admission-time snapshot;
+  present sealed applicable permission/channel authority immediately before
+  final client runtime handoff rather than relying on an admission-time snapshot;
 - extension of `AuthorizedClientPath` for relay media with canonical received
   and effective peer identities, family/transport/scope, translation/public-map
   generations, allocation identity/generation, permission identity/generation/
   expiry, and exact media direction;
 - ChannelData additionally binds channel number, canonical peer transport
   address, channel identity/generation/expiry, and its coupled permission generation;
-- permission refresh or channel refresh creates new authority generation:
-  queued media under an older generation is replaced only after full
-  revalidation and a new single-use capability, otherwise dropped;
+- separate permission/channel authorization-revocation generations from timer/
+  lifetime-revision generations so a refresh can reschedule expiry without
+  disguising revoke/rebind authority changes or reviving stale timer entries;
+- ordinary same-identity permission/channel lifetime refresh does not rotate
+  the revocation generation of an already-issued capability, but that
+  capability retains its original embedded expiry and gains no extended life;
+- revocation, removal, peer/channel rebind, policy/mapping change, or other
+  authority-changing update rotates the applicable generation immediately;
+- a stale queued-media capability is dropped by the base policy; no runtime
+  adapter may inspect core snapshots, reconstruct authority fields, or mint a
+  replacement, with the optional core-only path defined separately by `v0.43.3`;
 - permission/channel expiry, revocation, removal, rebind, mapping/policy change,
   allocation teardown, client disconnect, or fence advance before handoff makes
   the queued media inert with no lifetime refresh or response oracle;
@@ -3022,6 +3148,9 @@ Verification:
 - synthetic peer source canonicalization and alias/NAT64/mapping-generation
   tests crossing permission/channel refresh, expiry, revoke, delete, and rebind
 - Data versus ChannelData construction matrices proving distinct authority needs
+- ordinary-refresh tests proving old capabilities retain only their original
+  expiry while timer revision changes remain distinct and revoke/rebind/policy
+  authorization generations invalidate immediately
 - queue-age, client disconnect/reconnect, allocation teardown, fence advance,
   duplicate use, buffer reuse, and already-in-flight model tests
 
@@ -3031,6 +3160,56 @@ Exit criteria:
   canonical peer and live permission/channel generations it will require at
   final handoff.
 - Stop: `v0.43.2 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.43.3 - Core-Only Queued-Media Reauthorization
+
+Goal: keep stale relay-media handling inside core, with mandatory stale-drop as
+the base behavior and one optional bounded ownership-preserving replacement path.
+
+Deliverables:
+
+- mandatory base runtime behavior that drops stale queued Data/ChannelData
+  before handoff and returns its payload buffer/lease, charge, and ownership
+  through the ordinary terminal path without consulting a snapshot;
+- optional typed `ReauthorizeQueuedMedia` event returning the exact still-owned
+  packet/lease to core, bound to original command/operation, allocation,
+  canonical peer, permission/channel identities, buffer generation, charge,
+  enqueue tick, absolute queue-age deadline, authority fence, and worker epoch;
+- only core can consume that event and emit either one replacement single-use
+  client-delivery capability or an explicit drop; runtime/provider adapters
+  cannot inspect state, broaden endpoints, substitute fields, or construct authority;
+- at most one reauthorization attempt per original media item, backed by fixed
+  event/control-lane capacity and a separate bounded control-work charge;
+- replacement retains the original payload, ownership, semantic byte/attempt
+  charge, enqueue time, queue-age deadline, and delivery identity; it cannot
+  refund work, reset age, extend the original packet lifetime, or create a
+  second deliverable command;
+- core rechecks current allocation, client path, canonical peer, translation,
+  permission, channel, policy, quota, buffer, configuration, and fence state
+  atomically before replacement; any mismatch or capacity failure drops;
+- no reauthorization after any byte/packet has crossed the OS/provider handoff
+  boundary, during a partial-stream tail, or after ownership became uncertain;
+- ordinary same-identity permission/channel refresh follows `v0.43.2`: an
+  existing capability remains usable only through its embedded original expiry,
+  so reauthorization is not required merely to observe an extended lifetime.
+
+Verification:
+
+- `cargo test -p gjallarbru-core queued_media_reauthorization`
+- compile/API tests proving adapters cannot mint or modify relay-media authority
+  and snapshots cannot satisfy the event or replacement constructors
+- refresh, expiry, revoke, delete, rebind, mapping/policy/configuration change,
+  disconnect, queue-age boundary, fence, quota, and buffer-generation matrices
+- duplicate/stale/wrong-command/wrong-buffer event tests proving at most one
+  replacement or drop and exactly one final ownership/charge outcome
+- event/control-capacity exhaustion and partial-handoff tests proving fail-closed
+  drop without age reset, refund, duplicated delivery, or leaked lease
+
+Exit criteria:
+
+- Stale queued relay media always drops unless core alone reauthorizes the exact
+  still-owned item once within its original charge and queue-age envelope.
+- Stop: `v0.43.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.44.0 - Client-to-Peer Send Indication
 
@@ -3069,7 +3248,7 @@ Deliverables:
   `AuthorizedClientPath` bound to allocation, command/batch, payload buffer,
   exact charge, deadline, and acknowledged authority fence;
 - `v0.43.2` live final-handoff binding to canonical peer plus exact permission
-  identity/generation/expiry, with stale queued media dropped;
+  identity/generation/expiry and `v0.43.3` core-only stale-media handling;
 - unknown/stale relay, alias/mapping-generation mismatch, expired permission,
   stale/disconnected client path, buffer exhaustion, and send-failure tests.
 
@@ -3119,7 +3298,7 @@ Deliverables:
   `v0.37.2`/`v0.37.3` and emits `v0.30.6` authorized client delivery rather
   than a raw client address/connection;
 - `v0.43.2` live final-handoff binding to exact permission and channel
-  identities/generations/expiries, with refresh/rebind producing new authority;
+  identities/generations/expiries plus `v0.43.3` core-only stale-media handling;
 - permission recheck, rate/byte limits, headroom/scatter plans, and stream padding.
 
 Verification:
@@ -3150,6 +3329,8 @@ Deliverables:
   delayed send completion, cancellation, retry, drop, and shutdown path;
 - `v0.23.15` separation of semantic fence progress from physical lease release,
   plus `v0.23.16` bounded quarantine if completion/reconciliation never arrives;
+- `v0.23.17` typed quiescence proof before any quarantined receive lease or
+  pointer-bearing scatter segment returns to its physical pool;
 - bounded fallback-copy policy for platforms/providers that cannot retain a
   lease, with separate copy accounting and no semantic drift.
 
@@ -3662,9 +3843,9 @@ Deliverables:
   queue-survival/loss, runtime-resource inventory, fencing, cancellation, and
   cleanup matrix under supervisor-controlled worker/process restart;
 - implementation of `v0.23.15` physical-ownership quarantine and `v0.23.16`
-  bounded unresolved recovery, including proof that terminating the worker/
-  provider execution domain makes old external references unreachable before
-  its quarantined storage is reclaimed;
+  bounded unresolved recovery, plus `v0.23.17` evidence that confirmed worker/
+  provider process death, thread join, unregister, and inventory closure make
+  old external references unreachable before quarantined storage is reclaimed;
 - documented single-process development limitation and production minimum redundancy for
   native, container, cluster, and future Aesynx deployment profiles.
 
@@ -3679,6 +3860,8 @@ Verification:
 - never-responding provider and exhausted-recovery-budget tests proving domain
   destruction, generation replacement, non-aliasing quarantine, and bounded
   emergency capacity without silent unresolved-operation eviction
+- false process-death, surviving provider thread, incomplete unregister,
+  partial resource inventory, and stale quiescence-proof tests
 - Linux, Windows, BSD, macOS, container, service-manager, and cluster fault-injection matrix
   with explicit capability exclusions where a platform cannot provide a claimed control
 
@@ -3850,8 +4033,9 @@ Deliverables:
 - cleanup, ownership, and best-effort zeroization contract for provider-owned
   plaintext, ciphertext, sessions, record tails, retransmission flights, and
   key-adjacent storage on every terminal path;
-- integration with `v0.23.15`/`v0.23.16`: fence acknowledgement does not release
-  provider memory, and a silent provider enters bounded quarantine/destruction.
+- integration with `v0.23.15`-`v0.23.17`: fence acknowledgement does not release
+  provider memory, a silent provider enters bounded quarantine, and only typed
+  provider-thread/buffer quiescence evidence permits physical release.
 
 Verification:
 
@@ -3869,6 +4053,56 @@ Exit criteria:
   allocation evidence.
 - Stop: `v0.72.1 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.72.2 - Secure Control-Traffic Budgets
+
+Goal: bound TLS/DTLS post-handshake control work that consumes cryptography,
+timers, state, or output without ever becoming a STUN/TURN plaintext frame.
+
+Deliverables:
+
+- provider-neutral control-event taxonomy and accounting before common plaintext
+  ingress: inbound/outbound records and bytes, cryptographic operations, timer/
+  retransmission work, generated responses, retained state, and control age;
+- fixed per-connection, listener, tenant, source/prefix where observable, and
+  global count/byte/rate/concurrency budgets with monotonic non-refundable
+  charging and fair control-work scheduling independent of application permits;
+- TLS 1.2 renegotiation disabled; TLS 1.3 post-handshake client authentication
+  disabled unless a separately versioned profile later defines need and authority;
+- TLS 1.3 `KeyUpdate`, including peer-requested reciprocal update, limited by
+  minimum interval, lifetime count, concurrent/global crypto work, output bytes,
+  and anti-ping-pong policy without extending TURN/session authority;
+- bounded session-ticket/control-record generation with ticket count, encoded
+  bytes, key-generation, rate, lifetime, and retained-session ceilings;
+- bounded DTLS acknowledgements, flights, retransmissions, key updates,
+  connection-ID processing, path/migration attempts, and generated control
+  output, integrated with anti-amplification and path-identity policy;
+- adapters expose normalized events/counters before performing expensive or
+  state-growing work, or enforce an equivalent reviewed provider-internal limit
+  whose configuration and exhaustion evidence is part of qualification;
+- deterministic over-budget action per event/version/provider—ignore where safe,
+  suppress reciprocal output, reject migration, or close the secure session—
+  without plaintext delivery, allocation refresh, retry refund, or unbounded alerts;
+- redacted fixed-cardinality metrics distinguish control-budget exhaustion from
+  malformed transport and application ingress without leaking keys/session IDs.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime secure_control_budget`
+- TLS renegotiation/post-handshake-auth rejection and KeyUpdate request/reciprocal-
+  update flood tests across boundary counts, rates, concurrency, and output bytes
+- ticket/control-record generation tests covering churn, rotation, resumption,
+  no-reader backpressure, and provider-generated bursts
+- DTLS acknowledgement/retransmission/key-update/CID/migration/loss/reorder
+  matrices with anti-amplification, timer, memory, and CPU accounting
+- provider/test-double tests proving no control path reaches plaintext ingress or
+  bypasses an exposed event/counter or equivalent reviewed internal ceiling
+
+Exit criteria:
+
+- Every secure-transport control path is disabled or consumes finite authority
+  before work/output; control-only traffic cannot bypass application admission.
+- Stop: `v0.72.2 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.73.0 - TLS Provider Adapter
 
 Goal: integrate TLS without placing certificate or record logic in core.
@@ -3878,6 +4112,9 @@ Deliverables:
 - reviewed provider dependency/feature/license/MSRV decision and plaintext connection adapter;
 - provider-specific `v0.72.1` memory descriptor, ceilings, counters,
   instrumentation, backpressure, cleanup, and profile admission evidence;
+- provider-specific `v0.72.2` normalized control events or reviewed equivalent
+  internal limits, with renegotiation/post-handshake authentication disabled and
+  KeyUpdate/ticket/control-record work charged before plaintext ingress;
 - certificate/key loading, handshake/result normalization, session cleanup, and
   mandatory rejection of TLS/provider early application data before framing,
   authentication, or core processing;
@@ -3895,6 +4132,7 @@ Verification:
   early-data rejection tests where practical
 - TLS lifecycle and steady-state allocation/retained-byte/exhaustion tests from
   the `v0.72.1` qualification harness
+- TLS control-only flood and budget-exhaustion tests from the `v0.72.2` harness
 
 Exit criteria:
 
@@ -3911,6 +4149,8 @@ Deliverables:
 
 - TLS version/cipher/certificate policy, handshake prefix/global quotas, timeout,
   chain/record limits, resumption/ticket rotation, key-log/dump policy, and reload;
+- deployable `v0.72.2` control-budget defaults and immutable disabled-feature
+  policy for renegotiation and post-handshake client authentication;
 - interoperability profile for required legacy exceptions.
 
 Verification:
@@ -3962,6 +4202,8 @@ Deliverables:
   retransmission/timer events, replay handling, and cleanup;
 - provider-specific `v0.72.1` memory descriptor, flight/record/session ceilings,
   allocation instrumentation, backpressure, cleanup, and profile admission evidence;
+- provider-specific `v0.72.2` acknowledgement/retransmission/key-update/CID/
+  migration control events or reviewed equivalent internal limits;
 - dedicated cookie/handshake/replay admission budgets followed by one common
   `v0.30.3`-`v0.30.5` two-stage permit per accepted plaintext datagram;
 - migration/rebinding policy distinct from RFC 8016 mobility;
@@ -3975,6 +4217,7 @@ Verification:
   early-data rejection tests
 - DTLS lifecycle and steady-state allocation/retained-byte/exhaustion tests
   including retransmission-flight storage
+- DTLS control-only flood and budget-exhaustion tests from the `v0.72.2` harness
 
 Exit criteria:
 
@@ -3990,6 +4233,8 @@ Deliverables:
 
 - cookie/anti-amplification policy, per-prefix/global handshake and byte ceilings,
   timeouts, flight/retransmit limits, buffer accounting, and provider failure isolation;
+- post-handshake `v0.72.2` acknowledgement/retransmission/key-update/CID/
+  migration budgets retained after cookie validation and handshake completion;
 - no allocation or credential lookup before required reachability gates.
 
 Verification:
@@ -4093,9 +4338,10 @@ Deliverables:
   cancellation, disconnect, reload, provider replacement, and process shutdown;
 - best-effort zeroization requirements and documented library/OS limitations
   for provider-owned plaintext and key-adjacent memory;
-- integration with `v0.23.15`/`v0.23.16`: fence acknowledgement never releases
-  provider storage still externally reachable, and silent providers escalate
-  into bounded quarantine/domain destruction.
+- integration with `v0.23.15`-`v0.23.17`: fence acknowledgement never releases
+  provider storage still externally reachable, silent providers escalate into
+  bounded quarantine, and provider/domain destruction releases storage only
+  with complete typed thread/buffer quiescence evidence.
 
 Verification:
 
@@ -4117,6 +4363,50 @@ Exit criteria:
   phase-specific allocation policy, fail-closed backpressure, and complete
   cleanup evidence; no declared provider/platform/profile remains unqualified.
 - Stop: `v0.76.3 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.76.4 - Cross-Provider Secure Control Closure
+
+Goal: prove every selected TLS/DTLS provider, version, platform, and termination
+topology enforces the `v0.72.2` post-handshake control policy equivalently before
+shared-port and performance work enlarge the transport attack surface.
+
+Deliverables:
+
+- audited provider/version capability matrix for TLS renegotiation, post-
+  handshake authentication, KeyUpdate/reciprocal update, tickets/control
+  records, DTLS acknowledgements/retransmissions/key updates/CID/migration;
+- proof each active path exposes normalized pre-work events/counters or has
+  reviewed provider-internal limits no broader than the configured Gjallarbru
+  connection/listener/tenant/global budgets;
+- provider-independent charge/result normalization for accepted, ignored,
+  suppressed, rejected, over-budget, unsupported, and session-closing outcomes;
+- configuration validation refusing a provider/profile when a required feature
+  cannot be disabled, bounded, observed, or safely isolated;
+- trusted TLS termination contract carrying authenticated aggregate control-
+  budget evidence where applicable without trusting client-supplied metadata or
+  pretending upstream proxy work was locally charged;
+- mixed-version/node configuration compatibility so load balancing cannot move
+  clients onto a weaker control policy, with rollout gates and downgrade rejection;
+- operational defaults, metrics, alert thresholds, and incident evidence for
+  control-budget exhaustion without unbounded labels or sensitive session data.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime secure_control_provider_closure`
+- cross-provider differential control traces for all declared TLS 1.2/1.3 and
+  DTLS 1.2/1.3 profiles, including unsupported/opaque provider behavior
+- renegotiation, post-handshake-auth, KeyUpdate ping-pong, ticket burst, DTLS
+  loss/retransmit/ACK/CID/migration flood, and mixed-control attack suites
+- direct, shared-port, trusted-termination, restart, reload, cluster mixed-
+  version, and budget-saturation matrices with exact counters and output bounds
+- negative provider-substitution tests proving activation fails when equivalent
+  pre-work enforcement cannot be demonstrated
+
+Exit criteria:
+
+- No advertised secure provider or topology accepts unbounded post-handshake
+  control work, and provider choice cannot weaken the normalized budget policy.
+- Stop: `v0.76.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.77.0 - Standard Shared-Port Demultiplexing
 
@@ -4155,8 +4445,9 @@ Deliverables:
 - separate bounded occupancy/work charges for TCP/TLS framing bytes and retained
   partial frames, with one semantic permit and charge lifecycle per complete frame;
 - TLS/DTLS cookie, handshake, record, replay, and retransmission work kept under
-  their dedicated budgets; accepted plaintext then pays common packet/parse,
-  HMAC, credential-lookup, preparation, response, and send charges;
+  their dedicated budgets, including `v0.72.2` post-handshake control events;
+  accepted plaintext then pays common packet/parse, HMAC, credential-lookup,
+  preparation, response, and send charges;
 - coalesced frames, batched datagrams, and shared-port classifications admitted
   independently, never through one aggregate permit or batch reservation;
 - trusted termination metadata may establish reviewed path provenance but
@@ -4193,6 +4484,8 @@ Deliverables:
 - per-worker execution domains implementing `v0.23.12` authority sequences and
   `v0.23.13` coalesced lane watermarks across cross-worker queues before
   ownership/identifier reuse;
+- `v0.23.15`-`v0.23.17` separation of semantic worker-epoch retirement from
+  physical queue/buffer reuse, with typed quiescence required after worker loss;
 - safe single-worker reference retained for differential tests;
 - initial focused Loom models for bounded cross-worker queue publication,
   ownership epochs, immutable configuration publication, cancellation, and
@@ -4225,6 +4518,8 @@ Deliverables:
   including reload, rollback, retirement, and shutdown races;
 - worker start/drain/abort/restart and command cancellation ordering with no
   double completion, leaked lease, reused authority, or stranded accepted effect;
+- typed quiescence-proof publication/acceptance races, incomplete resource
+  manifests, and stale worker/provider proof rejection under `v0.23.17`;
 - model sizes and abstractions kept small enough for routine CI, with promoted
   counterexamples retained as deterministic regression tests;
 - v0.93.0 remains the comprehensive Loom/Miri/sanitizer inventory rather than
@@ -4234,6 +4529,8 @@ Verification:
 
 - routine bounded Loom runs plus mutation/fault variants for queue ordering,
   publication, ownership transfer prohibition, cancellation, and shutdown
+- worker-death versus late-access/quiescence-proof models proving physical
+  storage cannot re-enter a pool before every external accessor is unreachable
 - scalar/single-worker differential tests and repeated real-thread stress runs
   for every modeled outcome
 
@@ -4306,7 +4603,8 @@ Deliverables:
 - validation of each entry's client/peer capability, deadline, queue age,
   generations, exact charge, buffer, and `v0.23.12` fence immediately before
   the batch syscall/provider submission, including `v0.43.2` canonical peer,
-  permission generation, and ChannelData channel generation for relay media;
+  permission generation, and ChannelData channel generation for relay media,
+  using sealed capability checks rather than runtime inspection of core state;
 - only the prefix/entries reported accepted by the OS/provider consume their
   single-use capabilities and enter bounded in-flight state;
 - unsent entries retain exclusive capability and buffer/lease ownership, emit
@@ -4317,6 +4615,9 @@ Deliverables:
 - retry requires fresh validation of deadline, queue age, client path/peer
   permission, allocation/transaction, worker/configuration, buffer generation,
   acknowledged authority sequence, and exact live permission/channel generations;
+- a stale unsent relay-media entry drops by default; an enabled `v0.43.3`
+  reauthorization returns the exact owned entry to core once and the batch/
+  provider adapter cannot construct or modify its replacement capability;
 - expiry, revocation, disconnect, policy/translation change, worker restart, or
   buffer-generation reuse between partial return and retry deterministically
   invalidates the unsent entry;
@@ -4336,6 +4637,8 @@ Verification:
 - expiry, revocation, disconnect, mapping/policy reload, fence advance,
   permission/channel refresh or rebind, worker restart, and buffer reuse
   injected between partial return and retry
+- enabled/disabled core-only reauthorization tests proving original enqueue age,
+  charge, buffer ownership, and one-attempt limit survive partial batch return
 - property/model tests proving accepted entries consume once, unsent entries
   retain one owner, retry charges correctly, and no entry receives false completion
 - scalar/batched/provider differential traces including cancellation and
@@ -4433,12 +4736,17 @@ Deliverables:
   linked, multishot, or vector submissions with partial acceptance;
 - `v0.79.3` ordered stream-tail ownership/close semantics where `io_uring`
   accepts only part of a stream frame;
+- `v0.23.17` adapter proof covering ring disable/exit, completion drain,
+  registered file/buffer unregister, worker/process death where used, and the
+  exact quarantined fixed-resource inventory before physical reuse;
 - isolated unsafe/syscall modules with safety evidence.
 
 Verification:
 
 - differential portable/batched/`io_uring` suite, Miri-safe helpers, sanitizers,
   stale completion, cancellation, unsupported-kernel, and overload tests
+- failed unregister, late completion after close, live ring worker, partial
+  inventory, stale proof, and clean quiescence/reuse tests
 
 Exit criteria:
 
@@ -4490,7 +4798,8 @@ Deliverables:
   execution domain with a disjoint generation and never relies on map FIFO;
 - fence acknowledgement never releases registered buffers, map values, UMEM
   frames, descriptors, or provider slots still reachable by accepted fast-path
-  work; `v0.23.15` terminal reconciliation or domain destruction is required;
+  work; `v0.23.15` terminal reconciliation or `v0.23.17` typed map/queue/UMEM/
+  DMA quiescence evidence is required;
 - `v0.23.16` bounds unresolved remove/reconcile attempts, age, counts, and
   quarantined physical ownership, failing new acceleration admission rather
   than evicting another unresolved rule or aliasing its storage;
@@ -4503,7 +4812,8 @@ Verification:
 - revoke/reuse races, expiry boundary, clock skew, map loss/eviction, partial
   update, restart, stale epoch, and reconciliation-failure model tests
 - multi-map/program/queue fence acknowledgement, lost acknowledgement, domain
-  destruction, and disjoint-generation replacement tests
+  destruction, typed unregister/drain/DMA-quiescence proof, and disjoint-
+  generation replacement tests
 - accepted-packet versus fence-acknowledgement ownership races, silent remove/
   reconcile providers, unresolved-budget exhaustion, and UMEM/map-storage
   non-aliasing tests

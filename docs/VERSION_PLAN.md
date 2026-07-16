@@ -87,6 +87,7 @@ The index and detailed contracts are checked together by
 | `0.23.14` | Nonterminal timeout observations | Local deadline expiry initiates cancellation/reconciliation but never proves external failure or blocks policy-valid late success |
 | `0.23.15` | Fence and ownership separation | Fence acknowledgement prevents new handoff but never releases storage still reachable by an in-flight external operation |
 | `0.23.16` | Bounded unresolved recovery | Timeout/cancellation recovery has fixed rounds, ages, counts, escalation, quarantine, and non-aliasing capacity rules |
+| `0.23.17` | Typed execution-domain quiescence proof | Physical storage leaves quarantine only after generation-bound adapter evidence proves every external accessor is unable to reach it |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -103,6 +104,7 @@ The index and detailed contracts are checked together by
 | `0.30.5` | Ingress reservation fairness | Permits are acquired just in time, retained briefly, bounded per listener/worker, and never batch-reserved into starvation |
 | `0.30.6` | Authorized client delivery | Every client-bound response or indication carries a single-use, generation-bound, deadline-checked client-path capability |
 | `0.30.7` | Cached retransmission admission | Cache lookup is charged inside the ordinary method class before a bounded cached-response substate may release only unused reservations |
+| `0.30.8` | Cache timing threat model | Cache membership has explicit secrecy policy, bounded timing envelopes, no semantic oracle, and no artificial expensive equalization work |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -134,6 +136,7 @@ The index and detailed contracts are checked together by
 | `0.43.0` | CreatePermission | Multi-peer atomicity, peer-IP identity, policy denial, and 300-second expiry pass |
 | `0.43.1` | Relay payload ownership baseline | Send/Data paths use runtime-owned bounded copies until generation-tagged zero-copy leases are admitted |
 | `0.43.2` | Client-bound relay media authority | Data and ChannelData delivery bind canonical peer and live permission/channel generations through final client handoff |
+| `0.43.3` | Core-only queued-media reauthorization | Stale relay media drops by default; any optional replacement is issued only by core through one bounded ownership-preserving attempt |
 | `0.44.0` | Send indication | Authorized relay works; invalid/missing permission paths silently discard |
 | `0.45.0` | Peer Data indication | Permission filtering, zero-length data, and rate limits pass |
 | `0.46.0` | ChannelBind | Channel/peer uniqueness, refresh, reuse block, and permission coupling pass |
@@ -179,6 +182,7 @@ The index and detailed contracts are checked together by
 | `0.71.0` | TURN over TCP | Path identity, framing, disconnect, retransmission, and allocation cleanup pass |
 | `0.72.0` | Stream backpressure | Slow clients cannot exceed frame, byte, or age ceilings |
 | `0.72.1` | Secure-transport memory contract | Provider lifecycle/hot-path allocation, retained bytes, exhaustion, cleanup, and zeroization gates exist before TLS/DTLS activation |
+| `0.72.2` | Secure control-traffic budgets | TLS/DTLS post-handshake control work is disabled or charged against finite connection and global budgets before plaintext ingress |
 | `0.73.0` | TLS provider adapter | Provider-neutral plaintext integration, failure isolation, and pre-semantic early-data rejection pass |
 | `0.74.0` | Hardened TLS deployment | Current BCP 195 policy, handshake quotas, rotation, and interoperability pass |
 | `0.74.1` | TLS identity and termination | ALPN, SNI, certificate/realm mapping, trusted termination, and PROXY-source handling fail closed |
@@ -187,6 +191,7 @@ The index and detailed contracts are checked together by
 | `0.76.1` | DTLS 1.3 policy | RFC 9147 applicability, TLS/DTLS version profiles, provider capability, and interop evidence are explicit |
 | `0.76.2` | Cross-provider early-data closure | Every TLS/DTLS provider, termination topology, resumption path, and node rejects 0-RTT application data consistently |
 | `0.76.3` | Cross-provider secure-transport memory closure | Every selected TLS/DTLS provider and platform passes the v0.72.1 memory qualification and differential accounting suite |
+| `0.76.4` | Cross-provider secure control closure | Every provider exposes or internally enforces equivalent bounded TLS/DTLS control-event accounting and disabled-feature policy |
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
 | `0.77.1` | Common transport ingress accounting | UDP, TCP, TLS, DTLS, trusted termination, and shared-port paths all charge the same normalized per-frame semantic work permit |
 | `0.78.0` | Per-core ownership | Stable flow steering and initial Loom models remove global allocation locks without behavior drift |
