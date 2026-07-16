@@ -30,6 +30,7 @@ The index and detailed contracts are checked together by
 | `0.2.2` | Executed requirement evidence | Semantic requirements can become verified only when CI resolves their real symbol and observes their named test |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
 | `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, time, limits, and errors have boundary tests |
+| `0.4.1` | Complete client-path identity | Listener, socket, provenance, interface, configuration, connection, and worker generations prevent stale or cross-realm authority |
 | `0.5.0` | Checked cursors | Exhaustive read/write bounds and arbitrary-slice no-panic tests pass |
 | `0.5.1` | Hostile-input parser foundation | Progress, termination, checked padding, complexity, size, and early fuzz obligations are executable |
 | `0.6.0` | Generational storage | Fixed slab rejects stale handles and capacity overflow under model/Kani tests |
@@ -51,9 +52,11 @@ The index and detailed contracts are checked together by
 | `0.14.0` | Permission/channel attributes | Peer, channel, data, and ICMP attributes cover every valid and invalid length |
 | `0.15.0` | ChannelData codec | Datagram and stream length/padding boundaries round trip |
 | `0.15.1` | UDP ChannelData alignment closure | Both legal datagram forms are accepted while arbitrary trailing bytes remain rejected |
-| `0.16.0` | Caller-buffer encoder | Failed encodes leave output uncommitted; exact-size and short buffers pass |
+| `0.16.0` | Caller-buffer encoder | Failed transactional encodes leave caller-visible bytes unchanged; exact-size and short buffers pass |
+| `0.16.1` | Encoder commit mechanics | Sizing, validation, crypto preparation, staging, and caller-visible commit semantics are explicit and fault-tested |
 | `0.17.0` | FINGERPRINT | RFC 5769 and corruption vectors pass with FINGERPRINT last |
 | `0.17.1` | Crypto provider and secret contract | Capability-specific fixed-output providers, opaque keys, redacted secrets, and fail-closed errors are proven |
+| `0.17.2` | Synchronous and external crypto split | Packet crypto is bounded and deterministic; HSM/KMS work is asynchronous and cannot hide I/O or entropy |
 | `0.18.0` | Legacy message integrity | HMAC-SHA-1 ranges and long-term legacy derivation pass official/project vectors |
 | `0.19.0` | SHA-256 message integrity | RFC 8489 SHA-256, errata, ordering, and downgrade cases pass |
 | `0.19.1` | Integrity failure closure | Adjusted original-byte ranges, legal truncation, provider failures, mixed algorithms, and response-key uncertainty fail closed |
@@ -69,8 +72,10 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.23.0` | Sans-I/O event/command API | Synthetic events produce bounded commands with no borrowed data escaping |
 | `0.23.1` | Atomic deterministic reducer | Identical explicit inputs produce byte-identical results and capacity failure leaves state and runtime untouched |
+| `0.23.2` | Runtime effect lifecycle | Queue admission, operation IDs, dependencies, partial execution, compensation, cancellation, and shutdown accounting are deterministic |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm binding, stale handling, tamper rejection, and key overlap pass |
+| `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
 | `0.26.0` | Credential provider boundary | Fixed and asynchronous lookup models fail closed under timeout/capacity |
 | `0.26.1` | Credential timing and provider assurance | Dummy-user work, negative-cache normalization, opaque handles, provider substitution, and leakage tests pass |
 | `0.27.0` | Long-term authentication | 401, 438, success, bad integrity, realm, nonce, and identity ordering pass |
@@ -78,6 +83,7 @@ The index and detailed contracts are checked together by
 | `0.29.0` | Unknown/invalid attribute ordering | Authenticated 420 and method-schema errors match RFC ordering |
 | `0.30.0` | Transaction cache | Exact retransmission is idempotent; digest mismatch and exhaustion are safe |
 | `0.30.1` | Transaction identity and byte budgets | Keyed strong identity prevents collision confusion and cached responses obey explicit byte ceilings |
+| `0.30.2` | Transaction invalidation semantics | Normal reloads pin decisions while revocation explicitly defines replay, error, discard, teardown, and path termination |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -91,7 +97,9 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.35.0` | Allocation indexes and records | Path/relay ownership and capacity invariants match a simple reference model |
 | `0.36.0` | Hierarchical timing wheel | Allocation, permission, channel, reservation, and stale-generation tests pass |
+| `0.36.1` | Timing-wheel debt and jump closure | Stale debt, reschedule policy, expiration work, backlog fairness, and large time jumps remain bounded and cannot extend authority |
 | `0.37.0` | Relay-port allocator | Randomized bounded search, collision, exhaustion, and atomic pair tests pass |
+| `0.37.1` | Relay-port entropy profile | Explicit worker seeds or completions, unbiased unique candidates, fork/restart handling, and deterministic exhaustion are proven |
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
@@ -100,6 +108,7 @@ The index and detailed contracts are checked together by
 | `0.41.0` | Allocate completion | Success/error responses, actual lifetime, mapped/relayed addresses, and caching pass |
 | `0.42.0` | Refresh and delete | Identity match, lifetime changes, zero-delete, and cleanup are atomic |
 | `0.43.0` | CreatePermission | Multi-peer atomicity, peer-IP identity, policy denial, and 300-second expiry pass |
+| `0.43.1` | Relay payload ownership baseline | Send/Data paths use runtime-owned bounded copies until generation-tagged zero-copy leases are admitted |
 | `0.44.0` | Send indication | Authorized relay works; invalid/missing permission paths silently discard |
 | `0.45.0` | Peer Data indication | Permission filtering, zero-length data, and rate limits pass |
 | `0.46.0` | ChannelBind | Channel/peer uniqueness, refresh, reuse block, and permission coupling pass |
@@ -150,14 +159,17 @@ The index and detailed contracts are checked together by
 | `0.75.0` | DTLS provider adapter | Sessions, replay, retransmission, disconnect, and datagram boundaries pass |
 | `0.76.0` | DTLS anti-abuse | Cookie/handshake/time/size/prefix limits resist amplification and exhaustion |
 | `0.76.1` | DTLS 1.3 policy | RFC 9147 applicability, TLS/DTLS version profiles, provider capability, and interop evidence are explicit |
+| `0.76.2` | Secure-transport early-data prohibition | TLS/DTLS 0-RTT application data is disabled unless a future method-level replay-safety proof is admitted |
 | `0.77.0` | Standard shared-port demux | RFC 7983/RFC 9443 ranges classify without claiming TURN-over-QUIC |
 | `0.78.0` | Per-core ownership | Stable flow steering removes global allocation locks without behavior drift |
+| `0.78.1` | First concurrency-model closure | Loom models cover cross-worker queues, configuration publication, ownership epochs, cancellation, and shutdown ordering |
 | `0.79.0` | Batched portable/Linux I/O | Batching improves measured throughput while fairness and results remain identical |
 | `0.79.1` | Batch completion semantics | Normalized path metadata, partial sends, unsent work, and stale batch results preserve scalar behavior |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
 | `0.81.0` | `io_uring` backend | Differential, cancellation, stale completion, fallback, and overload tests pass |
 | `0.82.0` | Optional eBPF/AF_XDP fast path | Installed rules remain a verified subset of live core authority and fail closed |
 | `0.82.1` | Fast-path revocation closure | Revocation, expiry, map loss, reuse, and reconciliation cannot leave kernel authority broader or longer-lived than core state |
+| `0.82.2` | Fast-path quota leases | Kernel byte/packet authority is finite, generation-bound, reconciled before renewal, and never independently refillable |
 
 ## Phase G: Extensions and Final Assurance
 

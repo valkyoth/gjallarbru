@@ -177,8 +177,11 @@ operator-facing errors.
 
 Core address and transport types use byte arrays and integers rather than
 `std::net` types. Client paths include remote/local addresses, transport kind,
-and a connection generation so reused TCP/TLS endpoints cannot inherit stale
-authority.
+stable listener and local-endpoint identities, listener/configuration
+generations, authenticated ingress provenance, platform interface/scope where
+needed, connection/session generation, and worker ownership epoch. Reused
+sockets, listeners, proxy trust, TLS/DTLS sessions, configurations, interfaces,
+or workers therefore cannot inherit stale or cross-realm authority.
 
 Every reusable object uses an index plus generation:
 
@@ -194,7 +197,10 @@ credential, buffer, and fast-path handles. Delayed completions and stale
 timers become harmless generation mismatches.
 
 Monotonic `Tick` and absolute credential time are distinct types. The runtime
-injects both; the core never reads a clock.
+injects both; the core never reads a clock. Absolute time carries trusted,
+uncertain, or unavailable status plus a generation. Untrusted wall time cannot
+mint new credential authority, while rollback, forward correction, and recovery
+never alter monotonic allocation lifetimes without a separate revocation event.
 
 ## 6. Wire Processing
 
@@ -242,9 +248,13 @@ leaking through unauthenticated error paths.
 
 ### 6.4 Encoder and stream framer
 
-The encoder writes once into caller storage, reserves integrity fields,
-computes over the prescribed adjusted length, writes FINGERPRINT last, and
-returns a length without partially committing a failed message.
+The transactional encoder sizes and validates first, completes fallible crypto
+preparation, then writes once into caller storage or an explicit caller-provided
+fixed staging region. It reserves integrity fields, computes over the prescribed
+adjusted length, writes FINGERPRINT last, and publishes the committed length as
+the final infallible action. A failed transactional encode leaves the caller's
+declared output bytes unchanged; any destructive in-place API is separately
+named and typed.
 
 The stream framer accepts arbitrary partial reads and coalesced frames, caps
 retained bytes and frame counts, and applies ChannelData stream padding without
@@ -274,6 +284,13 @@ Credentials are returned as bounded derived-key records. Slow providers are
 represented by pending operations and bounded caches; the core never performs
 an external lookup while holding an incomplete mutation.
 
+Packet-path hash, HMAC, and derivation providers are synchronous, deterministic,
+bounded, nonblocking, allocation-qualified, and free of ambient entropy.
+Opaque handles cannot conceal I/O under that interface. HSM, KMS, network, or
+other external cryptographic work uses generation-tagged asynchronous
+command/completion operations, so provider state and nondeterministic results
+become explicit reducer inputs.
+
 Pawalyze never embeds a permanent TURN password in browser configuration.
 Its authenticated issuer returns short-lived credentials bound to user,
 tenant, realm, purpose, audience, expiry, and quota. OpenBao holds rotating
@@ -296,7 +313,20 @@ ordered events, supplied monotonic/absolute times, entropy results, and provider
 completions produce byte-identical commands and identical resulting state.
 Every transition preflights command count, output bytes, leases, and reservations;
 insufficient capacity or encoding failure leaves state and output unchanged.
-The runtime executes commands only after the transition succeeds.
+The runtime reserves downstream operation capacity before calling the reducer,
+or synchronously accepts the complete successful command batch. It executes
+commands only after the transition succeeds.
+
+Every effectful command has an operation ID, dependency and idempotency class,
+completion requirement, cancellation policy, and shutdown obligation. State
+never assumes an external effect succeeded before its completion event. Partial
+execution and compensation are represented as deterministic ordinary events;
+accepted commands are reconciled to one terminal result.
+
+Capability-shaped commands constrain what a conforming adapter can execute and
+are differentially verified against the safe reference runtime. They do not
+claim to prevent a malicious runtime from performing unrelated operating-system
+operations outside the command contract.
 
 Entropy is explicit asynchronous authority, not a hidden synchronous callback.
 The core emits purpose/length-bound entropy requests and consumes
@@ -332,7 +362,11 @@ lookups on the hottest peer path.
 One hierarchical timing wheel per worker manages allocations, permissions,
 channels, reuse blocks, transactions, reservations, nonces, credentials,
 pending operations, TCP connections, mobility overlap, and fast-path rules.
-Stale timer entries are ignored by generation rather than searched and removed.
+Stale timer entries are ignored by generation rather than acquiring authority,
+but live entries and stale-entry debt both have ceilings. Rescheduling and
+compaction are bounded, each transition has an expiration-work budget, and an
+overdue cursor processes backlog fairly. Large time jumps expire authority at
+its original deadline even when physical cleanup is delayed.
 
 The transaction cache records a per-process keyed cryptographic-strength request
 identity and pending/completed outcome. An exact retransmission repeats no side
@@ -340,6 +374,12 @@ effect and reuses the prior response; the same transaction key with different
 bytes is treated as suspicious. Collision resolution retains enough original
 byte/semantic evidence to avoid trusting the digest alone, while request and
 cached-response bytes have ceilings independent of record count.
+
+Ordinary configuration reload pins a live transaction to its original decision
+generation until expiry. Security revocation is a separate invalidation event;
+each invalidation class defines whether retransmission replays, returns an
+error, discards, tears down state, or terminates the path. A cached success never
+claims an allocation remains live after explicit revocation.
 
 ## 10. TURN Processing
 
@@ -357,10 +397,18 @@ discard unauthorized data. Peer datagrams require a permission before Data or
 ChannelData output. No data operation refreshes allocation, permission, or
 channel lifetime unless the RFC explicitly says so.
 
+Before generation-tagged zero-copy leases are admitted, Send and Data paths copy
+payloads into bounded runtime-owned output storage. No borrowed receive payload
+escapes a core transition. Later scatter/gather leases replace eligible copies
+without changing authorization or completion semantics.
+
 The relay-port allocator maintains state per relay IP, family, transport, and
-shard. It selects bounded randomized candidates, supports atomic even-port
-reservation, consumes authenticated reservation tokens once, and releases all
-state on failed opens.
+shard. It uses an explicitly supplied independent worker seed with a
+deterministic keyed permutation/PRF, or explicit per-search entropy completion.
+Candidate mapping has no modulo bias, never repeats within a search, handles
+fork/snapshot/restart seed reuse, and exhausts deterministically at its budget.
+It supports atomic even-port reservation, consumes authenticated reservation
+tokens once, and releases all state on failed opens.
 
 ## 11. Runtime and Platforms
 
@@ -379,6 +427,20 @@ transition. Partial sends report unsent packets truthfully. Fast-path rules are
 removed or invalidated before authority reuse, never expire later than core
 authority, and drop or return to the slow path on map loss or reconciliation
 uncertainty.
+
+The first cross-worker queues, configuration publication, cancellation, and
+shutdown ordering receive focused Loom models before batching or Linux
+acceleration is admitted. Comprehensive concurrency and sanitizer closure still
+occurs at the final assurance milestones.
+
+Fast-path packet and byte authority is a finite generation-bound lease issued by
+core. Kernel code may decrement but never refill it. Consumption must reconcile
+before renewal; lost or uncertain accounting prevents renewal, and unused budget
+is invalidated on expiry, revocation, teardown, restart, or generation reuse.
+
+TLS and DTLS early application data is disabled for STUN/TURN. Resumption begins
+application processing only after handshake confirmation; any future method-level
+exception requires a separate replay-safety contract and release.
 
 Windows, BSD, and macOS use platform event and batching facilities behind the
 same runtime command contract. Android and iOS embed the portable runtime

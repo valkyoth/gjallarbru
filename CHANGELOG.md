@@ -11,6 +11,10 @@ All notable changes to `gjallarbru` are documented here.
   for semantically refined rules with resolved symbols and tests observed by CI.
 - Corrected the design contract for receive-side STUN padding and legal UDP
   ChannelData alignment before wire implementation begins.
+- Added explicit closures for runtime effect admission, complete client-path
+  identity, encoder commit mechanics, external crypto, clock trust, transaction
+  invalidation, timer debt, relay entropy/payload ownership, secure-transport
+  early data, first-concurrency models, and accelerated quota leases.
 
 ## 0.2.0 - 2026-07-14
 
