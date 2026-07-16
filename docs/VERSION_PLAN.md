@@ -82,6 +82,7 @@ The index and detailed contracts are checked together by
 | `0.23.9` | Post-publication crash reconciliation | Every accepted batch is executed, reconciled, or deterministically cancelled across queue/resource/worker failure boundaries |
 | `0.23.10` | Portable publication adapters | Core APIs require no atomics or Send/Sync; single-thread and atomic runtime adapters remain behaviorally equivalent |
 | `0.23.11` | Terminal mailbox race semantics | Cancellation requests, late success, duplicate terminals, and conflicting observations follow one deterministic fail-closed state machine |
+| `0.23.12` | Acknowledged authority fences | Monotonic authority sequences are acknowledged by every execution lane before identifiers, endpoints, or buffers can be reused |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -94,7 +95,9 @@ The index and detailed contracts are checked together by
 | `0.30.1` | Transaction identity and byte budgets | Keyed strong identity prevents collision confusion and cached responses obey explicit byte ceilings |
 | `0.30.2` | Transaction invalidation semantics | Normal reloads pin decisions while revocation explicitly defines replay, error, discard, teardown, and path termination |
 | `0.30.3` | Linear ingress work permits | Cheap admission grants finite parse, HMAC, lookup, response, and preparation allowances with monotonic non-refundable refill |
-| `0.30.4` | Ingress reservation fairness | Permits are acquired just in time, retained briefly, bounded per listener/worker, and never batch-reserved into starvation |
+| `0.30.4` | Two-stage ingress classification | A cheap fixed-header permit irreversibly converts into one bounded method/work-class permit before attribute, HMAC, or lookup work |
+| `0.30.5` | Ingress reservation fairness | Permits are acquired just in time, retained briefly, bounded per listener/worker, and never batch-reserved into starvation |
+| `0.30.6` | Authorized client delivery | Every client-bound response or indication carries a single-use, generation-bound, deadline-checked client-path capability |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -182,6 +185,7 @@ The index and detailed contracts are checked together by
 | `0.78.1` | Expanded concurrency-model closure | Loom inventory expands across reload, rollback, restart, cancellation, shutdown, and promoted counterexamples |
 | `0.79.0` | Batched portable/Linux I/O | Batching improves measured throughput while fairness and results remain identical |
 | `0.79.1` | Batch completion semantics | Normalized path metadata, partial sends, unsent work, and stale batch results preserve scalar behavior |
+| `0.79.2` | Partial-batch capability consumption | Only the accepted send prefix consumes delivery authority; unsent entries retain ownership and revalidate before charged retry |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
 | `0.81.0` | `io_uring` backend | Differential, cancellation, stale completion, fallback, and overload tests pass |
 | `0.82.0` | Optional eBPF/AF_XDP fast path | Installed rules remain a verified subset of live core authority and fail closed |

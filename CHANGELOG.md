@@ -39,6 +39,10 @@ All notable changes to `gjallarbru` are documented here.
   semantics, just-in-time ingress reservation fairness, execution-time endpoint
   capability fences, and common per-frame work accounting across every client
   transport.
+- Added acknowledged authority-sequence fences, two-stage pre-parse ingress
+  classification, symmetric typed client-delivery capabilities, canonical
+  incoming-peer checks, and per-packet capability ownership across partial
+  batched sends.
 
 ## 0.2.0 - 2026-07-14
 

@@ -345,7 +345,8 @@ planned state changes, commands, and exact `TransitionRequirements`; it binds
 the event, state revision, configuration generation, and worker epoch.
 Preparation performs parsing, authentication, policy scans, encoding planning,
 and other attacker-controlled work at most once. Client-ingress preparation
-requires the linear finite ingress-work permit defined before the public UDP
+requires irreversible conversion from the finite unclassified fixed-header
+permit into the matching method/work-class permit defined before the public UDP
 runtime; authoritative control events instead consume their reserved control lane.
 
 `PreparedTransition` is single-consume, worker-local, and normally `!Send` and
@@ -439,6 +440,17 @@ Identical terminal observations coalesce; conflicting valid observations enter
 the deterministic `Uncertain` reconciliation path. Terminal ownership,
 attempt/completion accounting, cleanup, audit, and late-event behavior are
 defined for every transition.
+
+Each runtime execution domain has a monotonic `FenceId`/authority sequence.
+Every delivery command carries the sequence current when it was authorized.
+Revocation advances the sequence and requires bounded acknowledgement from
+every applicable queue, submission ring, provider lane, and kernel fast path
+before an identifier, endpoint, permission/allocation slot, connection, or
+buffer generation can be reused. FIFO ordering alone is insufficient. Missing
+or uncertain acknowledgement destroys the old execution domain or advances to
+a disjoint generation whose identifiers cannot alias the unacknowledged one.
+The portable core represents fence commands, acknowledgements, and generations
+as ordinary no-atomic values; runtime adapters implement the synchronization.
 
 Owner-generated snapshots are fixed-size, redacted, versioned observations.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
@@ -574,6 +586,19 @@ removed or invalidated before authority reuse, never expire later than core
 authority, and drop or return to the slow path on map loss or reconciliation
 uncertainty.
 
+Send batches track each packet independently:
+`Queued -> Validated -> HandedOff` or `Validated -> Unsent`. Only the prefix
+accepted by the OS/provider consumes its single-use delivery capability and
+becomes in flight. Unsent entries retain exclusive buffer/capability ownership,
+do not receive a completion, and must revalidate deadline, queue age, every
+generation, path/endpoint authority, and fence acknowledgement before retry.
+For a stream/vector call that accepts only part of one entry, that entry's
+capability is consumed once and its remaining tail stays owned by the same
+bounded in-flight operation; it is never reclassified as a fresh unsent packet.
+Retry attempt charging follows the declared idempotency policy and never
+recreates a consumed capability. Expiry, revocation, disconnect, or buffer
+reuse between a partial result and retry makes the unsent entry inert.
+
 The first cross-worker queues, configuration publication, cancellation, and
 shutdown ordering receive focused Loom models before batching or Linux
 acceleration is admitted. Comprehensive concurrency and sanitizer closure still
@@ -614,31 +639,42 @@ instead of inferred from operating-system defaults.
 Before the first public UDP listener becomes functional, a cheap admission
 transition uses only listener identity, datagram length, trusted receive
 metadata, and injected monotonic time to acquire one linear
-`IngressWorkPermit`. The permit carries finite global/listener/worker
-allowances for packet and parse bytes/operations, HMAC attempts, credential
-lookup admission, error-response bytes, and preparation workspace. Preparation
-consumes but cannot refill or transfer those allowances; permit failure occurs
-before attacker-controlled parsing or authentication work.
+`UnclassifiedIngressPermit`. It carries finite global/listener/worker
+allowances only for packet/frame admission and bounded fixed-header
+classification. Irreversible classification converts it into one finite
+configured method/work-class permit carrying the applicable parse, HMAC,
+credential-lookup, error-response, send, and preparation allowances.
+Preparation consumes but cannot refill or transfer those allowances; failure
+to convert occurs before attribute scanning or authentication work.
 
-Permit acquisition reserves the maximum allowed stage capacity. Starting
-parse, HMAC, lookup, response construction/send, or preparation converts only
-that stage's reservation into a non-refundable attempt charge. Dropping the
-permit releases unused reservations; started work is never refunded. Cached
-retransmissions still pay packet, parse/classification, and send charges but do
-not recreate semantic side effects. Capacity recovers only through
+Ingress authority has two irreversible levels. An `UnclassifiedIngressPermit`
+pays only for packet/frame admission and bounded fixed-header classification.
+After the fixed STUN/ChannelData header identifies a finite configured method/
+work class, atomic conversion consumes that classification authority and either
+acquires a class permit reserving the applicable HMAC, lookup, preparation, and
+response capacity or stops before attribute scanning, HMAC, or lookup.
+Attacker-declared methods cannot create new classes, repeat conversion, probe
+capacity without charge, or refund classification work.
+
+Within the classified permit, starting HMAC, lookup, response construction/send,
+or preparation converts only that stage's reservation into a non-refundable
+attempt charge. Dropping the permit releases unused reservations; started work
+is never refunded. Cached retransmissions still pay packet, classification,
+parse, and send charges but do not recreate semantic side effects. Capacity
+recovers only through
 deterministic saturating monotonic token-bucket refill with explicit burst and
 rate ceilings. This includes spoofed-source and amplification-safe policy, so
 Binding never ships as an unbudgeted internet-facing CPU or response path.
 
-Permits are acquired just in time immediately before preparation and are never
-retained while a packet waits in an input queue. Outstanding permit count,
-reserved stage capacity, and reservation lifetime are bounded per listener and
-worker. Receive batching does not grant batch-wide reservation: each packet is
-admitted independently, and unused stage reservations are released before the
-next packet where practical. Deterministic fairness prevents one listener or a
-large class of cheap Binding traffic from reserving all HMAC/lookup capacity
-needed by authenticated TURN work, without allowing expensive traffic to evade
-its own charges.
+Permits are acquired just in time immediately before classification/preparation
+and are never retained while a packet waits in an input queue. Outstanding
+permit count, reserved stage capacity, and reservation lifetime are bounded per
+listener and worker. Receive batching does not grant batch-wide reservation:
+each packet is admitted independently, and unused stage reservations are
+released before the next packet where practical. Deterministic fairness
+prevents one listener or classified work class from starving another; cheap
+Binding classification cannot reserve authenticated TURN HMAC/lookup capacity,
+and expensive traffic cannot evade its own charges.
 
 Before Allocate, CreatePermission, Send, ChannelBind, or ChannelData can become
 functional, every received destination becomes one canonical and effective
@@ -676,6 +712,18 @@ buffer can be reused. Commands already handed to the OS have explicit bounded
 in-flight semantics: recall is never assumed, their attempt charge stays
 consumed, and late completion enters the terminal-mailbox contract rather than
 silently extending authority.
+
+Client-bound delivery is symmetric. `AuthorizedClientPath` binds the complete
+`ClientPath` identity plus listener, socket/connection/session, worker,
+configuration, proxy, TLS/DTLS, interface, realm, allocation/transaction,
+command, batch, buffer, charge, and authority-sequence generations. It carries
+maximum queue age/execution tick and is single-use at final handoff. Binding and
+error responses, authenticated successes, Data indications, peer-to-client
+ChannelData, and later RFC 6062 indications cannot be sent from a raw address or
+connection handle. Disconnect, revocation, path replacement, or fence advance
+invalidates queued client delivery before reuse. Incoming peer sources are
+canonicalized with the same address/mapping-generation rules used for outbound
+peers before permission or channel lookup.
 
 A non-optional minimum relay safety profile applies to that canonical identity
 and denies metadata services, loopback, listeners, administration endpoints,
