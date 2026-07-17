@@ -65,6 +65,8 @@ All notable changes to `gjallarbru` are documented here.
 - Split complete internal state witnesses from redacted observations, added
   explicit hash-layout resource semantics, nested unwind/reentrancy rules,
   typed ingress provenance, and evidence-based eBPF reader reclamation.
+- Added mechanical witness confinement, keyed-hash seed lifecycle, a Linux BPF
+  reader-capability spike, and raw AF_XDP L2/L3/L4 validation before acceleration.
 
 ## 0.2.0 - 2026-07-14
 

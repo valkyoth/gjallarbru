@@ -413,6 +413,13 @@ serialize, log, export, administer, persist, restart, or deserialize authority.
 Provider secret bytes remain outside core when stable purpose-bound
 `{domain, id, generation}` references are the semantic state.
 
+Witness types, iterators, scratch, and sinks are private or `pub(crate)` and
+reachable only from a repository-internal fuzz/model/differential harness—not a
+normal Cargo feature, facade/runtime adapter, callback, FFI, or published API.
+No general byte sink or dynamic callback exists. Sensitive fixed scratch is
+non-escaping and scrubbed on success, error, and unwind; production package,
+symbol, rustdoc, and compile fixtures mechanically enforce the confinement.
+
 `RedactedObservationSnapshot` is a separate bounded production diagnostic with
 identities, credentials, nonces, packet/authentication evidence, and reusable
 handles removed. It is never equality evidence. Equality also never compares
@@ -427,6 +434,21 @@ invariants while permitting only typed bounded resource outcomes to differ.
 No hidden platform hash state, reseed, full-table scan, pointer layout, `usize`
 width, endianness, allocator placement, or runtime correlation ID may affect
 semantic authority or operation identity.
+
+Each attacker-keyed table uses an opaque non-cloneable `HashSeed` from explicit
+entropy, bound to process/engine/worker, purpose, and hash-domain generation.
+Transactions, allocations, permissions, channels, credentials, nonce/replay,
+and rate-limit tables use separate domains. Raw seed material never formats,
+serializes, exports, or enters observations/witnesses; the stable purpose/
+generation reference does. A seed changes only through a
+capacity-reserved bounded rebuild. Fork/clone/snapshot/restart/replacement must
+establish unique instance entropy and rebuild before ingress; failure stays
+closed. Live clone profiles require a non-snapshot-stable supervisor identity or
+resume event; otherwise live snapshot cloning is unsupported and service starts
+in a fresh process/epoch. The keyed hash has fixed work and no allocation or
+blocking. Deterministic safety, worst-case guaranteed insertion capacity, and
+statistical availability under healthy secret seeds are measured and documented
+as distinct claims.
 It first performs one bounded preparation pass into caller-provided fixed
 workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds
@@ -801,14 +823,30 @@ extension headers/fragments, checksum/offload ambiguity, and GRO metadata have
 explicit punt/drop eligibility. Related maps are filled under one inactive
 generation and exposed by a single atomic epoch switch, preferably map-in-map.
 Each packet captures the active epoch once and uses it for every related lookup;
-active entries are immutable. A fence first prevents new old-epoch entry, then
-a generation-bound kernel/RCU grace-completion observation proves pre-fence
-readers for that map/program class exited. Elapsed time never authorizes map
-reclamation; missing/stale/timeout evidence quarantines old maps and disables
-acceleration. UMEM/DMA/XSK ownership still requires its separate terminal or
-core-validated quiescence evidence. Epochs cannot wrap or be reused while
-reachable. UMEM frames carry a generation and one XSK queue owner with fixed
-headroom/alignment and exactly-once fill/completion return.
+active entries are immutable.
+
+A dated executed capability matrix names the exact kernel/UAPI/libbpf primitive
+for each backend. Map/link update, FD close, elapsed time, process death, or
+reference counts never imply reader drain. If a generation-bound reader-
+completion primitive is actually observable, it is used only for its proven
+map/program class. Otherwise old-capable invocations perform a final active-
+epoch check immediately before redirect/action; mismatch punts before redirect
+or drops, while a packet already past that check is bounded accepted in-flight
+work. Semantic retirement, packet action, kernel memory, FD, and persistent
+object ledgers are separate. bpffs pins, inner/outer maps, XSKMAPs, programs,
+links, attach points, namespaces, queues, and UMEM are inventoried; unsupported
+or unobservable capability leaves acceleration disabled.
+
+Before AF_XDP constructs complete ingress, a bounded raw cursor positively
+validates Ethernet/VLAN/QinQ lengths/type/end, IPv4 IHL/total-length/header-
+checksum/fragment policy, bounded IPv6 extension and fragment policy, exact UDP
+length, pseudo-header checksum, supported IPv4 zero-checksum and rejected IPv6
+zero-checksum policy, and qualified checksum/offload metadata. Unknown or
+unverifiable status uses software validation, `XDP_PASS` before redirect, or
+drop. An authenticated-looking prefix of a malformed raw frame is never input.
+Epochs cannot wrap or be reused while reachable. UMEM frames carry a generation
+and one XSK queue owner with fixed headroom/alignment and exactly-once fill/
+completion return.
 
 Batched receives preserve the complete `CompleteIngressEnvelope` for every
 scalar core transition without maintaining a second field list. Partial sends

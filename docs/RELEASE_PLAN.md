@@ -184,16 +184,18 @@ Current closure decisions are:
 | Determinism could remain an architectural promise until the full STUN core, allowing layout, word width, capacity, or correlation IDs to harden into APIs first. | `v0.2.4` lands a minimal executable reducer kernel and differential replay harness before protocol APIs. |
 | Queue-shaped permits, generations, or publication types could force core consumers to adopt Gjallarbru's runtime topology. | `v0.2.5` separates semantic preparation/commit from adapter-owned reservation and publication. |
 | Locked extension/deployment RFC text could remain only downloaded reference material until immediately before a conformance claim. | `v0.2.6` and `v0.2.7` complete semantic ledgers for every locked non-base profile before implementation authority. |
-| Storage layout, tombstone debt, `usize` width, generation wrap, or ambiguous Tick comparison could silently change deterministic results or exceed constrained-target bounds. | `v0.6.2` fixes mechanical bounds; `v0.6.3` makes seed/layout/probe saturation explicit resource inputs and separates exact same-resource replay from cross-layout safety invariants. |
+| Storage layout, tombstone debt, hash-seed lifecycle, `usize` width, generation wrap, or ambiguous Tick comparison could silently change results, weaken DoS resistance, or exceed constrained-target bounds. | `v0.6.2` fixes mechanical bounds; `v0.6.3` makes layout saturation explicit; `v0.6.4` owns purpose-separated entropy-backed seed lifecycle and separates guaranteed capacity from probabilistic availability. |
 | A one-pass attribute inventory could allocate or retain one descriptor per tiny attribute and misclassify its own capacity limit as malformed input. | `v0.8.2` uses sparse fixed metadata plus caller-bounded unknown-required accumulation and a distinct resource outcome. |
 | Encoder dependency/finalizer plans could be logically bounded yet still allocate vectors, closures, trait objects, or grown scatter lists per message. | `v0.16.1` requires fixed arrays/caller workspace and fail-allocator/copy evidence before finalizers. |
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
 | UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
 | Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
-| Raw Rust memory bytes, a redacted view used as equality, provider handles, overlapping caller regions, or an exported witness could make reducer equality incomplete, leak secrets, or permit aliasing during commit. | `v0.2.4` separates a complete internal `CanonicalStateWitness` from `RedactedObservationSnapshot`, uses stable core references, and validates exact disjoint arenas with compile-fail/Miri evidence. |
+| Raw Rust memory bytes, a redacted view used as equality, provider handles, overlapping caller regions, or an exported witness could make reducer equality incomplete, leak secrets, or permit aliasing during commit. | `v0.2.4` separates complete witness from redacted observation and validates disjoint arenas; `v0.2.8` mechanically prevents production crates/features/adapters from naming, formatting, exporting, or receiving witness data. |
 | A valid-looking prefix retained from a truncated UDP datagram could be parsed, authenticated, or answered. | `v0.30.9` normalizes scalar platform truncation before classification and requires silent whole-datagram discard; `v0.79.4` later preserves the same rule under GRO/GSO. |
 | A TCP/TLS framer could scan for a new boundary after an impossible prefix and desynchronize or perform quadratic work. | `v0.21.1` makes invalid prefixes, padding, lengths, and partial EOF terminal connection errors with linear-work fuzz evidence. |
-| `io_uring` or AF_XDP could use raw/lossy identities, lose multishot/buffer completion truth, expose mixed or prematurely reclaimed map generations, or mishandle complex packet shapes. | `v0.81.0` uses one opaque checked 64-bit operation token and closes buffer-ring lifecycles; `v0.82.0` captures one immutable map epoch and requires generation-bound kernel/RCU completion—not elapsed time—before reclamation, with separate UMEM evidence. |
+| Linux acceleration could assume a nonexistent userspace BPF reader-drain token, confuse kernel object lifetime with semantic authority, or leave pinned objects outside process-death recovery. | `v0.81.1` proves exact primitives per backend; without drain evidence it requires a final active-epoch check, separate in-flight/semantic/kernel-object ledgers, full pin/link/program/map inventory, and scalar fallback. |
+| AF_XDP could redirect malformed raw Ethernet/IP/UDP frames that the normal socket stack would reject, allowing an authenticated-looking prefix to reach protocol code. | `v0.81.2` performs bounded positive L2/L3/L4/checksum/offload/exact-end validation before `CompleteIngressEnvelope`; uncertain frames use `XDP_PASS` before redirect or drop. |
+| `io_uring` could use raw/lossy identities or lose multishot, buffer, partial-submission, or zero-copy completion truth. | `v0.81.0` uses one opaque checked 64-bit operation token, exact CQE/buffer lifecycles, feature-specific fallback, and validated quiescence before token-space reuse. |
 | Scalar, stream, secure, proxy, batched, GRO, `io_uring`, and AF_XDP provenance could collapse legitimate absence and missing metadata into optional defaults or reply through an unauthorized source. | `v0.30.10` uses sealed provenance variants and `RawIngress -> ValidatedProvenance -> CompleteIngressEnvelope`; only complete ingress classifies and response source/interface remains bound. |
 | An unwind-enabled embedder could catch a reducer/provider panic, nested guards could clear an outer poison guard, or callback reentrancy could inspect `InCall` state. | `v0.23.18` defines one outer `Idle -> InCall -> Idle|Poisoned` guard, nested-domain ownership, validated typed returns, and pre-inspection reentrancy rejection; production remains abort-and-supervise. |
 
@@ -387,6 +389,9 @@ Deliverables:
   ordinary `Debug`, `Display`, serialization, logging, metrics, crash-report,
   administration, or public snapshot APIs; no witness deserializer can create
   authoritative state and durable recovery needs a separately reviewed profile;
+- witness types/sinks begin private or `pub(crate)` and are consumed only by a
+  repository-internal harness; `v0.2.8` mechanically closes features, packages,
+  callbacks, adapters, symbols, scratch escape, and accidental export;
 - `RedactedObservationSnapshot` is the distinct production diagnostic concept:
   it removes/seals identities, secrets, nonces, packet/authentication evidence,
   and reusable handles, and is explicitly incomplete and unusable for equality;
@@ -569,6 +574,54 @@ Exit criteria:
 - Every locked extension/transport claim has complete semantic planning before
   `v0.3.0` locks assignment provenance and implementation can grant authority.
 - Stop: `v0.2.7 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.8 - Complete-Witness Confinement
+
+Goal: mechanically guarantee that sensitive complete-state comparison remains
+an internal verification mechanism rather than a downstream production feature
+or general-purpose byte-export surface.
+
+Deliverables:
+
+- `CanonicalStateWitness`, its item/iterator types, scratch workspace, digest
+  helper, and sinks are private or `pub(crate)` inside the owning core module;
+- no root/facade re-export, public trait method, public associated type, runtime
+  adapter hook, callback, plugin/provider API, FFI symbol, or server admin path
+  can name, construct, obtain, or stream witness items;
+- witness support is not enabled by an additive Cargo feature that normal
+  downstream dependency unification can activate in production; fuzz/model/
+  differential consumers use a dedicated internal harness or repository-only
+  test target with no published library API;
+- no general-purpose serialization, byte-slice export, `Debug`, `Display`,
+  reflection/schema, arbitrary callback sink, file/network writer, or dynamic
+  trait-object sink exists for witness data;
+- fixed witness scratch and temporary sensitive values obey prepared-transition
+  rules: non-escaping borrows, exact capacity, no hidden allocation/copy, scoped
+  exposure, deterministic scrubbing on success/error/panic, and no retention by
+  diagnostics, failures, assertions, fuzz crash artifacts, or snapshots;
+- `RedactedObservationSnapshot` remains the only production observation surface
+  and cannot be converted to or compared as a complete witness;
+- package/content/API gates ensure crates.io archives and EUPL runtime/server
+  artifacts contain no accidentally exported witness symbol or enablement path.
+
+Verification:
+
+- `cargo test -p gjallarbru-core witness_confinement`
+- downstream compile-fail fixtures from facade, wire, crypto, runtime, server,
+  custom adapter, FFI, and normal dependency-feature contexts
+- rustdoc/public-API/symbol/package scans for witness names, traits, formatting,
+  serialization, callbacks, byte export, and production feature activation
+- dedicated internal fuzz/model harness tests proving full comparison remains
+  usable without public visibility or proportional allocation
+- Miri plus panic/error/capacity tests for scratch escape, retained callback,
+  uninitialized bytes, double scrub, and sensitive crash/assertion output
+
+Exit criteria:
+
+- Complete state evidence is available only to repository-internal verification;
+  production and downstream code can obtain redacted observations but cannot
+  name, enable, export, format, retain, or callback-stream witness material.
+- Stop: `v0.2.8 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.3.0 - IANA Snapshot Tooling
 
@@ -827,9 +880,9 @@ Deliverables:
 - any key successfully inserted remains exactly retrievable/removable within
   the declared probe bound; lookup saturation cannot turn present into absent or
   absent into present, and failed insertion is atomic with no partial index/slab state;
-- user-visible logical-capacity claims name the minimum guaranteed admission
-  across every qualified layout at the configured load/probe limits; higher
-  incidental capacity is never promised or used to bypass quotas;
+- deterministic capacity evidence reports the mathematically proven minimum
+  admission across all layouts even when that minimum is small; it is not
+  relabeled as the supported-load/SLO claim, which `v0.6.4` qualifies separately;
 - no hidden full-table scan or attacker-triggered retry with a new seed; a
   saturation/rebuild/seed change is a bounded explicit control transition with
   a new resource generation and no semantic adoption from partial work;
@@ -837,7 +890,10 @@ Deliverables:
   debt capable of affecting future outcomes, so different resource states are
   not falsely declared equal; `RedactedObservationSnapshot` remains diagnostic;
 - qualification rules for custom storage require choosing the same explicit-
-  resource contract or a separately proven layout-independent admission model.
+  resource contract or a separately proven layout-independent admission model;
+- per-process keyed seed creation/protection, domain separation, rebuild, clone/
+  restart behavior, and availability claims are mandatory in `v0.6.4` before
+  attacker-keyed indexes can make production DoS-resistance claims.
 
 Verification:
 
@@ -858,6 +914,69 @@ Exit criteria:
   collision layout may change bounded capacity outcomes but can never alter
   authorization truth, lookup soundness, atomicity, or security invariants.
 - Stop: `v0.6.3 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.4 - Keyed-Hash Seed Lifecycle
+
+Goal: make attacker-keyed table randomization an explicit secret lifecycle and
+state availability claims honest, measurable, and distinct from safety bounds.
+
+Deliverables:
+
+- a purpose-specific opaque non-`Clone` `HashSeed` obtained only from an
+  explicit entropy completion/provider and bound to engine/process instance,
+  worker, table purpose, hash-domain generation, and creation epoch;
+- independent domain separation for transactions, allocations, permissions,
+  channels, credentials, nonce/replay state, rate limits, and every other
+  attacker-keyed table; seed/handle substitution across domains fails closed;
+- raw seed bytes never enter core state/witnesses, `Debug`, `Display`, ordinary
+  equality, serialization, logs, metrics, observations, crash evidence, config,
+  CLI/admin output, or provider-independent export; core holds a stable opaque
+  purpose/generation reference to immutable provider seed state;
+- fork, VM snapshot/clone, process restart, worker replacement, provider restart,
+  and instance-identity change rules: no child/replacement accepts attacker input
+  until unique explicit entropy and instance generation are established and all
+  retained tables are rebuilt through the bounded `v0.6.3` control transition;
+- snapshot/clone-capable profiles require a qualified non-snapshot-stable host/
+  supervisor instance identity or explicit resume/clone event; platforms unable
+  to provide one cannot resume a live cloned listener and must start a fresh
+  process/epoch before service rather than pretending clones are detectable;
+- entropy unavailable/duplicate/short/provider-failed/stale completions fail
+  startup or replacement closed; an old seed is never silently reused to regain availability;
+- seed changes occur only through one capacity-reserved bounded rebuild with
+  old/new generations, atomic activation, failure rollback before activation,
+  and complete invalidation/scrubbing after no old lookup can remain in flight;
+- a qualified DoS-resistant keyed hash provider with fixed maximum execution,
+  fixed output, no allocation/blocking/ambient entropy, no secret-dependent
+  variable work, and pinned algorithm/provider/version qualification;
+- three separately documented claims: deterministic safety bounds for all
+  layouts; mathematically proven guaranteed insertion capacity independent of
+  favorable collisions; and probabilistic availability at each supported load
+  under a secret healthy seed with stated distribution/confidence assumptions;
+- no operational capacity/SLO marketed as deterministic when it is only
+  probabilistic; if the proven guaranteed minimum is below a required hard
+  service capacity, that profile must add and qualify a bounded fallback/overflow
+  structure before making the guarantee.
+
+Verification:
+
+- `cargo test -p gjallarbru-core keyed_hash_seed_lifecycle`
+- deterministic entropy-provider vectors plus wrong-purpose/worker/engine/
+  process/domain/generation, stale completion, exhaustion, and provider failure tests
+- fork/snapshot/clone/restart/worker-replacement harnesses proving no ingress
+  precedes unique reseed and bounded complete table rebuild
+- compile/API/package/log/crash scans for seed formatting, export, equality,
+  serialization, observation, witness bytes, or additive production features
+- fixed-work/no-allocation hash qualification, collision/reference properties,
+  algorithm/version migration, old/new generation, and rebuild fault injection
+- published worst-case guaranteed-capacity proof plus reproducible statistical
+  saturation evidence across supported loads, seed samples, and adversarial key corpora
+
+Exit criteria:
+
+- Hash randomization has one opaque purpose-separated lifecycle; deterministic
+  safety never depends on seed luck, and every higher capacity/availability claim
+  is either proven for all layouts or explicitly statistical and reproducible.
+- Stop: `v0.6.4 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 
@@ -5758,12 +5877,126 @@ Exit criteria:
   and every unsafe invariant has executable evidence.
 - Stop: `v0.81.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.81.1 - BPF Reader-Lifetime Capability Spike
+
+Goal: prove the exact Linux mechanism available to retire BPF semantic authority
+and object references before `v0.82.0`, without inventing a userspace RCU token
+that the supported kernel/UAPI does not expose.
+
+Deliverables:
+
+- a dated per-kernel, attach mode, driver mode, map/program/link type, syscall,
+  and optional libbpf capability matrix naming the exact primitive and evidence
+  for update, final action validation, reader completion, detach, and cleanup;
+- official UAPI/source/selftest evidence for every claimed completion; successful
+  `BPF_MAP_UPDATE_ELEM`, outer-map replacement, `BPF_LINK_UPDATE`, FD close,
+  reference-count change, elapsed time, or process death never implies readers drained;
+- base fallback for any backend without observable generation-bound drain:
+  old-epoch program invocations are accepted in-flight work and must perform one
+  final active-epoch/generation validation immediately before redirect, pass,
+  transmit, or other externally visible action; mismatch deterministically
+  punts to the scalar path when still safe or drops;
+- the epoch switch prevents new authorization under the old generation; a
+  packet that passed the final check just before the switch is bounded accepted
+  in-flight work with exact attempt/byte/ownership accounting, never silently recalled;
+- separate ledgers for semantic authority retirement, accepted packet/in-flight
+  action, kernel-owned map/program memory lifetime, userspace FDs, and persistent
+  object ownership; no ledger can satisfy or release another by inference;
+- complete inventory/reconciliation for bpffs pins, map-in-map outer/inner maps,
+  XSKMAPs, programs, BPF links, legacy attach points, FDs, namespaces, devices,
+  queues, and UMEM references; process death is insufficient while a pin/link/
+  namespace or other kernel reference can retain an object;
+- bounded cleanup/quarantine and `v0.23.17` report integration where evidence is
+  available; unsupported/unobservable/inconsistent capability disables the
+  accelerated backend and preserves the scalar reference path;
+- no timer-based emulation of reader completion and no production capability
+  claim derived solely from kernel version rather than an executed probe.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime bpf_reader_lifetime_capabilities`
+- maintained-kernel integration probes and locked official UAPI/source/selftest
+  evidence for every enabled backend capability
+- live multi-CPU races switching epochs at every instruction boundary around
+  final validation/action, with mismatch punt/drop and exact in-flight accounting
+- negative providers reporting update/close/link success without drain evidence,
+  stale/wrong-generation completion, missing probes, and unsupported kernels
+- bpffs pin, surviving link/program/map/inner-map, namespace, process-death,
+  driver detach, reload, eviction, and partial cleanup inventory tests
+- scalar differential suite proving unavailable capability changes performance
+  only and never weakens authorization or ownership truth
+
+Exit criteria:
+
+- Every accelerated reader-lifetime claim names an executed Linux primitive;
+  absent such evidence, final epoch validation contains semantic authority,
+  kernel objects remain separately inventoried, and the scalar path stays active.
+- Stop: `v0.81.1 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.81.2 - AF_XDP Raw-Frame Validation
+
+Goal: positively validate raw link/network/transport frames before AF_XDP can
+bypass the normal socket stack and construct trusted ingress metadata.
+
+Deliverables:
+
+- a bounded allocation-free raw-frame cursor validating Ethernet minimum/header
+  lengths, configured VLAN/QinQ depth and tag lengths, EtherType, headroom,
+  multi-buffer shape, and the exact logical packet end versus permitted L2 padding;
+- IPv4 validation of version, IHL/options bound, total length, header checksum,
+  source/destination shape, fragmentation policy, payload boundary, and trailing
+  bytes before UDP interpretation;
+- IPv6 validation of version, payload length, source/destination shape, and a
+  bounded acyclic extension-header walk with exact count/byte/work limits;
+  fragments or unsupported/ambiguous extension chains punt before redirect or drop;
+- UDP source/destination/length validation against the exact IP payload, no
+  extra IP payload or truncated datagram, and pseudo-header checksum validation;
+  IPv4 zero checksum follows the documented supported profile while IPv6 zero
+  checksum is rejected unless a separately admitted standard profile proves it;
+- hardware checksum/offload and XDP metadata interpreted only through a qualified
+  driver/mode capability; unknown, partial, contradictory, missing-required, or
+  unverifiable status triggers software validation, pre-redirect `XDP_PASS`, or drop;
+- no STUN/ChannelData classification, HMAC, lookup, cache, state, response, or
+  `CompleteIngressEnvelope` until the complete raw frame and required metadata
+  pass; an authenticated-looking prefix of malformed trailing data is inert;
+- raw-validation results retain exact interface/queue/buffer/metadata generations
+  and promote through the `v0.30.10` provenance typestate without a privileged shortcut;
+- a safe socket fallback path using `XDP_PASS` must be selected before redirect;
+  once a malformed frame is redirected to AF_XDP it can only be dropped, never
+  reinjected as if the socket stack had validated it.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime af_xdp_raw_frame_validation`
+- arbitrary raw-frame fuzzing and checked-work counters for Ethernet/VLAN/QinQ,
+  IPv4 options/checksum/fragment/length, IPv6 extensions/fragments, UDP length/
+  checksum, padding, multi-buffer, truncation, overflow, and offload metadata
+- crafted frame corpus injected through raw/XDP test facilities, AF_XDP, and the
+  portable socket path; accepted cases produce identical complete ingress and
+  rejected cases never reach protocol work
+- IPv4 zero-checksum and IPv6 zero-checksum profile vectors plus pseudo-header,
+  odd-length, maximum-length, and corrupted payload checks
+- driver/mode/offload capability matrix forcing software validate, `XDP_PASS`,
+  drop, and disabled-AF_XDP paths with no semantic difference
+- differential packet captures proving exact packet-end consumption and no
+  authenticated-looking prefix acceptance or amplification
+
+Exit criteria:
+
+- AF_XDP accepts only frames positively equivalent to the supported socket-path
+  L2/L3/L4 profile; uncertain validation happens before redirect or drops, and
+  malformed raw bytes never become complete ingress.
+- Stop: `v0.81.2 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.82.0 - Optional eBPF and AF_XDP Fast Path
 
 Goal: accelerate only traffic already authorized by live core state.
 
 Deliverables:
 
+- activation gated by the executed `v0.81.1` reader-lifetime capability matrix
+  and `v0.81.2` raw-frame validation; unproven primitives, packet profiles, or
+  driver/offload metadata keep the scalar/socket path active;
 - tuple steering/filtering before semantic parsing wherever possible; the first
   fast path does not duplicate the complete STUN/TURN parser or authentication
   state machine in eBPF;
@@ -5788,14 +6021,15 @@ Deliverables:
 - entries/maps in an active generation are immutable; updates create a complete
   new generation, preferably switched through atomic map-in-map replacement
   where supported, with an explicit capability/fallback matrix;
-- the authority fence first prevents every declared program/CPU path from
-  beginning a new lookup in the old epoch; reclamation then requires a
-  generation-bound kernel/RCU grace-completion observation proving all readers
-  that entered before that fence have exited for the declared map/program class;
-- elapsed time, a local timer, queue idleness, or fence acknowledgement alone is
-  never grace completion; unavailable, timed-out, stale, wrong-generation, or
-  incomplete reader evidence leaves old maps immutable in bounded quarantine
-  and disables acceleration rather than reclaiming them;
+- where `v0.81.1` proves an observable generation-bound kernel reader-completion
+  primitive, the authority fence prevents new old-epoch entry and that exact
+  completion retires pre-fence readers for only its declared map/program class;
+- where no such primitive exists, every old-capable invocation performs the
+  final active-epoch check immediately before action; mismatch punts/drops and
+  already-past-check packets remain bounded accepted in-flight operations;
+- elapsed time, local timers, queue idleness, update/link/close success, process
+  death, or reference-count inference never retire semantic readers or objects;
+  unavailable evidence uses final validation or disables acceleration;
 - AF_XDP UMEM frames, DMA reachability, XSK rings, and accepted packet ownership
   remain on their separate terminal-completion or `v0.23.17` validated-
   quiescence path even after kernel/RCU map readers have completed;
@@ -5804,7 +6038,9 @@ Deliverables:
   quarantined, or awaiting acknowledgement; uncertainty disables acceleration;
 - UMEM frame identity/generation, XSK queue ownership, headroom/alignment,
   fill/completion-ring lifecycle, and exactly-once return before frame reuse;
-- install/remove ordering, map-capacity, fail-closed miss, and reconciliation checks.
+- install/remove ordering, map-capacity, fail-closed miss, and reconciliation checks;
+- kernel object memory/references and semantic authority use separate ledgers;
+  complete pin/link/program/map/inner-map/XSK/namespace inventory gates cleanup.
 
 Verification:
 
@@ -5821,15 +6057,19 @@ Verification:
 - generation-bound kernel/RCU completion tests for pre-fence delayed readers,
   post-fence entry rejection, stale/wrong-class completion, timeout/unavailable
   evidence, and explicit proof that sleeping never authorizes reclamation
+- no-drain-capability races for final epoch mismatch, switch immediately before/
+  after the final check, bounded accepted in-flight action, and scalar punt/drop
+- pinned/surviving object inventory and cleanup tests proving process death,
+  FD close, link update, and outer-map replacement do not imply object absence
 - map-in-map and fallback capability tests plus epoch maximum/exhaustion/wrap,
   premature reclamation, delayed reader, and stale CPU/XSK reference fixtures
 
 Exit criteria:
 
 - Kernel rules cannot create, refresh, broaden, or outlive core authorization;
-  no packet observes mixed/reclaimed authority generations, old maps remain
-  installed until kernel/RCU reader completion is observed, and UMEM/DMA
-  ownership is released only through separate terminal or validated evidence.
+  each backend uses proven reader completion or final epoch validation, kernel
+  objects stay separately inventoried, and UMEM/DMA ownership is released only
+  through separate terminal or validated evidence.
 - Stop: `v0.82.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.82.1 - Fast-Path Revocation Closure
@@ -5850,6 +6090,12 @@ Deliverables:
   partial update behavior that drops or returns traffic to the slow path;
 - missing/uncertain fence acknowledgement destroys or replaces the fast-path
   execution domain with a disjoint generation and never relies on map FIFO;
+- `v0.81.1` capability-specific reader handling: proven drain evidence where
+  available, otherwise mandatory final active-epoch validation before action;
+  stale final checks punt/drop and already-past-check packets remain accounted in flight;
+- bpffs pins, links, programs, maps/inner maps, XSKs, namespaces, and other
+  kernel references remain inventoried and semantically inert across revocation;
+  process death, FD close, or update success is not removal evidence;
 - fence acknowledgement never releases registered buffers, map values, UMEM
   frames, descriptors, or provider slots still reachable by accepted fast-path
   work; `v0.23.15` terminal reconciliation or `v0.23.17` typed map/queue/UMEM/

@@ -33,6 +33,7 @@ The index and detailed contracts are checked together by
 | `0.2.5` | Adapter-neutral capacity admission | Core prepares semantic requirements and commits to caller arenas while queue topology, reservations, publication, wakeups, and atomics remain adapter-owned |
 | `0.2.6` | Core and deployment standards ledgers | Locked authentication, address, URI, discovery, security, and deployment RFC profiles receive complete semantic requirement inventories |
 | `0.2.7` | Extension and transport standards ledgers | Locked TURN extension, DTLS, shared-port, mobility, measurement, and congestion-profile RFCs receive complete semantic requirement inventories |
+| `0.2.8` | Complete-witness confinement | Private internal harnesses can compare complete state, while production crates, features, adapters, callbacks, formatting, and byte export cannot obtain witness data |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
 | `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, monotonic time, absolute-time trust/source generations, limits, and errors have boundary tests |
 | `0.4.1` | Complete client-path identity | Listener, socket, provenance, interface, configuration, connection, and worker generations prevent stale or cross-realm authority |
@@ -42,6 +43,7 @@ The index and detailed contracts are checked together by
 | `0.6.1` | Freestanding and storage qualification | No-allocator downstream fixtures and bounded storage contracts pass without OS assumptions |
 | `0.6.2` | Deterministic indexes and wrap closure | Load, probes, tombstones, iteration, word-size independence, generation wrap, and tick horizons have executable fixed bounds |
 | `0.6.3` | Hash-layout resource determinism | Seed, layout, probe, and saturation are explicit resource inputs; exact replay uses identical resources while cross-layout tests preserve safety and authorization invariants |
+| `0.6.4` | Keyed-hash seed lifecycle | Purpose-separated opaque seeds come from explicit entropy, rotate only through bounded rebuild, survive no fork/clone ambiguity, and separate deterministic safety from probabilistic availability |
 
 ## Phase B: First-Party Wire Protocol
 
@@ -219,7 +221,9 @@ The index and detailed contracts are checked together by
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
 | `0.80.1` | Measured allocation and copy profiles | UDP/STUN, UDP/TURN, TCP, TLS, and DTLS profiles publish exact warm-up, allocation, copy, retention, and provider qualification evidence |
 | `0.81.0` | `io_uring` backend | One opaque 64-bit operation token, multishot/cancel/CQ/buffer lifecycles, linked partial submission, and feature-by-feature scalar fallback pass |
-| `0.82.0` | Optional eBPF/AF_XDP fast path | Captured immutable map epochs require generation-bound kernel/RCU reader-completion evidence before reclamation; UMEM ownership remains separately proven |
+| `0.81.1` | BPF reader-lifetime capability spike | Exact Linux primitives are proven per backend; absent reader-drain evidence uses final epoch validation and separate kernel-memory/semantic ledgers, never time |
+| `0.81.2` | AF_XDP raw-frame validation | Bounded Ethernet/VLAN, IPv4/IPv6, extension, UDP, checksum/offload, and exact-end validation precedes complete ingress or redirects safely fall back |
+| `0.82.0` | Optional eBPF/AF_XDP fast path | Only capabilities proven by `v0.81.1`/`v0.81.2` activate; final epoch validation, object inventory, packet validation, and UMEM ownership fail closed |
 | `0.82.1` | Fast-path revocation closure | Revocation, expiry, map loss, reuse, and reconciliation cannot leave kernel authority broader or longer-lived than core state |
 | `0.82.2` | Fast-path quota leases | Kernel byte/packet authority is finite, generation-bound, reconciled before renewal, and never independently refillable |
 
