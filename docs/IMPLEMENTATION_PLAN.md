@@ -431,10 +431,20 @@ the confinement.
 
 `RedactedObservationSnapshot` is a separate bounded production diagnostic with
 identities, credentials, nonces, packet/authentication evidence, and reusable
-handles removed. It is never equality evidence. Equality also never compares
-raw Rust memory, padding, pointers, or backend handle representation. Every
-future-behavior state field has a mutation test proving it changes the complete
-witness, while intentionally nonsemantic fields require reviewed exclusions.
+handles removed. It is never equality evidence. Complete-witness equality is
+required across nonsemantic Rust object representation, padding, addresses,
+allocator placement, pointer width, endianness, opaque backend-handle
+representation, and different adapters representing the same declared
+provider/resource identity, when every declared reducer input is identical.
+Different hash seeds, declared layouts/saturation, provider or algorithm
+identities, migrations, and resource generations intentionally change the
+complete witness. Those runs compare wire/protocol results where both admit,
+authentication and authorization truth, endpoint/quota bounds, atomicity,
+lookup soundness, typed resource/provider failures, and allocation/copy/work
+bounds instead of claiming witness equality. Every future-behavior state field
+has a mutation test proving it changes the complete witness, including negative
+tests that distinct declared resource layouts or `HashProviderIdentity` values
+cannot compare equal; intentionally nonsemantic fields require reviewed exclusions.
 
 Open-addressed hash seed, layout, probe/load limits, tombstone debt, and
 saturation are explicit reducer resource inputs. Identical inputs replay exactly;

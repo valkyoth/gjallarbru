@@ -69,6 +69,8 @@ All notable changes to `gjallarbru` are documented here.
   reader-capability spike, and raw AF_XDP L2/L3/L4 validation before acceleration.
 - Added a same-crate private-witness replay topology and immutable hash-provider
   identity binding, with accurate unwind-versus-abort scratch containment.
+- Separated exact witness equality across nonsemantic representation from
+  differential invariant testing across declared resource/provider identities.
 
 ## 0.2.0 - 2026-07-14
 

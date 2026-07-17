@@ -184,7 +184,7 @@ Current closure decisions are:
 | Determinism could remain an architectural promise until the full STUN core, allowing layout, word width, capacity, or correlation IDs to harden into APIs first. | `v0.2.4` lands a minimal executable reducer kernel and differential replay harness before protocol APIs. |
 | Queue-shaped permits, generations, or publication types could force core consumers to adopt Gjallarbru's runtime topology. | `v0.2.5` separates semantic preparation/commit from adapter-owned reservation and publication. |
 | Locked extension/deployment RFC text could remain only downloaded reference material until immediately before a conformance claim. | `v0.2.6` and `v0.2.7` complete semantic ledgers for every locked non-base profile before implementation authority. |
-| Storage layout, tombstone debt, hash-seed/provider lifecycle, `usize` width, generation wrap, or ambiguous Tick comparison could silently change results, weaken DoS resistance, or exceed constrained-target bounds. | `v0.6.2` fixes bounds; `v0.6.3` makes saturation explicit; `v0.6.4` owns opaque seeds/availability; `v0.6.5` binds provider, algorithm/version, reference, generation, purpose, and seed behavior immutably. |
+| Storage layout, tombstone debt, hash-seed/provider lifecycle, `usize` width, generation wrap, ambiguous Tick comparison, or conflated representation/resource equivalence could silently change results, weaken DoS resistance, or exceed constrained-target bounds. | `v0.6.2` fixes bounds; `v0.6.3` makes saturation explicit; `v0.6.4` owns opaque seeds/availability; `v0.6.5` binds provider behavior immutably; `v0.6.6` separates exact representation equality from cross-resource/provider invariant testing. |
 | A one-pass attribute inventory could allocate or retain one descriptor per tiny attribute and misclassify its own capacity limit as malformed input. | `v0.8.2` uses sparse fixed metadata plus caller-bounded unknown-required accumulation and a distinct resource outcome. |
 | Encoder dependency/finalizer plans could be logically bounded yet still allocate vectors, closures, trait objects, or grown scatter lists per message. | `v0.16.1` requires fixed arrays/caller workspace and fail-allocator/copy evidence before finalizers. |
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
@@ -433,8 +433,13 @@ Verification:
   is explicit, entropy/provider result substitution, time-source generation, and every capacity
 - 32-/64-bit or equivalent width fixtures plus same-resource exact replay and
   cross-seed/layout safety differential tests required by `v0.6.3`
-- complete-witness fixtures proving stable semantic equality across padding,
-  layout, handle representation, pointer width, and provider adapters
+- complete-witness fixtures proving equality across padding, object
+  representation, addresses, allocator placement, handle representation,
+  pointer width, endianness, and different adapters only when all declared
+  resource/provider identities and reducer inputs are identical
+- cross-seed, declared-layout/saturation, provider/algorithm identity,
+  migration, and resource-generation fixtures compare protocol/security/
+  resource invariants under `v0.6.6` and require the witness to record the difference
 - a field inventory plus mutation test for every state field: changing any field
   capable of affecting future behavior changes the complete witness stream;
   intentionally nonsemantic fields require an explicit reviewed exclusion
@@ -952,6 +957,9 @@ Deliverables:
 - per-process keyed seed creation/protection, domain separation, rebuild, clone/
   restart behavior, and availability claims are mandatory in `v0.6.4` before
   attacker-keyed indexes can make production DoS-resistance claims.
+- `v0.6.6` separates representation-equivalent exact witness replay from
+  cross-resource differential invariants and forbids equal witnesses for
+  distinct declared layouts or provider identities.
 
 Verification:
 
@@ -1091,6 +1099,70 @@ Exit criteria:
   hashing behavior for its generation; any ambiguity creates a new generation
   and rebuild before ingress rather than silently changing reducer behavior.
 - Stop: `v0.6.5 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.6 - Declared-Resource Equivalence Classes
+
+Goal: make reducer verification distinguish nonsemantic implementation
+representation from declared resource/provider state that legitimately changes
+future behavior and therefore must change the complete witness.
+
+Deliverables:
+
+- one reviewed equivalence taxonomy labels every replay dimension as either
+  nonsemantic representation or declared semantic/resource input; new adapters,
+  layouts, providers, algorithms, and generations cannot remain unclassified;
+- exact complete-witness equality is required when all declared reducer,
+  resource, and provider identities are identical while varying Rust padding
+  and object representation, memory addresses, allocator placement, pointer
+  width, endianness, opaque backend-handle representation, and adapter
+  implementations representing the same declared identity;
+- exact-class fixtures also require identical typed results and wire/command
+  output, with no hidden target, allocator, address, handle, or adapter identity
+  entering semantic state, ordering, work selection, or authorization;
+- differential invariant testing replaces witness equality when varying hash
+  seed, declared storage layout or saturation/debt, `provider_id`, algorithm or
+  algorithm version, provider migration, or provider/resource generation;
+- where both differential paths admit an operation, they agree on applicable
+  wire/protocol results, authentication and authorization truth, endpoint and
+  quota bounds, operation identity, and externally visible semantic effects;
+- all differential paths preserve atomicity, lookup soundness, stale-generation
+  rejection, bounded work/memory/allocation/copy behavior, and fail closed only
+  through documented typed resource/provider outcomes;
+- the complete witness records every declared resource/provider difference,
+  including `HashProviderIdentity`, layout, capacity/probe/tombstone/saturation
+  state, migration phase, and resource generation; a witness digest is never
+  substituted for decisive full-stream comparison;
+- comparison tooling rejects an attempted exact-class run whose declared inputs
+  differ, preventing a test harness from erasing differences to manufacture
+  equality or accidentally comparing incomparable reducer states;
+- this taxonomy is reused by later reducer, storage, runtime-adapter, restart,
+  migration, cross-target, fuzz, model, and differential conformance gates.
+
+Verification:
+
+- `cargo test -p gjallarbru-core declared_resource_equivalence_classes`
+- exact-class fixtures across supported pointer widths/endiannesses, randomized
+  addresses/allocator placement/padding, opaque handle encodings, and at least
+  two adapters declaring the same provider/resource identity
+- cross-seed/layout/saturation/provider/algorithm-version/migration/generation
+  matrices comparing wire results where jointly admitted plus authentication,
+  authorization, endpoint, quota, atomicity, lookup, and resource invariants
+- negative complete-witness mutation tests proving distinct
+  `HashProviderIdentity`, layout, saturation/debt, migration phase, and resource
+  generation values cannot yield equal full witness streams
+- malicious comparator/adapter fixtures for hidden backend identity, erased
+  declared inputs, forged sameness, digest collision, platform-dependent order,
+  widened authorization, partial mutation, and untyped provider failure
+- no_std/MSRV/cross-target replay plus fixed work, allocation, copy, capacity,
+  failure, fuzz, property, Kani/reference-model, and package/API gates
+
+Exit criteria:
+
+- Exact witness equality is claimed only across nonsemantic representation with
+  identical declared inputs; declared resource/provider changes are visible in
+  the witness and may change only documented resource outcomes, never protocol
+  authority, security truth, atomicity, lookup soundness, or boundedness.
+- Stop: `v0.6.6 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 

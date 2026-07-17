@@ -46,6 +46,7 @@ The index and detailed contracts are checked together by
 | `0.6.3` | Hash-layout resource determinism | Seed, layout, probe, and saturation are explicit resource inputs; exact replay uses identical resources while cross-layout tests preserve safety and authorization invariants |
 | `0.6.4` | Keyed-hash seed lifecycle | Purpose-separated opaque seeds come from explicit entropy, rotate only through bounded rebuild, survive no fork/clone ambiguity, and separate deterministic safety from probabilistic availability |
 | `0.6.5` | Hash-provider identity binding | Provider, algorithm/version, seed reference, and generation map immutably to one purpose/seed behavior; uncertainty forces a new generation and table rebuild |
+| `0.6.6` | Declared-resource equivalence classes | Exact witnesses ignore only nonsemantic representation variance; cross-seed, layout, provider, migration, and generation tests expect identity differences while preserving protocol and security invariants |
 
 ## Phase B: First-Party Wire Protocol
 
