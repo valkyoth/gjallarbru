@@ -56,6 +56,9 @@ All notable changes to `gjallarbru` are documented here.
   admission, complete locked-profile ledger passes, deterministic storage and
   sparse wire workspaces, honest nonce replay semantics, UDP GRO/GSO closure,
   and named allocation/copy profiles.
+- Closed reducer commit/crash, canonical-state, caller-memory aliasing, scalar
+  UDP truncation, terminal stream framing, runtime validation, constructible
+  quiescence, bounded key-lease, `io_uring`, and AF_XDP lifecycle contracts.
 
 ## 0.2.0 - 2026-07-14
 

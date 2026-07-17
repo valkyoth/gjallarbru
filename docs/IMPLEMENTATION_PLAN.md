@@ -310,7 +310,11 @@ and typed.
 
 The stream framer accepts arbitrary partial reads and coalesced frames, caps
 retained bytes and frame counts, and applies ChannelData stream padding without
-including it in the ChannelData length.
+including it in the ChannelData length. An invalid/impossible/oversized prefix,
+invalid stream padding, impossible declared length, or EOF with a partial frame
+is terminal for the connection. The framer never scans forward for a plausible
+cookie or ChannelData boundary after failure; arbitrary fragmentation and
+malformed input retain linear work with no resynchronization attempt.
 
 UDP ChannelData accepts either the exact declared datagram length or its legal
 four-byte-aligned padded form. Every other trailing length is rejected. Received
@@ -359,6 +363,14 @@ externally held key never needs export between provider objects. `Unsupported`,
 distinct internally but all fail closed without algorithm fallback or
 unauthenticated success.
 
+Concurrent or prepared key use is represented by one bounded non-cloneable key
+lease bound to purpose, provider, core key reference, generation, consumer, and
+expiry. A prepared synchronous operation borrows for its call or owns one
+accounted lease. Revocation prevents new use; already-started work follows its
+declared completion/cancellation/quarantine lifecycle. Leases never export key
+bytes or backend handles, compare backend representation, extend themselves on
+use, or hide unbounded reference-counted cache retention.
+
 For valid public tag lengths, verification computes the complete required MAC
 and compares every offered tag byte without secret-dependent early exit.
 Structurally invalid public lengths may fail before secret work. Statistical
@@ -388,11 +400,13 @@ caller-provided command sink allows one event to emit several bounded actions.
 Borrowed packet data must be consumed before event handling returns or replaced
 by an explicit runtime-owned buffer lease.
 
-The core is a pure reducer: identical initial state, immutable configuration,
+The core is a pure reducer: identical initial semantic state, immutable configuration,
 ordered event/path identities and generations, supplied monotonic/absolute
 times, entropy bytes, provider completions, storage seed/layout inputs, and
-output/workspace capacities produce byte-identical commands and identical
-resulting state. Bucket/insertion/tombstone order, pointer layout, `usize`
+output/workspace capacities produce byte-identical wire/command output and the
+same versioned canonical state projection/digest. Equality never compares raw
+Rust memory, padding, pointers, or backend handles; resources use stable core-
+owned `{domain, id, generation}` references. Bucket/insertion/tombstone order, pointer layout, `usize`
 width, endianness, allocator placement, and runtime correlation IDs cannot
 affect semantic output or operation identity.
 It first performs one bounded preparation pass into caller-provided fixed
@@ -426,6 +440,12 @@ to the reducer. Core observes only opaque reservation/arena identity, exact
 sufficiency, and single-consume validity. A stale prepared transition or
 insufficient capacity is discarded without mutation. Only droppable client
 ingress may be retried as a new external event under a new ingress-work permit.
+State, input, mutable workspace, command output, and retained regions are
+disjoint unless an API explicitly permits read-only overlap. Reservations bind
+the exact arena identity, checked base/length, alignment, capacity, and
+generation. Safe borrows make aliasing unrepresentable; raw-memory adapters
+validate overlap, arithmetic, lifetime, substitution, alignment, and generation
+at their reviewed unsafe construction boundary before mutation.
 
 Queue/listener/worker generations, topology, publication state, wakeups, and
 correlation IDs stay in the adapter envelope. Failed commit, cancellation,
@@ -436,15 +456,21 @@ generational counter. Exhaustion or wrap fails closed; adapter correlation
 metadata cannot affect reducer behavior.
 
 Mutable core state is exclusively worker-owned. Commit writes commands into the
-adapter-reserved caller arena without knowing its eventual queue, completes the
-state mutation, and returns one complete ready arena. The adapter then performs
+adapter-reserved caller arena without knowing its eventual queue. Every provider
+call, bounds/capacity check, encoding step, and fallible arena write finishes
+before semantic mutation. Once mutation begins, it and ready-arena return are
+infallible and non-panicking; preflight/shadow records or a bounded undo journal
+prove failure atomicity rather than assuming arbitrary in-place rollback. The
+adapter then performs
 its reserved infallible publication. Threaded consumers use release/acquire;
 local and custom adapters use equivalent mechanics without atomics. State
 inspection occurs through owner-generated immutable snapshots, never concurrent
-direct reads. A crash before publication invalidates the committed arena and
-adapter reservation through the worker epoch; recovery never treats a partial
-arena as published. Partial arena acceptance is prohibited, while later OS
-execution remains explicitly non-atomic and completion-driven.
+direct reads. If execution stops after mutation begins but before publication,
+the base design destroys the complete worker engine epoch and its authoritative
+state together with the arena; invalidating only the unpublished arena is
+forbidden and this is epoch loss, not rollback. Partial arena acceptance is
+prohibited, while later OS execution remains explicitly non-atomic and
+completion-driven.
 
 Capacity reservation and publication are runtime-adapter responsibilities, not
 part of the portable core data model. `gjallarbru-core` transitions, requirements,
@@ -535,13 +561,18 @@ acknowledged watermark remains capable of a new handoff in that lane. An
 already-handed-off command may still be externally in flight. Its buffer,
 descriptor, lease, provider storage, operation slot, and other physically
 reachable ownership remain pinned until a generation-valid terminal result or
-deterministic reconciliation proves release. Domain destruction counts only
-through a typed, generation-bound adapter quiescence proof covering the exact
-resource inventory and showing every kernel operation, registered buffer,
-DMA/UMEM reference, provider thread, and provider-owned buffer unreachable. A
-closed descriptor, dropped handle, timeout, or Boolean is insufficient. An
-adapter unable to prove in-process quiescence retains storage until confirmed
-process death or uses supervised process isolation. Semantic identifiers may
+deterministic reconciliation proves release. For domain destruction, an adapter
+submits a structured `QuiescenceReport` bound to a single-use core challenge,
+domain/adapter/worker/provider generations, shutdown attempt, fences, and the
+exact resource manifest. Core validates it against live state and alone creates
+and consumes private `ValidatedQuiescence`. Types establish report shape,
+freshness, inventory completeness, and exact-once acceptance; truthful
+observation that every kernel operation, registered buffer, DMA/UMEM reference,
+provider thread, and provider-owned buffer stopped remains a reviewed conforming-
+adapter trust obligation. A closed descriptor, dropped handle, timeout, Boolean,
+or free-form snapshot is insufficient. An adapter unable to report in-process
+quiescence retains storage until confirmed process death or uses supervised
+process isolation. Semantic identifiers may
 advance to a disjoint generation after the fence, but their backing storage
 cannot be reused or aliased while the old external operation could still access it.
 
@@ -550,7 +581,7 @@ cancellation attempts, reconciliation rounds, unresolved age, and fixed
 global/worker/provider counts. Exhaustion transitions the mailbox to
 `Uncertain`, quarantines or destroys the affected provider/execution domain,
 and keeps externally reachable storage non-aliasing until inventory or domain
-quiescence proof establishes it unreachable. Logical admission capacity may be
+validated quiescence report establishes it unreachable. Logical admission capacity may be
 replaced only from a separate bounded reserve/disjoint generation; another
 unresolved operation is never silently evicted. Recovery from saturation is
 explicit and cannot depend on a provider eventually responding.
@@ -693,11 +724,34 @@ tokens once, and releases all state on failed opens.
 The safe portable backend is the behavior reference on every supported OS. It
 uses bounded buffers and no task or timer per allocation.
 
+Every scalar UDP receive first normalizes platform completeness metadata.
+`MSG_TRUNC`, `WSAEMSGSIZE`, equivalent indicators, or uncertainty that a buffer
+contains the complete datagram silently discard that indivisible datagram before
+classification, parsing, authentication, lookup, state, or response. A retained
+prefix is never an input frame even when it is a complete valid authenticated
+STUN message. Batched and accelerated receives refine this scalar rule.
+
 Linux adds worker-local `SO_REUSEPORT` steering, batched receive/send,
 scatter-gather buffers, then `io_uring` only after measurement. Optional eBPF
 and AF_XDP can filter or accelerate already-authorized plaintext UDP paths but
 cannot authenticate, create state, refresh lifetimes, or independently decide
 policy.
+
+The `io_uring` adapter identifies operations with checked slab index,
+generation, domain, and kind—never a raw pointer. It models multishot `F_MORE`
+and terminal CQEs, cancellation with late completions, provided-buffer depletion
+and exactly-once return, CQ overflow/ring disable, failed unregister/fixed-file
+updates, and partial linked submission. `SEND_ZC` is excluded unless its separate
+notification CQE retains buffer ownership correctly. Each unavailable feature
+has a tested scalar fallback.
+
+The first eBPF/AF_XDP profile prefers tuple steering/filtering and does not
+duplicate the semantic STUN parser. VLAN/QinQ, IP options/fragments, IPv6
+extension headers/fragments, checksum/offload ambiguity, and GRO metadata have
+explicit punt/drop eligibility. Related maps are filled under one inactive
+generation and exposed by a single atomic epoch switch. UMEM frames carry a
+generation and one XSK queue owner with fixed headroom/alignment and exactly-once
+fill/completion return.
 
 Batched receives preserve remote address, local destination, transport,
 truncation, operation, worker epoch, and buffer generation for every scalar core
@@ -710,8 +764,12 @@ Send batches track each packet independently:
 `Queued -> Validated -> HandedOff` or `Validated -> Unsent`. Only the prefix
 accepted by the OS/provider consumes its single-use delivery capability and
 becomes in flight. Unsent entries retain exclusive buffer/capability ownership,
-do not receive a completion, and must revalidate deadline, queue age, every
-generation, path/endpoint authority, and fence acknowledgement before retry.
+do not receive a completion, and must revalidate deadline, queue age,
+adapter-local buffer/command/batch identity, exact endpoint, and acknowledged
+fence before retry. Semantic freshness belongs to the core-issued capability.
+Any runtime semantic-generation mirror is versioned and fence-driven, may reject
+but never authorize, and fails closed when stale or uncertain; observation
+snapshots are never send authority.
 For a stream/vector call that accepts only part of one entry, that entry's
 capability is consumed once and its remaining tail stays owned by the same
 bounded in-flight operation; it is never reclassified as a fresh unsent packet.

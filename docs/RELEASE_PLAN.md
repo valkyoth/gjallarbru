@@ -125,17 +125,17 @@ Current closure decisions are:
 | Future readiness could be a one-time standards review. | API/config evolution, scheduled standards review, extension policy, and first-party provenance gates are `v0.108.0` through `v0.110.0`. |
 | Formal, fuzz, packaging, operations, specification closure, and external audit could be postponed past 1.0. | Assigned to `v0.93.0`, `v0.94.0`, and `v0.111.0` through `v0.115.0`. |
 | Separate public crates could leave users without a coherent `gjallarbru::` entry point or allow facade documentation to drift. | `v0.55.1` admits a no_std facade, stable namespaced re-exports, root-README parity, and facade-last publication. |
-| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the contract, `v0.2.4` makes its kernel executable early, and `v0.23.1` proves the full reducer with byte-identical all-or-nothing transitions. |
+| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the contract, `v0.2.4` makes its kernel executable with canonical semantic state, disjoint arenas, and an explicit commit/crash rule, and `v0.23.1` proves the full reducer. |
 | A protocol or credential name without a standard or project specification could silently acquire authority. | `v0.2.1` requires a reviewed mechanism registry; names such as `STUN-DEREF` remain unsupported until a threat model, key domain, wire assignment, and requirement evidence exist. |
 | `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds a freestanding no-allocator/no-atomic local fixture; `v0.6.2` closes deterministic storage, debt, width, and wrap behavior. |
 | Receive padding, post-integrity attributes, repeated scans, oversized inventories, or ChannelData datagram alignment could be implemented with subtly incorrect semantics. | `v0.5.1`, `v0.8.1`/`v0.8.2`, `v0.15.1`, and `v0.22.1` close cursor progress, sparse authenticated views, legal UDP forms, complexity, and operation ceilings. |
-| Broad crypto traits or ordinary secret types could hide allocation, key export, variable output, timing, or provider-failure behavior. | `v0.17.1`, `v0.19.1`, and `v0.26.1` define capability-specific providers, secret wrappers, scatter integrity, fail-closed errors, opaque handles, and timing qualification. |
+| Broad crypto traits, ordinary secret types, or cloned concurrent key handles could hide allocation, key export, stale authority, variable output, timing, or provider-failure behavior. | `v0.17.1`, `v0.17.4`, `v0.19.1`, and `v0.26.1` define capability-specific providers, bounded non-clone leases, secret wrappers, scatter integrity, fail-closed errors, opaque handles, and timing qualification. |
 | Transaction equality or response caching could rely on a weak digest or item count while ignoring collision, tombstone, iteration, and byte-exhaustion risk. | `v0.6.2` and `v0.30.1` require bounded table structure, keyed identity, collision evidence, and independent cached byte budgets. |
 | Allocation/copy/task accounting and formal state evidence could arrive only after the first real packet and relay paths. | `v0.31.1` instruments the first runtime hot path; `v0.39.1`/`v0.39.2` move reference and lifecycle model checking before real relay sockets. |
 | Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
 | Batching or kernel acceleration could treat partial sends, capability consumption, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes completion truth, `v0.79.2` closes per-entry authority/ownership, and `v0.82.1` closes acknowledged fast-path revocation, reuse, expiry, and reconciliation. |
 | Keyword anchors could be marked verified by plausible-looking strings without semantic refinement, a real symbol, or an executed test. | `v0.2.2` adds semantic child requirements and a CI evidence manifest that resolves implementation symbols and records observed test execution. |
-| A successful core transition could still overrun adapter capacity, repeat expensive work while sizing a reservation, or be only partly visible. | `v0.23.2` creates one exact prepared transition, `v0.23.3` closes adapter reservation/operation-ID authority, and `v0.23.4` defines adapter-owned publication. |
+| A successful core transition could still overrun adapter capacity, repeat expensive work while sizing a reservation, mutate state before a fallible write, or survive without its unpublished commands. | `v0.23.2` creates one exact prepared transition, `v0.23.3` closes adapter reservation/operation-ID authority, and `v0.23.4` defines preflight, infallible commit/publication, and whole-epoch loss rather than fictional rollback. |
 | Client identity could survive listener, socket, configuration, proxy, interface, or worker reuse. | `v0.4.1` makes every relevant path/provenance generation part of authorization identity. |
 | An opaque synchronous crypto provider could conceal blocking HSM/KMS I/O, allocation, mutable state, ambient entropy, or nondeterministic output. | `v0.17.2` separates bounded deterministic packet crypto from asynchronous external-crypto command/completion operations. |
 | Stale timing-wheel entries and large time jumps could create unbounded expiration debt or accidentally extend authorization. | `v0.36.1` bounds live/dead entries, rescheduling, expiration work, overdue fairness, and time-jump behavior. |
@@ -162,7 +162,7 @@ Current closure decisions are:
 | Cancellation request, OS success, failure, and duplicate terminal observations could race without one authoritative outcome. | `v0.23.11` defines a bounded terminal-mailbox state machine where cancellation is intent, identical terminals coalesce, and conflicts enter deterministic uncertainty/reconciliation. |
 | A whole-process restart could mistakenly adopt prior node-local allocations or replay non-idempotent delivery with unknown status. | `v0.23.9` limits reconciliation to surviving authority, fences and closes old resources after process loss, preserves attempt charges, and forbids base-profile adoption. |
 | Maximum-stage reservations could be pre-acquired for queued or batched packets and starve other listeners or authenticated traffic. | `v0.30.5` requires just-in-time, short-lived, per-packet permits with bounded outstanding reservations and deterministic listener/work-class fairness. |
-| A valid endpoint capability could wait in a queue past permission expiry or revocation and become indefinite runtime authority. | `v0.37.5` makes delivery capabilities single-use, execution-deadline/queue-age/command/charge bound, generation-checked, and revocation-fenced before reuse. |
+| A valid endpoint capability could wait in a queue past permission expiry or revocation, while a runtime mirror could become a second semantic authority. | `v0.37.5` makes capabilities single-use and deadline/command/charge bound; runtime checks adapter-local facts and acknowledged fences only, and any semantic mirror is fence-driven and fail-closed. |
 | TCP, TLS, DTLS, trusted termination, or shared-port dispatch could bypass the UDP ingress work budget. | Initial transport milestones inherit `v0.30.3`-`v0.30.5`; `v0.77.1` proves every admitted plaintext frame uses one normalized ingress permit after transport-specific handshake/framing admission. |
 | Pre-parse fairness could reserve HMAC/lookup capacity before the request method or work class is knowable. | `v0.30.4` separates charged fixed-header classification from irreversible bounded conversion into one finite method/work-class permit. |
 | Peer-bound commands could use typed endpoint authority while client responses and indications still use raw or stale paths. | `v0.30.6` requires one `AuthorizedClientPath` for every client send; `v0.45.0`/`v0.47.0` canonicalize incoming peer identity before permission/channel lookup. |
@@ -176,7 +176,7 @@ Current closure decisions are:
 | A silent provider could leave `DeadlineExceeded`/`CancelRequested` operations and terminal mailboxes unresolved forever. | `v0.23.16` bounds attempts, rounds, age, counts, escalation, quarantine, non-aliasing storage, and saturation recovery. |
 | Client-bound Data or ChannelData could bind only the client path while peer permission/channel authority changes before final handoff. | `v0.43.2` chooses live final-handoff semantics before relay media activates and binds canonical peer plus permission/channel generations, expiry, refresh, revoke, and rebind behavior. |
 | TLS/DTLS adapters could hide unbounded provider buffers or per-record allocations despite precise protocol handoff semantics. | `v0.72.1` gates every adapter before activation; `v0.76.3` closes lifecycle/hot-path allocation, provider byte ceilings, backpressure, cleanup, and zeroization across all selected providers. |
-| An adapter could claim execution-domain destruction without proving kernel, DMA, provider-thread, or registered-memory quiescence. | `v0.23.17` requires typed generation-bound adapter evidence before quarantined physical ownership is released. |
+| A type could overclaim proof of physical quiescence or rely on impossible cross-crate “friend” construction. | `v0.23.17` accepts a generation-bound adapter `QuiescenceReport`, lets core alone create internal validated state from a single-use challenge and complete manifest, and records adapter truthfulness as a trust boundary. |
 | Cache hit/miss latency could be specified as impossible constant-time equality, encouraging artificial authentication work and a new DoS cost. | `v0.30.8` defines cache-membership secrecy, bounded envelopes, secret comparisons, semantic equivalence, and optional release scheduling without repeated expensive work. |
 | A runtime could inspect snapshots or reconstruct authority when queued relay-media permission/channel generations become stale. | `v0.43.3` makes stale-drop mandatory by default and permits replacement only through one bounded core-owned reauthorization event. |
 | TLS/DTLS control records that never become STUN frames could consume uncharged post-handshake crypto, output, timers, or state. | `v0.72.2` defines pre-plaintext control budgets and disabled features; `v0.76.4` closes equivalent enforcement across all selected providers. |
@@ -190,6 +190,10 @@ Current closure decisions are:
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
 | UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
 | Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
+| Raw Rust memory bytes, provider handles, or overlapping caller regions could make reducer equality undefined or permit aliasing during commit. | `v0.2.4` defines a versioned canonical semantic projection, stable core references, exact arena identities, disjointness, and raw-boundary validation with compile-fail/Miri evidence. |
+| A valid-looking prefix retained from a truncated UDP datagram could be parsed, authenticated, or answered. | `v0.30.9` normalizes scalar platform truncation before classification and requires silent whole-datagram discard; `v0.79.4` later preserves the same rule under GRO/GSO. |
+| A TCP/TLS framer could scan for a new boundary after an impossible prefix and desynchronize or perform quadratic work. | `v0.21.1` makes invalid prefixes, padding, lengths, and partial EOF terminal connection errors with linear-work fuzz evidence. |
+| `io_uring` or AF_XDP could use raw-pointer identities, lose multishot/buffer completion truth, expose mixed map generations, or mishandle complex packet shapes. | `v0.81.0` closes checked operation and buffer-ring lifecycles with scalar fallback; `v0.82.0` adds tuple-first shape eligibility, atomic multi-map epochs, and exact UMEM ownership. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -265,8 +269,9 @@ Deliverables:
 
 Verification:
 
-- executable architecture examples replayed twice for byte-identical command/state
-  output, followed by the minimal real core artifact required by `v0.2.4`
+- executable architecture examples replayed twice for byte-identical commands
+  and identical versioned canonical-state projections, followed by the minimal
+  real core artifact required by `v0.2.4`
 - ADR review matrix covering capacity failure, equal/decreasing time, entropy
   failure, stale completion, lease reuse, storage misbehavior, and unknown names
 
@@ -354,7 +359,7 @@ Exit criteria:
   dependency can bypass core to create authentication, state, policy, or send authority.
 - Stop: `v0.2.3 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.2.4 - Executable Reducer Kernel
+### v0.2.4 - Executable Reducer and Memory Contract
 
 Goal: turn deterministic architecture from prose into a minimal protocol-neutral
 core artifact before STUN/TURN API details become compatibility constraints.
@@ -367,13 +372,32 @@ Deliverables:
   complete path/generations, monotonic and absolute-time observations, entropy
   bytes, provider completions, configuration generation, storage seed/layout
   inputs, and output/workspace capacity;
-- byte-identical resulting state and commands for identical envelopes, with
-  adapter queue/provider/transport correlation IDs excluded from semantic input;
+- byte-identical wire output and semantic commands for identical envelopes;
+  state equality uses a fixed, versioned canonical semantic projection and
+  digest that excludes padding, pointers, allocator layout, and backend handles;
+- provider/runtime resources appear in state only through stable core-owned
+  `{domain, id, generation}` references, never backend representation or raw
+  Rust object bytes; adapter queue/provider/transport correlation IDs remain
+  excluded from semantic input and equality;
 - deterministic ordering rules forbidding output/state dependence on hash-table
   iteration, insertion/tombstone layout, pointer/address layout, `usize` width,
   platform endianness, allocator behavior, or unspecified collection order;
 - capacity/fault points proving insufficient workspace/command/output storage
   leaves caller state, visible output, operation counters, and effects unchanged;
+- a caller-memory contract requiring state, input, mutable workspace, command
+  output, and retained regions to be disjoint unless an API explicitly names a
+  read-only overlap; reservations bind exact arena identity, checked base/length,
+  alignment, capacity, and generation, and reject substitution or overlap before mutation;
+- safe APIs whose borrows make aliasing unrepresentable plus one narrowly
+  reviewed unsafe raw-backed adapter boundary that validates range arithmetic,
+  disjointness, alignment, identity, lifetime, and generation;
+- a transactional phase rule: all fallible/provider/bounds/encoding/arena-write
+  work completes before semantic mutation; mutation and ready-arena return are
+  infallible and non-panicking once begun, without arbitrary in-place rollback;
+- a base crash policy that destroys the complete worker engine epoch and all
+  of its authoritative state if execution stops after mutation begins but before
+  ready publication; invalidating only the unpublished arena is forbidden and
+  epoch destruction is never described as rollback;
 - fixed canonical test snapshots and a replay harness reusable by every later
   reducer milestone, including failure offset and first-divergence diagnostics;
 - a deliberately tiny behavioral implementation and nonzero unit/property test
@@ -386,15 +410,23 @@ Verification:
   is explicit, entropy/provider result substitution, time-source generation, and every capacity
 - 32-/64-bit or equivalent width fixtures plus storage seed, insertion order,
   tombstone layout, memory-address, and runtime-correlation differential tests
-- fail-at-every-write instrumentation proving observationally unchanged state,
-  arena, and output on failure
+- canonical-projection fixtures proving stable semantic equality across padding,
+  layout, handle representation, pointer width, and provider adapters
+- fail-at-every-preflight/write instrumentation using shadow records or bounded
+  undo journals and proving unchanged state, arena, and output before commit;
+  panic/fault injection at each commit/publication edge proves either one complete
+  publish or destruction of the entire authoritative engine epoch
+- compile-fail alias fixtures plus an adversarial raw-backed adapter under Miri
+  and sanitizers covering overlap, wraparound ranges, misalignment, substitution,
+  stale generations, and arena reuse
 - no_std/no-allocator link check and traps for ambient time, entropy, callback,
   thread-local, blocking, unwinding, or hosted-OS access
 
 Exit criteria:
 
-- Determinism and atomic absence on failure have executable evidence in core;
-  they are no longer claims inferred from an empty crate or documentation alone.
+- Determinism uses canonical semantics rather than object representation; no
+  fallible work follows semantic mutation, caller regions cannot alias, and a
+  pre-publication crash cannot preserve state whose commands were lost.
 - Stop: `v0.2.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.2.5 - Adapter-Neutral Capacity Admission
@@ -1280,6 +1312,44 @@ Exit criteria:
   can outlive, alias, or exceed the bounded ownership of its exact message bytes.
 - Stop: `v0.17.3 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.17.4 - Bounded Cryptographic Key Leases
+
+Goal: permit bounded concurrent and prepared cryptographic work without making
+opaque key authority clonable, exportable, immortal, or backend-comparable.
+
+Deliverables:
+
+- non-`Clone` `KeyLease`/`KeyRef` authority bound to one key purpose, provider,
+  key generation, consumer domain, operation class, and monotonic expiry;
+- synchronous prepared transitions either borrow the key for their bounded call
+  or own exactly one accounted lease; no hidden reference-counted clone or
+  unbounded cache retention is admitted;
+- revocation and provider/key-generation change prevent new use immediately,
+  while already-started work follows explicit completion, cancellation,
+  quarantine, zeroization, and terminal ownership rules;
+- fixed global/provider/tenant/worker/key counts, ages, bytes, prepared leases,
+  and renewal work with deterministic capacity failure;
+- provider handles remain opaque and are never compared for equality; stable
+  core `{domain, id, generation}` references identify semantic key authority;
+- no lease API exports key bytes, exposes backend handles, implements ordinary
+  `Clone`/`Copy`/`Debug`/equality, or extends expiry through use or copying.
+
+Verification:
+
+- `cargo test -p gjallarbru-crypto key_lease`
+- compile-fail clone/copy/export/equality/escape fixtures and purpose/provider/
+  tenant/generation substitution tests
+- revoke/use, prepared-transition discard, provider restart, expiry boundary,
+  cancellation, stale completion, lease exhaustion, and zeroization models
+- synchronous-borrow versus owned-lease differential results with exact
+  outstanding-count and release accounting
+
+Exit criteria:
+
+- Concurrent key use has one finite, purpose-bound authority lifecycle and
+  cannot turn provider opacity into clonable or stale cryptographic authority.
+- Stop: `v0.17.4 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.18.0 - Legacy Message Integrity
 
 Goal: support legacy long-term credentials without making them the modern core.
@@ -1424,6 +1494,40 @@ Exit criteria:
 - Stream framing is bounded independently of later socket backpressure.
 - Stop: `v0.21.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.21.1 - Terminal Stream-Framing Failures
+
+Goal: make malformed TCP/TLS framing fail once and close rather than search for
+a convenient later byte pattern and desynchronize the authenticated stream.
+
+Deliverables:
+
+- invalid, impossible, reserved, or oversized STUN/ChannelData prefixes are
+  terminal connection-framing errors after bounded prefix work;
+- impossible declared lengths, invalid ChannelData stream padding, and EOF with
+  a partial header, payload, or padding close the connection deterministically;
+- no byte-by-byte scan, magic-cookie search, speculative skip, or other attempt
+  to rediscover a frame boundary after a framing error;
+- one monotonic cursor/work budget proving each received byte is examined a
+  fixed number of times across arbitrary fragmentation and buffer compaction;
+- error categories remain syntax-only runtime input and cannot construct
+  authenticated state, semantic authority, or an error response from a
+  desynchronized tail.
+
+Verification:
+
+- `cargo test -p gjallarbru-wire stream_framing_failures`
+- fuzz every chunk split and every invalid-prefix offset, including partial EOF,
+  bad padding, maximum lengths, valid-looking embedded frames, and long garbage
+- operation-count properties proving linear total work with no rescanning,
+  infinite wait, boundary recovery, parser desynchronization, or response
+- TCP and TLS adapter differential tests proving identical terminal closure
+
+Exit criteria:
+
+- Once stream framing is impossible, no later bytes on that connection can be
+  interpreted as a fresh STUN or ChannelData frame and closure work stays linear.
+- Stop: `v0.21.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.22.0 - Wire Assurance Milestone
 
 Goal: close the first-party wire profile before stateful server work.
@@ -1508,7 +1612,8 @@ planned or observationally absent.
 
 Deliverables:
 
-- byte-identical command and resulting-state replay for identical configuration,
+- byte-identical command replay and identical versioned canonical-state
+  projection/digest for identical configuration,
   ordered event/path identities and generations, supplied times, entropy bytes,
   provider completions, storage seed/layout inputs, output capacities, and every
   other field frozen by the `v0.2.4` executable input envelope;
@@ -1648,8 +1753,13 @@ Deliverables:
   custom adapters use equivalent mechanics without atomics;
 - owner-generated immutable/versioned snapshots as the only cross-thread state
   inspection path, published independently without widening command authority;
-- worker epoch invalidation for crashes before publication, abandoned reserved
-  slots, stale snapshots, restarts, and ownership transfer;
+- all fallible work before semantic mutation plus an infallible non-panicking
+  mutation/ready-publication critical sequence as frozen by `v0.2.4`;
+- complete worker engine-epoch destruction, including authoritative core state,
+  for a crash between mutation start and publication; invalidating only the
+  arena, retaining state, or describing the outcome as rollback is forbidden;
+- worker epoch invalidation for abandoned reserved slots, stale snapshots,
+  restarts, and ownership transfer;
 - a safe single-thread reference adapter plus Loom/model representation of the
   publication protocol and memory-order assumptions.
 
@@ -1664,7 +1774,8 @@ Verification:
 Exit criteria:
 
 - Cross-thread consumers observe only complete ready batches, core state remains
-  worker-owned, and pre-publication crashes invalidate both prepared sides.
+  worker-owned, and a commit/publication crash loses the whole authoritative
+  engine epoch rather than preserving state without its commands.
 - Stop: `v0.23.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.23.5 - Composable Runtime Effect Envelope
@@ -2104,8 +2215,8 @@ Deliverables:
   operation slots, registered files/buffers, and kernel references remain
   pinned while an old external operation may read, write, complete, or cancel;
 - physical release occurs only after a generation-valid terminal result,
-  deterministic reconciliation/inventory proof, or a `v0.23.17` typed
-  quiescence proof establishes that the external domain is unreachable;
+  deterministic reconciliation/inventory proof, or a `v0.23.17` core-validated
+  quiescence report establishes that the external domain is unreachable;
 - semantic identifiers may advance to a disjoint generation after ordering is
   fenced, but backing storage, descriptor numbers, pointer-bearing leases, and
   provider slots cannot alias old externally reachable objects;
@@ -2154,7 +2265,7 @@ Deliverables:
   unresolved operation;
 - deterministic admission failure when unresolved/emergency capacity is full,
   plus operator/audit signals and recovery only through terminal reconciliation,
-  inventory proof, or `v0.23.17` typed quiescence proof;
+  inventory proof, or `v0.23.17` core-validated quiescence report;
 - no LRU/age eviction, forced false terminal result, counter reset, or mailbox
   overwrite used to regain capacity.
 
@@ -2176,17 +2287,20 @@ Exit criteria:
   containment; silence cannot retain unbounded state or force unsafe reuse.
 - Stop: `v0.23.16 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.17 - Typed Execution-Domain Quiescence Proof
+### v0.23.17 - Validated Execution-Domain Quiescence
 
-Goal: make external-domain destruction an executable, generation-bound proof
-that no kernel, DMA engine, provider thread, or registered object can still
-access quarantined physical storage.
+Goal: make external-domain destruction depend on constructible, generation-
+bound adapter evidence that core validates before releasing physical storage,
+without pretending a Rust type can prove an external DMA engine stopped.
 
 Deliverables:
 
-- sealed `QuiescenceProof`/`DomainDestroyed` completion types constructible
-  only by a reviewed runtime adapter and bound to execution-domain, adapter,
-  worker, provider, resource-inventory, shutdown-attempt, and fence generations;
+- a public structured `QuiescenceReport` submitted by an adapter and bound to
+  execution-domain, adapter, worker, provider, complete resource manifest,
+  shutdown attempt, single-use core challenge, and fence generations;
+- core validation of the report against its live challenge, expected domain,
+  shutdown attempt, acknowledged fence state, and exact quarantined inventory;
+  core alone constructs and immediately consumes private `ValidatedQuiescence`;
 - an adapter-specific proof taxonomy covering ordinary socket operations,
   provider worker threads, asynchronous cryptography, `io_uring` queues and
   registered files/buffers, eBPF/AF_XDP maps and UMEM/DMA frames, and secure-
@@ -2197,33 +2311,40 @@ Deliverables:
 - a fixed manifest of resources covered by each proof; omitted, extra,
   duplicated, already-reused, or generation-mismatched resources fail closed;
 - stale, duplicate, forged, wrong-adapter, wrong-domain, partial, or reordered
-  destruction evidence is inert and cannot release ownership or capacity;
+  reports are inert and cannot release ownership or capacity;
 - adapters unable to prove in-process quiescence retain storage in bounded
   quarantine until process termination, or run the external provider inside a
   supervised isolation boundary whose confirmed death supplies the proof;
-- proof acceptance atomically transitions the covered `v0.23.15` physical-
+- validated report acceptance atomically transitions the covered `v0.23.15` physical-
   ownership ledger exactly once and is the only domain-destruction path that
   replenishes `v0.23.16` quarantined/emergency capacity;
 - portable no-OS core representation plus first-party adapter evidence
   contracts; a Boolean, closed descriptor, dropped object, timeout, or fence
-  acknowledgement alone can never satisfy the type.
+  acknowledgement alone can never validate a report;
+- an explicit conforming-adapter trust statement: types prove report shape,
+  identity, completeness, freshness, and single consumption, while truthful
+  observation of kernel/provider/DMA cessation remains in the adapter trust boundary;
+- authority-bearing wrappers remain core-owned regardless of Cargo visibility;
+  public wire/runtime APIs expose syntax and reports, never semantic promotion.
 
 Verification:
 
 - `cargo test -p gjallarbru-core execution_domain_quiescence`
-- compile/API tests proving runtime code cannot forge a proof from a handle,
-  fence acknowledgement, local timeout, provider drop, or free-form snapshot
+- compile/API tests proving external code cannot construct `ValidatedQuiescence`
+  or semantic authority; a handle, acknowledgement, timeout, drop, free-form
+  snapshot, stale challenge, or incomplete report cannot pass core validation
 - adapter/test-double matrices for late kernel completion, live provider thread,
   failed unregister, pending DMA, partial inventory, process death, and clean drain
 - stale/duplicate/wrong-domain/wrong-generation proof tests with exact physical-
   ownership and emergency-capacity counters
 - model tests proving storage becomes reusable exactly once only after terminal
-  completion, deterministic inventory reconciliation, or valid complete quiescence
+  completion, deterministic inventory reconciliation, or a valid complete report
 
 Exit criteria:
 
-- No claim of domain destruction can release physical storage unless typed,
-  adapter-specific evidence proves every declared external accessor quiescent.
+- No claim of domain destruction releases physical storage unless core validates
+  fresh adapter-specific evidence for every declared external accessor; the
+  evidence contract never overstates what Rust visibility or types can prove.
 - Stop: `v0.23.17 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
@@ -2808,6 +2929,42 @@ Exit criteria:
   behavior; no semantic oracle or artificial expensive equalization path exists.
 - Stop: `v0.30.8 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.9 - Scalar Datagram Truncation Boundary
+
+Goal: normalize datagram truncation at the first portable receive boundary so a
+retained valid-looking prefix can never enter protocol classification or auth.
+
+Deliverables:
+
+- normalized receive metadata containing `truncated` and original datagram
+  length when the platform exposes it, plus a conservative fail-closed outcome
+  where exact original length is unavailable;
+- `MSG_TRUNC`, `WSAEMSGSIZE`, and documented platform equivalents cause silent
+  discard of the complete datagram before STUN/ChannelData classification,
+  parsing, HMAC, cache/transaction lookup, ingress-class conversion, or response;
+- fixed receive buffers sized from the supported datagram ceiling and adapter
+  contracts that cannot represent a truncated buffer as a complete frame;
+- no error response, audit payload echo, cache insertion, transaction mutation,
+  allocation mutation, or other amplification from truncation;
+- identical truncation semantics for IPv4/IPv6 and every later UDP adapter,
+  with batched and GRO/GSO paths required to refine this scalar contract.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime scalar_datagram_truncation`
+- oversized datagrams whose retained prefixes are complete valid unauthenticated
+  and authenticated STUN requests, ChannelData, errors, and cache hits
+- adapter tests for Linux truncation flags, Windows oversized-datagram errors,
+  BSD/macOS behavior, exact-fit/one-byte-over boundaries, and unknown length
+- packet capture and state/counter assertions proving no parse/HMAC/lookup,
+  response, amplification, partial acceptance, or semantic mutation
+
+Exit criteria:
+
+- A datagram is known complete before any protocol work begins; every truncated
+  or uncertain receive is silently discarded as one indivisible input event.
+- Stop: `v0.30.9 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -2817,6 +2974,8 @@ Deliverables:
 - safe single-worker portable UDP listener, fixed buffer pool, path conversion,
   full-batch operation-queue reservation/acceptance, command execution, exact
   completion accounting, and clean shutdown;
+- mandatory `v0.30.9` whole-datagram completeness normalization and silent
+  truncation discard before classification or ingress-work conversion;
 - mandatory `v0.30.3`-`v0.30.5` two-stage just-in-time ingress admission before
   class-specific parse, HMAC, lookup, preparation, and response work;
 - `v0.30.7` charged cache lookup/substate behavior for exact retransmissions;
@@ -2854,6 +3013,8 @@ Verification:
 - cache hit/miss/error semantic differential and timing-envelope smoke tests
 - closed-descriptor versus outstanding-operation proof tests demonstrating that
   handle close alone cannot release a quarantined buffer
+- scalar truncation differential fixtures proving retained valid-looking STUN
+  prefixes never reach parser, authentication, cache, state, or response paths
 
 Exit criteria:
 
@@ -3229,9 +3390,19 @@ Deliverables:
   generation, direction, packet length, byte charge, and packet attempt charge;
 - single-use consumption for delivery commands, with duplicate handoff,
   split/merge, charge substitution, and cross-batch reuse rejected;
-- runtime pre-handoff validation of execution tick, queue age, allocation/
-  permission/policy/translation/public-map/worker generations, command/batch
-  identity, buffer generation, and exact endpoint;
+- runtime pre-handoff validation limited to adapter-local facts: execution tick,
+  queue age, buffer generation/ownership, command/batch/correlation identity,
+  exact endpoint, and the acknowledged authority/fence sequence carried by the
+  core-issued single-use capability;
+- semantic freshness for allocation, permission, policy, translation, public-
+  map, tenant, and worker authority remains exclusively in the core capability
+  and revocation fence; runtime cannot independently authorize from snapshots;
+- any performance-motivated runtime mirror of semantic generations is explicitly
+  versioned and updated only by core-issued fence/control events, can reject but
+  never authorize or widen a command, and fails closed on missing, stale,
+  contradictory, reset, or uncertain state;
+- immutable observation snapshots are redacted diagnostics and never send,
+  resource-open, refresh, or policy authority;
 - a non-droppable control-lane revocation fence that prevents older queued
   capabilities from reaching the OS before identifier, endpoint, permission,
   allocation slot, policy generation, or buffer generation reuse;
@@ -3250,6 +3421,9 @@ Verification:
 
 - compile/API tests for single-use command/batch/charge binding and rejection of
   cloning, replay, split, merge, packet/byte substitution, and cross-batch use
+- adversarial adapter tests proving a fresh local mirror cannot authorize an
+  absent/stale capability, a stale/uncertain mirror cannot pass a command, and
+  snapshots cannot be converted into authority
 - deterministic queue-delay tests crossing permission/allocation expiry,
   revocation, policy/translation reload, teardown, worker restart, and every
   identifier/endpoint/buffer reuse boundary
@@ -3263,9 +3437,9 @@ Verification:
 
 Exit criteria:
 
-- Endpoint authorization remains valid at the final runtime handoff, every
-  delivery capability is consumed once for its exact command and charge, and
-  revocation/reuse cannot leave older queued authority executable.
+- Core-issued capability and acknowledged fences remain the only semantic
+  authority at final handoff; adapter-local validation cannot become a second
+  state machine, and revocation/reuse cannot leave old authority executable.
 - Stop: `v0.37.5 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.37.6 - Minimum Relay Safety Baseline
@@ -3388,7 +3562,8 @@ Deliverables:
 - states/transitions for prepared/committed allocation, external open handoff,
   success/failure, local deadline, cancellation request/result, late/conflicting
   completion, revocation fence/acknowledgement, semantic retirement, physical
-  quarantine, recovery budget, domain replacement, and typed quiescence proof;
+  quarantine, recovery budget, domain replacement, adapter quiescence report,
+  and core-validated quiescence state;
 - explicit environment/fairness assumptions for provider silence, delayed/lost/
   duplicate observations, control-lane scheduling, crash/restart, and process death;
 - checked invariants for at-most-once external effect/terminal result, unique
@@ -3797,7 +3972,7 @@ Deliverables:
   delayed send completion, cancellation, retry, drop, and shutdown path;
 - `v0.23.15` separation of semantic fence progress from physical lease release,
   plus `v0.23.16` bounded quarantine if completion/reconciliation never arrives;
-- `v0.23.17` typed quiescence proof before any quarantined receive lease or
+- `v0.23.17` core-validated quiescence report before any quarantined receive lease or
   pointer-bearing scatter segment returns to its physical pool;
 - bounded fallback-copy policy for platforms/providers that cannot retain a
   lease, with separate copy accounting and no semantic drift.
@@ -5299,7 +5474,25 @@ Goal: add measured Linux `io_uring` acceleration behind the unchanged runtime co
 Deliverables:
 
 - fixed files/buffers, multishot capability detection, bounded in-flight operations,
-  generation-tagged user data, cancellation, shutdown, and portable fallback;
+  cancellation, shutdown, and portable fallback;
+- `user_data` encoded only as a checked slab index, slab generation, execution-
+  domain generation, and operation kind; raw pointers and unchecked casts are forbidden;
+- exact multishot semantics: every `F_MORE` completion preserves operation and
+  buffer authority, while the one terminal CQE closes the ledger exactly once;
+  cancellation may race with multiple late CQEs without early reuse;
+- provided-buffer/buffer-ring depletion and `ENOBUFS` handling, exact buffer-ID/
+  generation checks, and exactly-once return after terminal reachability ends;
+- CQ overflow, disabled/broken ring, failed unregister, fixed-file update races,
+  stale completion, and shutdown represented as bounded uncertain/reconciliation
+  states rather than inferred completion;
+- partial submission of linked SQEs consumes only operations actually accepted
+  by the kernel and preserves ownership/capability of every unsubmitted tail;
+- the first backend excludes `SEND_ZC` unless a separately reviewed capability
+  row is enabled; when enabled, buffer ownership remains retained until the
+  distinct notification CQE and all cancellation/late-notification races close;
+- a checked kernel/capability matrix for multishot, buffer rings, fixed files,
+  linked operations, cancellation, and optional zero-copy, with a tested scalar
+  fallback for every missing, denied, or runtime-disabled feature;
 - `v0.79.2` per-entry capability consumption and unsent/retry semantics for
   linked, multishot, or vector submissions with partial acceptance;
 - `v0.79.3` ordered stream-tail ownership/close semantics where `io_uring`
@@ -5315,10 +5508,17 @@ Verification:
   stale completion, cancellation, unsupported-kernel, and overload tests
 - failed unregister, late completion after close, live ring worker, partial
   inventory, stale proof, and clean quiescence/reuse tests
+- multishot `F_MORE`/terminal/cancel race models, CQ overflow/disable, buffer-ring
+  depletion/`ENOBUFS`, buffer double-return, fixed-file update, linked partial-
+  submission, and slab index/generation/kind corruption tests
+- capability-matrix fixtures forcing every scalar fallback plus, if enabled,
+  `SEND_ZC` notification loss/reorder/late-arrival ownership tests
 
 Exit criteria:
 
-- Disabling `io_uring` changes performance only and unsafe invariants are reviewed.
+- Disabling any `io_uring` feature changes performance only; operation identity,
+  multishot completion, kernel acceptance, and buffer ownership remain exact,
+  and every unsafe invariant has executable evidence.
 - Stop: `v0.81.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.82.0 - Optional eBPF and AF_XDP Fast Path
@@ -5327,12 +5527,24 @@ Goal: accelerate only traffic already authorized by live core state.
 
 Deliverables:
 
+- tuple steering/filtering before semantic parsing wherever possible; the first
+  fast path does not duplicate the complete STUN/TURN parser or authentication
+  state machine in eBPF;
+- an explicit packet-shape matrix for VLAN/QinQ, IPv4 options and fragments,
+  IPv6 extension headers and fragments, checksum/offload ambiguity, and GRO
+  metadata; unsupported or ambiguous shapes deterministically punt to the
+  scalar path or drop according to reviewed policy;
 - ingress filtering/steering and optional rules containing allocation generation,
   the exact `v0.37.4` authorized endpoint fields, direction, channel, expiry,
   policy epoch, and byte/packet budgets, with client-bound relay rules also
   binding the `v0.43.2` permission generation and ChannelData channel generation;
 - install commands derived from typed fast-path capabilities, with kernel/user
   adapters forbidden from reconstructing or widening raw endpoints;
+- multi-map updates populated completely under an inactive generation followed
+  by one atomic epoch switch; packets can never observe mixed endpoint,
+  permission, channel, quota, policy, or expiry generations;
+- UMEM frame identity/generation, XSK queue ownership, headroom/alignment,
+  fill/completion-ring lifecycle, and exactly-once return before frame reuse;
 - install/remove ordering, map-capacity, fail-closed miss, and reconciliation checks.
 
 Verification:
@@ -5340,10 +5552,15 @@ Verification:
 - core-rule subset property, stale/expired/epoch mismatch, endpoint-substitution/
   widening tests, XDP-disabled differential suite, verifier/load/eviction tests,
   and performance report
+- differential packet corpora for VLAN/QinQ, IPv4 options/fragments, IPv6
+  extension headers/fragments, malformed or offloaded checksums, and GRO metadata
+- multi-map fault injection before every population/switch step and UMEM/XSK
+  depletion, misalignment, stale frame, queue migration, and double-return tests
 
 Exit criteria:
 
-- Kernel rules cannot create, refresh, broaden, or outlive core authorization.
+- Kernel rules cannot create, refresh, broaden, or outlive core authorization;
+  no packet observes mixed authority generations and every UMEM frame has one owner.
 - Stop: `v0.82.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.82.1 - Fast-Path Revocation Closure
@@ -5380,7 +5597,8 @@ Verification:
 - revoke/reuse races, expiry boundary, clock skew, map loss/eviction, partial
   update, restart, stale epoch, and reconciliation-failure model tests
 - multi-map/program/queue fence acknowledgement, lost acknowledgement, domain
-  destruction, typed unregister/drain/DMA-quiescence proof, and disjoint-
+  destruction, typed unregister/drain evidence in a core-validated quiescence
+  report, DMA cessation evidence, and disjoint-
   generation replacement tests
 - accepted-packet versus fence-acknowledgement ownership races, silent remove/
   reconcile providers, unresolved-budget exhaustion, and UMEM/map-storage
