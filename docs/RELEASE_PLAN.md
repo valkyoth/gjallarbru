@@ -125,12 +125,12 @@ Current closure decisions are:
 | Future readiness could be a one-time standards review. | API/config evolution, scheduled standards review, extension policy, and first-party provenance gates are `v0.108.0` through `v0.110.0`. |
 | Formal, fuzz, packaging, operations, specification closure, and external audit could be postponed past 1.0. | Assigned to `v0.93.0`, `v0.94.0`, and `v0.111.0` through `v0.115.0`. |
 | Separate public crates could leave users without a coherent `gjallarbru::` entry point or allow facade documentation to drift. | `v0.55.1` admits a no_std facade, stable namespaced re-exports, root-README parity, and facade-last publication. |
-| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the contract, `v0.2.4` makes its kernel executable with canonical semantic state, disjoint arenas, and an explicit commit/crash rule, and `v0.23.1` proves the full reducer. |
+| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the contract, `v0.2.4` makes its kernel executable with a complete internal state witness, disjoint arenas, and an explicit commit/crash rule, and `v0.23.1` proves the full reducer. |
 | A protocol or credential name without a standard or project specification could silently acquire authority. | `v0.2.1` requires a reviewed mechanism registry; names such as `STUN-DEREF` remain unsupported until a threat model, key domain, wire assignment, and requirement evidence exist. |
-| `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds a freestanding no-allocator/no-atomic local fixture; `v0.6.2` closes deterministic storage, debt, width, and wrap behavior. |
+| `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds a freestanding no-allocator/no-atomic local fixture; `v0.6.2`/`v0.6.3` close storage bounds, explicit resource inputs, debt, width, and wrap behavior. |
 | Receive padding, post-integrity attributes, repeated scans, oversized inventories, or ChannelData datagram alignment could be implemented with subtly incorrect semantics. | `v0.5.1`, `v0.8.1`/`v0.8.2`, `v0.15.1`, and `v0.22.1` close cursor progress, sparse authenticated views, legal UDP forms, complexity, and operation ceilings. |
 | Broad crypto traits, ordinary secret types, or cloned concurrent key handles could hide allocation, key export, stale authority, variable output, timing, or provider-failure behavior. | `v0.17.1`, `v0.17.4`, `v0.19.1`, and `v0.26.1` define capability-specific providers, bounded non-clone leases, secret wrappers, scatter integrity, fail-closed errors, opaque handles, and timing qualification. |
-| Transaction equality or response caching could rely on a weak digest or item count while ignoring collision, tombstone, iteration, and byte-exhaustion risk. | `v0.6.2` and `v0.30.1` require bounded table structure, keyed identity, collision evidence, and independent cached byte budgets. |
+| Transaction equality or response caching could rely on a weak digest or item count while ignoring collision, tombstone, iteration, and byte-exhaustion risk. | `v0.6.2`/`v0.6.3` and `v0.30.1` require bounded explicit-resource tables, keyed identity, collision evidence, and independent cached byte budgets. |
 | Allocation/copy/task accounting and formal state evidence could arrive only after the first real packet and relay paths. | `v0.31.1` instruments the first runtime hot path; `v0.39.1`/`v0.39.2` move reference and lifecycle model checking before real relay sockets. |
 | Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
 | Batching or kernel acceleration could treat partial sends, capability consumption, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes completion truth, `v0.79.2` closes per-entry authority/ownership, and `v0.82.1` closes acknowledged fast-path revocation, reuse, expiry, and reconciliation. |
@@ -184,18 +184,18 @@ Current closure decisions are:
 | Determinism could remain an architectural promise until the full STUN core, allowing layout, word width, capacity, or correlation IDs to harden into APIs first. | `v0.2.4` lands a minimal executable reducer kernel and differential replay harness before protocol APIs. |
 | Queue-shaped permits, generations, or publication types could force core consumers to adopt Gjallarbru's runtime topology. | `v0.2.5` separates semantic preparation/commit from adapter-owned reservation and publication. |
 | Locked extension/deployment RFC text could remain only downloaded reference material until immediately before a conformance claim. | `v0.2.6` and `v0.2.7` complete semantic ledgers for every locked non-base profile before implementation authority. |
-| Storage layout, tombstone debt, `usize` width, generation wrap, or ambiguous Tick comparison could change deterministic results or exceed constrained-target bounds. | `v0.6.2` fixes probes/load/debt/order/width/wrap/horizon contracts with model evidence. |
+| Storage layout, tombstone debt, `usize` width, generation wrap, or ambiguous Tick comparison could silently change deterministic results or exceed constrained-target bounds. | `v0.6.2` fixes mechanical bounds; `v0.6.3` makes seed/layout/probe saturation explicit resource inputs and separates exact same-resource replay from cross-layout safety invariants. |
 | A one-pass attribute inventory could allocate or retain one descriptor per tiny attribute and misclassify its own capacity limit as malformed input. | `v0.8.2` uses sparse fixed metadata plus caller-bounded unknown-required accumulation and a distinct resource outcome. |
 | Encoder dependency/finalizer plans could be logically bounded yet still allocate vectors, closures, trait objects, or grown scatter lists per message. | `v0.16.1` requires fixed arrays/caller workspace and fail-allocator/copy evidence before finalizers. |
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
 | UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
 | Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
-| Raw Rust memory bytes, provider handles, overlapping caller regions, or an authority-bearing/exported state projection could make reducer equality undefined, leak secrets, or permit aliasing during commit. | `v0.2.4` defines a confined versioned canonical semantic projection, stable core references, exact arena identities, disjointness, and raw-boundary validation with compile-fail/Miri evidence. |
+| Raw Rust memory bytes, a redacted view used as equality, provider handles, overlapping caller regions, or an exported witness could make reducer equality incomplete, leak secrets, or permit aliasing during commit. | `v0.2.4` separates a complete internal `CanonicalStateWitness` from `RedactedObservationSnapshot`, uses stable core references, and validates exact disjoint arenas with compile-fail/Miri evidence. |
 | A valid-looking prefix retained from a truncated UDP datagram could be parsed, authenticated, or answered. | `v0.30.9` normalizes scalar platform truncation before classification and requires silent whole-datagram discard; `v0.79.4` later preserves the same rule under GRO/GSO. |
 | A TCP/TLS framer could scan for a new boundary after an impossible prefix and desynchronize or perform quadratic work. | `v0.21.1` makes invalid prefixes, padding, lengths, and partial EOF terminal connection errors with linear-work fuzz evidence. |
-| `io_uring` or AF_XDP could use raw/lossy identities, lose multishot/buffer completion truth, expose mixed or prematurely reclaimed map generations, or mishandle complex packet shapes. | `v0.81.0` uses one opaque checked 64-bit slab token and closes buffer-ring lifecycles with scalar fallback; `v0.82.0` captures one immutable map epoch through grace/fence/quiescence reclamation and exact UMEM ownership. |
-| Scalar, batched, GRO, `io_uring`, and AF_XDP receive metadata could drift, lose ancillary truncation, or reply through an unauthorized wildcard-socket source. | `v0.30.10` makes one canonical `IngressEnvelope` mandatory, rejects incomplete/conflicting ancillary data before classification, and binds response source/interface selection. |
-| An unwind-enabled embedder could catch a reducer/provider panic and continue using partially modified or externally reachable state. | `v0.23.18` poisons the complete engine epoch across every unwind boundary and exposes only quarantine/destruction; production remains abort-and-supervise. |
+| `io_uring` or AF_XDP could use raw/lossy identities, lose multishot/buffer completion truth, expose mixed or prematurely reclaimed map generations, or mishandle complex packet shapes. | `v0.81.0` uses one opaque checked 64-bit operation token and closes buffer-ring lifecycles; `v0.82.0` captures one immutable map epoch and requires generation-bound kernel/RCU completion—not elapsed time—before reclamation, with separate UMEM evidence. |
+| Scalar, stream, secure, proxy, batched, GRO, `io_uring`, and AF_XDP provenance could collapse legitimate absence and missing metadata into optional defaults or reply through an unauthorized source. | `v0.30.10` uses sealed provenance variants and `RawIngress -> ValidatedProvenance -> CompleteIngressEnvelope`; only complete ingress classifies and response source/interface remains bound. |
+| An unwind-enabled embedder could catch a reducer/provider panic, nested guards could clear an outer poison guard, or callback reentrancy could inspect `InCall` state. | `v0.23.18` defines one outer `Idle -> InCall -> Idle|Poisoned` guard, nested-domain ownership, validated typed returns, and pre-inspection reentrancy rejection; production remains abort-and-supervise. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -272,7 +272,7 @@ Deliverables:
 Verification:
 
 - executable architecture examples replayed twice for byte-identical commands
-  and identical versioned canonical-state projections, followed by the minimal
+  and identical complete versioned state witnesses, followed by the minimal
   real core artifact required by `v0.2.4`
 - ADR review matrix covering capacity failure, equal/decreasing time, entropy
   failure, stale completion, lease reuse, storage misbehavior, and unknown names
@@ -375,27 +375,31 @@ Deliverables:
   bytes, provider completions, configuration generation, storage seed/layout
   inputs, and output/workspace capacity;
 - byte-identical wire output and semantic commands for identical envelopes;
-  state equality uses a fixed-buffer, versioned, domain-separated canonical
-  semantic projection that excludes padding, pointers, allocator layout, and
-  backend handles;
-- full canonical-projection comparison is decisive for determinism; its digest
-  is only a domain-separated diagnostic/index shortcut and never sufficient
-  evidence for security-relevant equality, authorization, or state adoption;
-- the projection is test evidence, not a persistence/restart wire format,
-  authority-bearing snapshot, log/metric/crash-report/admin payload, or stable
-  public serialization API; production export is absent unless a separately
-  reviewed redacted diagnostic profile explicitly enables it;
-- projection output contains no keys, credentials, packet/authentication
-  evidence, raw client/tenant identities, nonces, reusable capabilities, or
-  backend handles, and has no deserializer that can reconstruct authoritative
-  engine state; durable recovery requires a future separately reviewed profile;
+- internal/test-only `CanonicalStateWitness` is a versioned, domain-separated,
+  complete canonical representation of every stored field capable of changing
+  any future reducer result, including retained request/authentication evidence,
+  nonce/identity state, resource inputs, debt, and all security generations;
+- witness comparison uses canonical structured streams or lockstep iterators
+  with fixed scratch space rather than allocating a buffer proportional to
+  maximum server state; the complete stream is decisive and its digest is only
+  a diagnostic/index shortcut, never authorization or state-adoption evidence;
+- sensitive witness values remain internal and may never implement/export
+  ordinary `Debug`, `Display`, serialization, logging, metrics, crash-report,
+  administration, or public snapshot APIs; no witness deserializer can create
+  authoritative state and durable recovery needs a separately reviewed profile;
+- `RedactedObservationSnapshot` is the distinct production diagnostic concept:
+  it removes/seals identities, secrets, nonces, packet/authentication evidence,
+  and reusable handles, and is explicitly incomplete and unusable for equality;
+- provider secret bytes stay outside core/witness state when stable purpose-
+  bound `{domain, id, generation}` key references are the semantic state;
 - provider/runtime resources appear in state only through stable core-owned
   `{domain, id, generation}` references, never backend representation or raw
   Rust object bytes; adapter queue/provider/transport correlation IDs remain
   excluded from semantic input and equality;
-- deterministic ordering rules forbidding output/state dependence on hash-table
-  iteration, insertion/tombstone layout, pointer/address layout, `usize` width,
-  platform endianness, allocator behavior, or unspecified collection order;
+- deterministic ordering rules forbidding hidden dependence on pointer/address
+  layout, `usize` width, endianness, allocator behavior, platform-default hash,
+  or unspecified iteration; `v0.6.3` may admit only declared seed/layout/probe
+  inputs and their typed resource-capacity outcomes, never authorization widening;
 - capacity/fault points proving insufficient workspace/command/output storage
   leaves caller state, visible output, operation counters, and effects unchanged;
 - a caller-memory contract requiring state, input, mutable workspace, command
@@ -412,7 +416,7 @@ Deliverables:
   of its authoritative state if execution stops after mutation begins but before
   ready publication; invalidating only the unpublished arena is forbidden and
   epoch destruction is never described as rollback;
-- fixed canonical test snapshots and a replay harness reusable by every later
+- fixed complete-witness fixtures and a replay harness reusable by every later
   reducer milestone, including failure offset and first-divergence diagnostics;
 - a deliberately tiny behavioral implementation and nonzero unit/property test
   suite without implying Binding, authentication, allocation, or conformance.
@@ -422,13 +426,16 @@ Verification:
 - `cargo test -p gjallarbru-core reducer_kernel`
 - repeated identical-envelope replay plus event-order permutations proving order
   is explicit, entropy/provider result substitution, time-source generation, and every capacity
-- 32-/64-bit or equivalent width fixtures plus storage seed, insertion order,
-  tombstone layout, memory-address, and runtime-correlation differential tests
-- canonical-projection fixtures proving stable semantic equality across padding,
+- 32-/64-bit or equivalent width fixtures plus same-resource exact replay and
+  cross-seed/layout safety differential tests required by `v0.6.3`
+- complete-witness fixtures proving stable semantic equality across padding,
   layout, handle representation, pointer width, and provider adapters
-- full-projection versus digest-collision test doubles, domain/version mismatch,
-  fixed-buffer exhaustion, redaction/forbidden-field, production-export, and
-  no-authoritative-deserializer API tests
+- a field inventory plus mutation test for every state field: changing any field
+  capable of affecting future behavior changes the complete witness stream;
+  intentionally nonsemantic fields require an explicit reviewed exclusion
+- full-witness versus digest-collision test doubles, domain/version mismatch,
+  streaming scratch exhaustion, sensitive-format/export compile failures,
+  snapshot-not-equality, and no-authoritative-deserializer API tests
 - fail-at-every-preflight/write instrumentation using shadow records or bounded
   undo journals and proving unchanged state, arena, and output before commit;
   panic/fault injection at each commit/publication edge proves either one complete
@@ -441,10 +448,10 @@ Verification:
 
 Exit criteria:
 
-- Determinism uses a confined full canonical projection rather than object bytes
-  or digest equality; the projection leaks and reconstructs no authority, no
-  fallible work follows mutation, caller regions cannot alias, and a crash
-  cannot preserve state whose unpublished commands were lost.
+- Determinism compares a complete non-exportable canonical witness rather than
+  raw object bytes, a redacted snapshot, or digest equality; diagnostics remain
+  separate, no fallible work follows mutation, caller regions cannot alias, and
+  a crash cannot preserve state whose unpublished commands were lost.
 - Stop: `v0.2.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.2.5 - Adapter-Neutral Capacity Admission
@@ -734,8 +741,8 @@ Deliverables:
   callback-free, non-blocking, and documented with maximum complexity/capacity;
 - construction rules preventing large fixed arrays from being copied through the
   stack and production-claim gates excluding unqualified custom storage;
-- integration with `v0.6.2` deterministic iteration, tombstone debt, word-size,
-  generation-wrap, and maximum Tick-comparison-horizon contracts.
+- integration with `v0.6.2` deterministic iteration/debt/width/wrap/horizon and
+  `v0.6.3` explicit hash-layout resource-input contracts.
 
 Verification:
 
@@ -785,8 +792,8 @@ Verification:
 - `cargo test -p gjallarbru-core deterministic_storage`
 - Kani/property checks for every load/probe/tombstone boundary, collision chain,
   cleanup interruption, stale handle, generation exhaustion, and Tick wrap horizon
-- insertion/bucket/hash-seed/tombstone-layout/word-width/endianness differential
-  traces proving byte-identical semantic output and canonical snapshots
+- identical seed/layout/capacity/probe inputs replay byte-identically across
+  word width/endianness; cross-seed/layout traces feed the `v0.6.3` invariant gate
 - no-allocator freestanding fixtures with stack/static/alignment measurements
   and traps for forbidden atomic/TLS/callback/blocking/unwinding imports
 - malicious storage fixtures returning unstable iteration or over-budget work
@@ -794,9 +801,63 @@ Verification:
 
 Exit criteria:
 
-- Storage churn, layout, target width, and wrap cannot change protocol results or
-  exceed declared work/memory bounds; ambiguous reuse/time comparisons fail closed.
+- Hidden platform layout and target width cannot change results; declared
+  resource layout follows `v0.6.3`, all work/memory stays bounded, and ambiguous
+  reuse/time comparisons fail closed.
 - Stop: `v0.6.2 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.3 - Hash-Layout Resource Determinism
+
+Goal: reconcile per-process keyed open-addressing with bounded probes by making
+layout-dependent resource admission explicit instead of promising impossible
+byte-identical outcomes across different collision layouts.
+
+Deliverables:
+
+- the explicit-resource model for every first-party open-addressed table:
+  hash seed/domain, logical capacity, physical layout, load/probe/tombstone
+  limits, cleanup state, and saturation outcome are reducer resource inputs;
+- identical semantic state/event plus identical resource inputs replays exact
+  commands, complete state witness, and typed result; no platform-default seed,
+  randomized collection state, address, or allocator placement is hidden;
+- different declared seeds/layouts may differ only in typed resource admission,
+  cleanup scheduling, or `IndexCapacity` timing; cross-layout variation cannot
+  authenticate an invalid request, authorize an absent permission/channel,
+  widen an endpoint/quota, confuse identity, or mutate state after rejection;
+- any key successfully inserted remains exactly retrievable/removable within
+  the declared probe bound; lookup saturation cannot turn present into absent or
+  absent into present, and failed insertion is atomic with no partial index/slab state;
+- user-visible logical-capacity claims name the minimum guaranteed admission
+  across every qualified layout at the configured load/probe limits; higher
+  incidental capacity is never promised or used to bypass quotas;
+- no hidden full-table scan or attacker-triggered retry with a new seed; a
+  saturation/rebuild/seed change is a bounded explicit control transition with
+  a new resource generation and no semantic adoption from partial work;
+- the complete `CanonicalStateWitness` includes all resource inputs and index
+  debt capable of affecting future outcomes, so different resource states are
+  not falsely declared equal; `RedactedObservationSnapshot` remains diagnostic;
+- qualification rules for custom storage require choosing the same explicit-
+  resource contract or a separately proven layout-independent admission model.
+
+Verification:
+
+- `cargo test -p gjallarbru-core hash_layout_resource_determinism`
+- same-seed/layout exact replay across pointer widths/endianness and adversarial
+  collision, insertion, deletion, tombstone, cleanup, and capacity boundaries
+- cross-seed/layout properties compare authorization, identity, quota, atomicity,
+  lookup soundness, and safety invariants while allowing only documented typed
+  resource outcomes to differ
+- Kani/reference-model tests for every accepted key remaining findable, failed
+  insertion leaving slab/index/witness unchanged, and rebuild generation fencing
+- malicious keyed hashers, maximum collision clusters, seed substitution,
+  implicit reseed, probe exhaustion, wrap, and false capacity-claim fixtures
+
+Exit criteria:
+
+- Exact determinism is claimed only for identical declared resource inputs;
+  collision layout may change bounded capacity outcomes but can never alter
+  authorization truth, lookup soundness, atomicity, or security invariants.
+- Stop: `v0.6.3 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 
@@ -1630,8 +1691,9 @@ planned or observationally absent.
 
 Deliverables:
 
-- byte-identical command replay and identical full versioned canonical-state
-  projection for identical configuration, with the digest diagnostic only,
+- byte-identical command replay and identical complete versioned
+  `CanonicalStateWitness` for identical configuration, with witness digest
+  diagnostic only,
   ordered event/path identities and generations, supplied times, entropy bytes,
   provider completions, storage seed/layout inputs, output capacities, and every
   other field frozen by the `v0.2.4` executable input envelope;
@@ -1646,15 +1708,17 @@ Deliverables:
 - capability command types constraining the endpoints, lifetime, quota, key
   domain, and other fields available to conforming adapters, with safe-reference
   differential verification rather than a claim about malicious runtime behavior.
-- iteration/insertion/tombstone order, hash layout, pointer addresses, `usize`
-  width, endianness, allocator placement, and runtime correlation IDs forbidden
-  from affecting command/state bytes or semantic operation identity.
+- pointer addresses, `usize` width, endianness, allocator placement, runtime
+  correlation IDs, and hidden iteration/hash state cannot affect command/state
+  bytes or semantic operation identity; declared `v0.6.3` resource inputs may
+  affect only their typed bounded capacity outcomes.
 
 Verification:
 
-- snapshot/replay properties across event sequences and every capacity boundary
-- `v0.2.4` replay corpus across storage layouts, word widths, correlation IDs,
-  configuration/path generations, and reordered arrival with explicit event order
+- complete-witness/replay properties across event sequences and every capacity boundary
+- `v0.2.4` same-resource exact replay across word widths/correlation IDs plus
+  `v0.6.3` cross-layout authorization/safety invariants, configuration/path
+  generations, and reordered arrival with explicit event order
 - fault injection at each preflight/encode/entropy/provider/lease stage proving
   state, counters, command sinks, and runtime side effects remain unchanged
 
@@ -1921,6 +1985,8 @@ creating unbounded RCU-style retention under slow readers.
 
 Deliverables:
 
+- the explicit `RedactedObservationSnapshot` type, separate from the complete
+  internal `v0.2.4` `CanonicalStateWitness` and unable to satisfy witness/equality APIs;
 - fixed maximum snapshot bytes, item counts, publication frequency, and
   generation count per worker/listener/tenant observation domain;
 - redaction excluding keys, credentials, packet bodies, raw tenant identities,
@@ -1930,7 +1996,8 @@ Deliverables:
 - bounded reader leases/references, reclamation work, and stalled-reader policy
   that cannot pin unbounded snapshot generations or worker resources;
 - snapshots forbidden as authorization, reducer input, completion validation,
-  recovery input, or proof of current allocation/resource existence;
+  recovery input, state equality, determinism evidence, or proof of current
+  allocation/resource existence;
 - owner-only construction and immutable release/acquire publication compatible
   with the `v0.23.4` memory model.
 
@@ -1941,7 +2008,7 @@ Verification:
 - stalled/crashed/slow reader, generation rollover, reload, restart, ownership
   transfer, and reclamation-budget models
 - compile/API tests proving snapshots cannot be passed where live authority,
-  semantic IDs, capabilities, or completion evidence are required
+  semantic IDs, capabilities, completion evidence, or canonical witnesses are required
 
 Exit criteria:
 
@@ -2372,9 +2439,20 @@ resume a reducer/provider epoch after a panic crossed its trust boundary.
 
 Deliverables:
 
-- an engine-epoch poison state set by a non-bypassable boundary guard unless a
-  reducer/provider call reaches its normal validated return and disarms it;
-  detection does not require `std`, allocation, or `thread::panicking`;
+- an explicit engine-entry state machine `Idle -> InCall -> Idle | Poisoned`;
+  exactly one outer non-bypassable guard owns each public engine call and sets
+  `Poisoned` on drop unless a validated ordinary return disarms it;
+- internal storage, crypto, policy, encoder, and provider calls run beneath the
+  outer guard and can never clear/disarm it; independently scheduled runtime or
+  provider domains may own separate poison state machines, and a panic crossing
+  into the engine still poisons the outer engine guard;
+- reentrant public engine entry observes only the entry-state discriminator,
+  returns typed `ReentrantCall` before inspecting input or authoritative state,
+  and cannot prepare, mutate, publish, invoke a provider, or clear the outer guard;
+- every normal typed `Result`, including expected `Err`, disarms only after the
+  boundary validates its promised failure atomicity and ownership state; a panic
+  during error construction/validation drops the guard and poisons the epoch;
+- guard implementation requires no `std`, allocation, or `thread::panicking`;
 - any unwind crossing reducer preparation/commit, storage, crypto, policy,
   encoder, runtime-provider, completion, or adapter callback boundaries poisons
   that complete engine/worker epoch even when mutation was not expected;
@@ -2397,6 +2475,11 @@ Verification:
 - `cargo test -p gjallarbru-core unwind_epoch_poisoning`
 - hosted `catch_unwind` injection before, during, and after every reducer,
   provider, callback, commit, arena-write, and publication boundary
+- explicit `Idle/InCall/Poisoned` model tests for nested provider calls,
+  callback/public-entry reentrancy, expected `Err`, panic during error creation,
+  guard disarm/drop ordering, attempted double-drop, and independent domains
+- destructor-panic and panic-during-unwind subprocess tests proving fail-closed
+  abort behavior without claiming a recoverable second panic
 - subsequent event/completion/publish/resource-release calls return
   `EnginePoisoned`; quarantine and destruction remain bounded and exactly once
 - outstanding handle, arena, snapshot, lease, completion, and old-epoch replay
@@ -2406,9 +2489,9 @@ Verification:
 
 Exit criteria:
 
-- No unwind-capable embedder can continue authoritative work after a panic;
-  poison permits containment only, while production still aborts and replaces
-  the process/epoch through the supervised recovery contract.
+- One outer guard alone controls public-entry recovery: nested calls cannot
+  disarm it, reentrancy sees no state, and no unwind-capable embedder can continue
+  authority after panic; production still aborts and replaces the process/epoch.
 - Stop: `v0.23.18 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.24.0 - Binding State Processing
@@ -2643,7 +2726,7 @@ Deliverables:
   same-key different-request input without trusting a collision-prone digest;
 - independent item, retained-request-byte, and cached-response-byte ceilings
   with deterministic admission, eviction, and reconstructable-response policy;
-- `v0.6.2` fixed load factor, maximum probes, tombstone/stale debt, bounded
+- `v0.6.2`/`v0.6.3` fixed load/probes/debt and explicit layout-resource inputs, bounded
   cleanup work, and saturation outcome for the transaction index;
 - lookup/equality constant-time only for secret-bearing keyed evidence, not
   ordinary public transaction IDs, while collision resolution remains bounded;
@@ -3030,7 +3113,7 @@ Exit criteria:
   or uncertain receive is silently discarded as one indivisible input event.
 - Stop: `v0.30.9 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.30.10 - Canonical Ingress Envelope
+### v0.30.10 - Typed Canonical Ingress Envelope
 
 Goal: make every scalar, batched, coalesced, asynchronous, and accelerated
 receive path produce one complete, authoritative adapter-input shape before the
@@ -3038,16 +3121,26 @@ first public listener fixes platform-specific metadata behavior.
 
 Deliverables:
 
-- one bounded `IngressEnvelope` shared by scalar UDP, batched UDP, GRO,
-  `io_uring`, AF_XDP, TCP/TLS/DTLS framing, trusted termination, simulation, and
-  future Aesynx adapters rather than separately maintained field lists;
-- remote and local transport addresses; listener/socket identity and generation;
-  local-destination and outbound-source-selection identity; interface index,
-  scope/zone, and generation; transport and connection/session identity; worker,
-  configuration, trust/proxy, operation, and buffer generations;
-- optional typed ECN/DSCP values where supported plus explicit payload-
-  completeness and ancillary-metadata-completeness states; optional absence is
-  distinct from malformed, conflicting, truncated, or required-but-missing data;
+- one bounded common ingress header plus a sealed transport-provenance enum:
+  `Datagram(DatagramProvenance)`, `Stream(StreamProvenance)`,
+  `SecureDatagram(SecureDatagramProvenance)`, and
+  `TrustedTermination(ProxyProvenance)`; internal AF_XDP, simulation, and Aesynx
+  sources must validate into the applicable semantic provenance variant;
+- typestate promotion `RawIngress -> ValidatedProvenance ->
+  CompleteIngressEnvelope`; only the complete type can reach STUN/ChannelData
+  classification, admission conversion, parsing, authentication, or core events;
+- the common header carries remote/local transport identity, listener/socket,
+  worker, configuration, operation, and buffer generations; each sealed variant
+  owns only provenance it can actually establish, including destination/source-
+  selection, interface/scope, connection/session, secure-transport, or trusted-
+  proxy identity and generations as applicable;
+- a reviewed per-variant field-presence matrix distinguishes `Present`,
+  `LegitimatelyAbsent`, and `Unsupported`; malformed, conflicting, truncated,
+  untrusted, or required-but-missing values are validation failures and can
+  never collapse into `None`, zero, a default, or legitimate absence;
+- optional typed ECN/DSCP values are admitted only where their provenance is
+  supported and complete, without making stream/proxy inputs pretend to have
+  per-frame datagram ancillary metadata;
 - normalized `MSG_CTRUNC` and platform equivalents that reject the complete
   event before classification, parsing, HMAC, lookup, state, cache, or response;
 - a bounded checked ancillary decoder covering control-header length/alignment,
@@ -3059,6 +3152,9 @@ Deliverables:
 - every response capability binds the authorized local source address,
   interface/scope, listener/socket generation, and send mechanism; runtime uses
   a correctly bound socket or validated per-send packet information exactly;
+- stream frames inherit their path and source-selection identity from the
+  generation-bound accepted connection/session provenance; they do not accept
+  synthetic per-frame packet-info fields or ambient connection-handle reuse;
 - forward rules requiring `v0.31.0`, `v0.79.0`, `v0.79.4`, `v0.81.0`, and
   `v0.82.0` to construct/differentially preserve this envelope without
   transport-specific authority fields or silent metadata loss.
@@ -3068,6 +3164,10 @@ Verification:
 - `cargo test -p gjallarbru-runtime canonical_ingress_envelope`
 - scalar/batched/GRO/`io_uring`/AF_XDP/simulated adapter differential fixtures
   producing identical envelopes for the same packet and path identity
+- compile-fail typestate/variant tests proving raw or merely validated provenance
+  cannot classify and that one variant cannot construct fields owned by another
+- exhaustive field-presence matrix tests for legitimate absence, unsupported,
+  malformed, conflicting, untrusted, truncated, and required-but-missing states
 - arbitrary-byte ancillary decoder fuzzing for header length, alignment,
   truncation, wraparound, no-progress, duplicates, conflicts, unknown records,
   maximum chains, and `MSG_CTRUNC` equivalents
@@ -3080,9 +3180,9 @@ Verification:
 
 Exit criteria:
 
-- Every adapter supplies the same complete ingress identity before protocol
-  work, ancillary truncation fails closed, and every response leaves through
-  the exact authorized local source/interface rather than ambient OS selection.
+- Every adapter promotes sealed truthful provenance to complete ingress before
+  protocol work; absence cannot mask missing data, stream identity comes from
+  its accepted connection, and responses use the exact authorized source/path.
 - Stop: `v0.30.10 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
@@ -4686,7 +4786,7 @@ Deliverables:
   relay handles, credentials, audit, and configuration generations;
 - `v0.2.5` caller-owned semantic workspace/command arena with an Aesynx-owned
   capacity reservation/publication mechanism rather than a required queue model;
-- `v0.6.1`/`v0.6.2` no-atomic local path, deterministic storage iteration,
+- `v0.6.1`-`v0.6.3` no-atomic local path, deterministic storage iteration,
   tombstone/probe debt, fixed stack/static/alignment, generation wrap, and Tick horizon;
 - compile-only/mock Aesynx adapter with no `std`, OS socket, thread, or ambient allocator dependency.
 
@@ -5339,7 +5439,7 @@ success and stale-result behavior.
 
 Deliverables:
 
-- every receive preserves the complete `v0.30.10` canonical `IngressEnvelope`
+- every receive preserves the complete `v0.30.10` `CompleteIngressEnvelope`
   without a batch-specific metadata list or completeness downgrade;
 - scalar core invocation for every admitted packet with bounded per-batch
   fairness and no batch-wide authorization shortcut;
@@ -5484,7 +5584,7 @@ Deliverables:
 - platform capability detection and disabled-by-default fallback for UDP GRO/
   GSO, with no requirement that a supported OS/provider expose either feature;
 - GRO input split into exact original datagram views using validated segment
-  metadata, each retaining one complete `v0.30.10` canonical `IngressEnvelope`
+  metadata, each retaining one complete `v0.30.10` `CompleteIngressEnvelope`
   plus its independent payload completeness and admission identity;
 - no aggregate parse, HMAC, credential, transaction, policy, quota, or command
   permit: every reconstructed datagram pays the same work and byte/packet charge
@@ -5597,7 +5697,7 @@ Deliverables:
 
 - fixed files/buffers, multishot capability detection, bounded in-flight operations,
   cancellation, shutdown, and portable fallback;
-- receive completions construct/preserve the full `v0.30.10` canonical ingress
+- receive completions construct/preserve the full `v0.30.10` complete ingress
   envelope and reject incomplete ancillary results before protocol work;
 - `user_data` is exactly one opaque nonzero 64-bit `OperationToken`, never a raw
   pointer or lossy bit-pack of index/generation/domain/kind; zero and declared
@@ -5667,7 +5767,7 @@ Deliverables:
 - tuple steering/filtering before semantic parsing wherever possible; the first
   fast path does not duplicate the complete STUN/TURN parser or authentication
   state machine in eBPF;
-- AF_XDP/userspace handoff constructs the full `v0.30.10` canonical ingress
+- AF_XDP/userspace handoff constructs the full `v0.30.10` complete ingress
   envelope or punts/drops when required path/ancillary identity is unavailable;
 - an explicit packet-shape matrix for VLAN/QinQ, IPv4 options and fragments,
   IPv6 extension headers and fragments, checksum/offload ambiguity, and GRO
@@ -5688,10 +5788,17 @@ Deliverables:
 - entries/maps in an active generation are immutable; updates create a complete
   new generation, preferably switched through atomic map-in-map replacement
   where supported, with an explicit capability/fallback matrix;
-- the prior generation remains installed and immutable until a bounded platform
-  grace period plus acknowledged fence, or a `v0.23.17` core-validated
-  quiescence report, establishes that no packet, program invocation, CPU, XSK
-  queue, or DMA/UMEM reference can still reach it;
+- the authority fence first prevents every declared program/CPU path from
+  beginning a new lookup in the old epoch; reclamation then requires a
+  generation-bound kernel/RCU grace-completion observation proving all readers
+  that entered before that fence have exited for the declared map/program class;
+- elapsed time, a local timer, queue idleness, or fence acknowledgement alone is
+  never grace completion; unavailable, timed-out, stale, wrong-generation, or
+  incomplete reader evidence leaves old maps immutable in bounded quarantine
+  and disables acceleration rather than reclaiming them;
+- AF_XDP UMEM frames, DMA reachability, XSK rings, and accepted packet ownership
+  remain on their separate terminal-completion or `v0.23.17` validated-
+  quiescence path even after kernel/RCU map readers have completed;
 - epoch values and map generations have fixed width/exhaustion rules and cannot
   wrap, reset, or be reused while any old entry/map remains installed, reachable,
   quarantined, or awaiting acknowledgement; uncertainty disables acceleration;
@@ -5711,6 +5818,9 @@ Verification:
 - race/model tests switch and reclaim generations while packets execute on every
   CPU and while maps/programs are evicted, reloaded, partially populated, or
   fence-delayed; every lookup observes only its one captured immutable epoch
+- generation-bound kernel/RCU completion tests for pre-fence delayed readers,
+  post-fence entry rejection, stale/wrong-class completion, timeout/unavailable
+  evidence, and explicit proof that sleeping never authorizes reclamation
 - map-in-map and fallback capability tests plus epoch maximum/exhaustion/wrap,
   premature reclamation, delayed reader, and stale CPU/XSK reference fixtures
 
@@ -5718,7 +5828,8 @@ Exit criteria:
 
 - Kernel rules cannot create, refresh, broaden, or outlive core authorization;
   no packet observes mixed/reclaimed authority generations, old maps remain
-  reachable until readers quiesce, and every UMEM frame has one owner.
+  installed until kernel/RCU reader completion is observed, and UMEM/DMA
+  ownership is released only through separate terminal or validated evidence.
 - Stop: `v0.82.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.82.1 - Fast-Path Revocation Closure

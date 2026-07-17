@@ -62,6 +62,9 @@ All notable changes to `gjallarbru` are documented here.
 - Added canonical ingress/ancillary metadata and unwind-poisoning releases, and
   confined state projections, 64-bit `io_uring` tokens, response-source
   selection, and eBPF epoch reclamation before their first production use.
+- Split complete internal state witnesses from redacted observations, added
+  explicit hash-layout resource semantics, nested unwind/reentrancy rules,
+  typed ingress provenance, and evidence-based eBPF reader reclamation.
 
 ## 0.2.0 - 2026-07-14
 

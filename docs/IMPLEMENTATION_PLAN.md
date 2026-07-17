@@ -404,17 +404,29 @@ The core is a pure reducer: identical initial semantic state, immutable configur
 ordered event/path identities and generations, supplied monotonic/absolute
 times, entropy bytes, provider completions, storage seed/layout inputs, and
 output/workspace capacities produce byte-identical wire/command output and the
-same fixed-buffer, versioned, domain-separated canonical state projection.
-Full projection comparison is decisive; its digest is diagnostic only and never
-security equality or authority. The projection is not persistence, restart
-state, an authority-bearing snapshot, or an automatic logging/metrics/admin/
-crash-report format. It contains no secrets, packet evidence, raw identities,
-nonces, reusable handles, or authoritative deserializer, and production export
-is absent unless a separately reviewed redacted profile enables it. Equality
-never compares raw Rust memory, padding, pointers, or backend handles; resources
-use stable core-owned `{domain, id, generation}` references. Bucket, insertion,
-tombstone order, pointer layout, `usize` width, endianness, allocator placement,
-and runtime correlation IDs cannot affect semantic output or operation identity.
+same complete versioned, domain-separated `CanonicalStateWitness`. The witness
+is an internal/test-only canonical structured stream or lockstep iterator using
+fixed scratch space and contains every field capable of changing future reducer
+behavior, including sensitive retained evidence and resource debt. Full stream
+comparison is decisive; its digest is diagnostic only. Witnesses never format,
+serialize, log, export, administer, persist, restart, or deserialize authority.
+Provider secret bytes remain outside core when stable purpose-bound
+`{domain, id, generation}` references are the semantic state.
+
+`RedactedObservationSnapshot` is a separate bounded production diagnostic with
+identities, credentials, nonces, packet/authentication evidence, and reusable
+handles removed. It is never equality evidence. Equality also never compares
+raw Rust memory, padding, pointers, or backend handle representation. Every
+future-behavior state field has a mutation test proving it changes the complete
+witness, while intentionally nonsemantic fields require reviewed exclusions.
+
+Open-addressed hash seed, layout, probe/load limits, tombstone debt, and
+saturation are explicit reducer resource inputs. Identical inputs replay exactly;
+cross-layout runs compare safety, lookup soundness, atomicity, and authorization
+invariants while permitting only typed bounded resource outcomes to differ.
+No hidden platform hash state, reseed, full-table scan, pointer layout, `usize`
+width, endianness, allocator placement, or runtime correlation ID may affect
+semantic authority or operation identity.
 It first performs one bounded preparation pass into caller-provided fixed
 workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds
@@ -478,14 +490,18 @@ forbidden and this is epoch loss, not rollback. Partial arena acceptance is
 prohibited, while later OS execution remains explicitly non-atomic and
 completion-driven.
 
-Every reducer, provider, storage, crypto, policy, encoder, completion, and
-adapter-callback entry uses a no_std boundary guard that poisons the complete
-engine epoch unless normal validated return disarms it. If an unwind-enabled
-host catches a panic, all later work returns `EnginePoisoned`; only bounded
-quarantine, redacted evidence, destruction, and supervised disjoint-epoch
-replacement remain. Poison never proves quiescence or releases external
-ownership. Production retains abort-and-supervise and never treats
-`catch_unwind` as fault isolation.
+Public engine entry follows `Idle -> InCall -> Idle | Poisoned`. Exactly one
+outer no_std guard owns a public call; internal storage/crypto/provider work
+cannot disarm it, while independently scheduled domains own separate guards.
+Every ordinary `Result`, including expected failure, disarms only after failure
+atomicity and ownership validate. Guard drop without validated return poisons
+the epoch. Reentrant public entry observes only `InCall`, returns
+`ReentrantCall`, and cannot inspect input/state, invoke providers, or mutate.
+If an unwind-enabled host catches a panic, all later work returns
+`EnginePoisoned`; only bounded quarantine, redacted evidence, destruction, and
+supervised disjoint-epoch replacement remain. Poison never proves quiescence or
+releases external ownership. Production aborts and never treats `catch_unwind`
+as fault isolation; destructor panic during unwinding remains process-fatal.
 
 Capacity reservation and publication are runtime-adapter responsibilities, not
 part of the portable core data model. `gjallarbru-core` transitions, requirements,
@@ -595,13 +611,14 @@ Unresolved recovery is also bounded. Each operation type declares maximum
 cancellation attempts, reconciliation rounds, unresolved age, and fixed
 global/worker/provider counts. Exhaustion transitions the mailbox to
 `Uncertain`, quarantines or destroys the affected provider/execution domain,
-and keeps externally reachable storage non-aliasing until inventory or domain
+and keeps externally reachable storage non-aliasing until inventory or a core-
 validated quiescence report establishes it unreachable. Logical admission capacity may be
 replaced only from a separate bounded reserve/disjoint generation; another
 unresolved operation is never silently evicted. Recovery from saturation is
 explicit and cannot depend on a provider eventually responding.
 
-Owner-generated snapshots are fixed-size, redacted, versioned observations.
+Owner-generated `RedactedObservationSnapshot`s are fixed-size, redacted,
+versioned observations and are distinct from complete internal state witnesses.
 They contain no keys, credentials, packet bodies, raw tenant identities, or
 capability-bearing handles; are bound to worker epoch and configuration
 generation; and cannot authorize, validate a completion, or drive recovery.
@@ -746,16 +763,19 @@ classification, parsing, authentication, lookup, state, or response. A retained
 prefix is never an input frame even when it is a complete valid authenticated
 STUN message. Batched and accelerated receives refine this scalar rule.
 
-All receive paths construct one bounded `IngressEnvelope`: remote/local
-transport addresses; listener/socket and local-destination/source-selection
-identity; interface/scope; transport/session; worker/configuration/trust/proxy/
-operation/buffer generations; typed optional ECN/DSCP; and separate payload and
-ancillary completeness. Scalar, batched, GRO, `io_uring`, AF_XDP, stream,
-trusted-termination, simulation, and future Aesynx adapters share this shape.
-`MSG_CTRUNC`, malformed/conflicting/duplicate packet information, or missing
-profile-required metadata fails before classification. Wildcard/multihomed
-responses bind the authorized local address/interface to a bound socket or
-validated per-send packet information; ambient OS source selection is forbidden.
+All receive paths promote `RawIngress -> ValidatedProvenance ->
+CompleteIngressEnvelope`. A common bounded header is paired with one sealed
+variant: datagram, stream, secure datagram, or trusted termination. Internal
+AF_XDP, simulation, and Aesynx sources validate into the applicable semantic
+variant. A per-variant presence matrix distinguishes present, legitimately
+absent, and unsupported; malformed, conflicting, truncated, untrusted, and
+required-but-missing values cannot become `None` or defaults. Only complete
+ingress can reach classification. Streams inherit identity from their generation-
+bound accepted connection instead of fabricating per-frame ancillary metadata.
+`MSG_CTRUNC` and malformed/conflicting packet information fail before promotion.
+Wildcard/multihomed responses bind the authorized local address/interface to a
+bound socket or validated per-send packet information; ambient OS source
+selection is forbidden.
 
 Linux adds worker-local `SO_REUSEPORT` steering, batched receive/send,
 scatter-gather buffers, then `io_uring` only after measurement. Optional eBPF
@@ -781,13 +801,16 @@ extension headers/fragments, checksum/offload ambiguity, and GRO metadata have
 explicit punt/drop eligibility. Related maps are filled under one inactive
 generation and exposed by a single atomic epoch switch, preferably map-in-map.
 Each packet captures the active epoch once and uses it for every related lookup;
-active entries are immutable. Old generations remain installed until a bounded
-grace/fence or core-validated quiescence report closes every CPU/program/XSK/
-DMA reader. Epochs cannot wrap or be reused while reachable; uncertainty
-disables acceleration. UMEM frames carry a generation and one XSK queue owner
-with fixed headroom/alignment and exactly-once fill/completion return.
+active entries are immutable. A fence first prevents new old-epoch entry, then
+a generation-bound kernel/RCU grace-completion observation proves pre-fence
+readers for that map/program class exited. Elapsed time never authorizes map
+reclamation; missing/stale/timeout evidence quarantines old maps and disables
+acceleration. UMEM/DMA/XSK ownership still requires its separate terminal or
+core-validated quiescence evidence. Epochs cannot wrap or be reused while
+reachable. UMEM frames carry a generation and one XSK queue owner with fixed
+headroom/alignment and exactly-once fill/completion return.
 
-Batched receives preserve the complete canonical `IngressEnvelope` for every
+Batched receives preserve the complete `CompleteIngressEnvelope` for every
 scalar core transition without maintaining a second field list. Partial sends
 report unsent packets truthfully. Fast-path rules are
 removed or invalidated before authority reuse, never expire later than core
