@@ -83,7 +83,7 @@ supported STUN/TURN profiles is postponed beyond `1.0.0`.
 | Protocol authority | `no_std`, Sans-I/O, bounded |
 | Default external dependencies | None |
 | Unsafe policy | Forbidden in the future facade, wire, crypto, and core; isolated and reviewed in future runtime modules |
-| Packet-path allocation target | None after startup |
+| Packet-path allocation target | Zero after each named profile's explicit warm-up; copies and provider-owned retention measured separately |
 | Specification source | Checksum-locked RFC Editor text plus reviewed errata |
 | Code size | Non-generated Rust files must stay below 500 lines |
 | CodeQL | GitHub default setup; no advanced CodeQL workflow |
@@ -110,8 +110,15 @@ The dependency direction is inward only:
 
 ```text
 gjallarbru facade -> {wire, crypto, core}
-server -> runtime -> core -> {wire, crypto}
+server -> runtime -> {core, wire}
+core -> {wire, crypto}
 ```
+
+Runtime uses wire only for classification, framing, exact frame consumption,
+and raw untrusted views. Only core may promote input into authenticated,
+method-valid, stateful, policy-authorized, or capability-bearing values. Core
+orchestrates wire ranges into crypto provider calls, so wire and crypto remain
+independent and neither exports protocol authority to runtime.
 
 Core crates never depend on the runtime, an operating system, an async
 executor, TLS/DTLS, a database, or another STUN/TURN implementation.

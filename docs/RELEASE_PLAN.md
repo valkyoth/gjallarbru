@@ -125,17 +125,17 @@ Current closure decisions are:
 | Future readiness could be a one-time standards review. | API/config evolution, scheduled standards review, extension policy, and first-party provenance gates are `v0.108.0` through `v0.110.0`. |
 | Formal, fuzz, packaging, operations, specification closure, and external audit could be postponed past 1.0. | Assigned to `v0.93.0`, `v0.94.0`, and `v0.111.0` through `v0.115.0`. |
 | Separate public crates could leave users without a coherent `gjallarbru::` entry point or allow facade documentation to drift. | `v0.55.1` admits a no_std facade, stable namespaced re-exports, root-README parity, and facade-last publication. |
-| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the pure-reducer contract; `v0.23.1` proves its implementation with byte-identical replay and all-or-nothing transitions. |
+| Determinism, time, entropy, storage, command atomicity, and buffer ownership could remain implicit until the sans-I/O API is frozen. | `v0.2.1` freezes the contract, `v0.2.4` makes its kernel executable early, and `v0.23.1` proves the full reducer with byte-identical all-or-nothing transitions. |
 | A protocol or credential name without a standard or project specification could silently acquire authority. | `v0.2.1` requires a reviewed mechanism registry; names such as `STUN-DEREF` remain unsupported until a threat model, key domain, wire assignment, and requirement evidence exist. |
-| `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds freestanding no-allocator downstream fixtures, stack evidence, feature-matrix checks, and qualified bounded storage contracts. |
-| Receive padding, post-integrity attributes, repeated scans, or ChannelData datagram alignment could be implemented with subtly incorrect semantics. | `v0.5.1`, `v0.8.1`, `v0.15.1`, and `v0.22.1` close parser progress, nonzero receive padding, authenticated views, legal UDP forms, complexity, and operation ceilings. |
+| `no_std` could compile on hosts while still requiring an allocator, OS import, large stack copy, blocking storage, or unsafe feature combination. | `v0.6.1` adds a freestanding no-allocator/no-atomic local fixture; `v0.6.2` closes deterministic storage, debt, width, and wrap behavior. |
+| Receive padding, post-integrity attributes, repeated scans, oversized inventories, or ChannelData datagram alignment could be implemented with subtly incorrect semantics. | `v0.5.1`, `v0.8.1`/`v0.8.2`, `v0.15.1`, and `v0.22.1` close cursor progress, sparse authenticated views, legal UDP forms, complexity, and operation ceilings. |
 | Broad crypto traits or ordinary secret types could hide allocation, key export, variable output, timing, or provider-failure behavior. | `v0.17.1`, `v0.19.1`, and `v0.26.1` define capability-specific providers, secret wrappers, scatter integrity, fail-closed errors, opaque handles, and timing qualification. |
-| Transaction equality or response caching could rely on a weak digest or item count while ignoring collision and byte-exhaustion risk. | `v0.30.1` requires keyed cryptographic-strength identity and independent cached-response byte budgets. |
-| Allocation/copy/task accounting and formal state evidence could arrive only after the first real packet and relay paths. | `v0.31.1` instruments the first runtime hot path; `v0.39.1` moves reference-model and bounded model checking into two-phase allocation work. |
+| Transaction equality or response caching could rely on a weak digest or item count while ignoring collision, tombstone, iteration, and byte-exhaustion risk. | `v0.6.2` and `v0.30.1` require bounded table structure, keyed identity, collision evidence, and independent cached byte budgets. |
+| Allocation/copy/task accounting and formal state evidence could arrive only after the first real packet and relay paths. | `v0.31.1` instruments the first runtime hot path; `v0.39.1`/`v0.39.2` move reference and lifecycle model checking before real relay sockets. |
 | Zero-copy relay output could return a borrow after its receive buffer is reused. | `v0.47.1` requires generation-tagged leases and completion-aware scatter plans before relay performance claims. |
 | Batching or kernel acceleration could treat partial sends, capability consumption, stale completions, map loss, revocation, or expiry differently from scalar core behavior. | `v0.79.1` closes completion truth, `v0.79.2` closes per-entry authority/ownership, and `v0.82.1` closes acknowledged fast-path revocation, reuse, expiry, and reconciliation. |
 | Keyword anchors could be marked verified by plausible-looking strings without semantic refinement, a real symbol, or an executed test. | `v0.2.2` adds semantic child requirements and a CI evidence manifest that resolves implementation symbols and records observed test execution. |
-| A successful core transition could still overrun a downstream queue, repeat expensive work while sizing a permit, or be only partly visible. | `v0.23.2` creates one exact prepared transition, `v0.23.3` closes permit/operation-ID authority, and `v0.23.4` defines worker-owned release/acquire publication. |
+| A successful core transition could still overrun adapter capacity, repeat expensive work while sizing a reservation, or be only partly visible. | `v0.23.2` creates one exact prepared transition, `v0.23.3` closes adapter reservation/operation-ID authority, and `v0.23.4` defines adapter-owned publication. |
 | Client identity could survive listener, socket, configuration, proxy, interface, or worker reuse. | `v0.4.1` makes every relevant path/provenance generation part of authorization identity. |
 | An opaque synchronous crypto provider could conceal blocking HSM/KMS I/O, allocation, mutable state, ambient entropy, or nondeterministic output. | `v0.17.2` separates bounded deterministic packet crypto from asynchronous external-crypto command/completion operations. |
 | Stale timing-wheel entries and large time jumps could create unbounded expiration debt or accidentally extend authorization. | `v0.36.1` bounds live/dead entries, rescheduling, expiration work, overdue fairness, and time-jump behavior. |
@@ -147,7 +147,7 @@ Current closure decisions are:
 | Relay-port randomness could conflict with deterministic reducer inputs or repeat biased candidates after fork/restart. | `v0.37.1` specifies explicit worker-seed/completion policy, unbiased unique search, seed independence, and deterministic exhaustion. |
 | Absolute-time rollback handling alone could leave forward jumps, uninitialized clocks, and recovery ambiguous or make nonce work depend on a later type. | `v0.4.0` defines absolute time, trust, source, and generation; `v0.25.1` adds production clock-health transitions and recovery without altering monotonic lifetimes. |
 | Concurrency models could arrive only after cross-worker queues and configuration publication are already entrenched. | Initial focused Loom evidence is an exit condition of `v0.78.0`; `v0.78.1` expands the inventory and `v0.93.0` remains comprehensive closure. |
-| Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` acquires one exact whole-batch permit from immutable prepared requirements; adversarial partial acceptance remains uncommitted, while later partial execution is completion-driven. |
+| Command admission could allow a committed reducer transition followed by partial runtime acceptance. | `v0.23.2` requires one exact adapter reservation and caller arena from immutable prepared requirements; adversarial partial arena acceptance remains uncommitted, while later execution is completion-driven. |
 | Treating every output as one mutually exclusive effect class could exhaust operation tables or lose ownership/audit duties on a best-effort send. | `v0.23.5` composes semantic authority, resource ownership, delivery guarantee, and durability/audit properties in one effect envelope. |
 | Asynchronous packet HMAC could retain an escaping borrow or undocumented unbounded packet copy. | `v0.17.3` keeps base-profile packet HMAC synchronous and defines immutable generation-tagged lease/copy ceilings before any asynchronous packet-crypto profile can be admitted. |
 | A safeguard closure could arrive after the first feature that depends on it. | Clock trust is mandatory in `v0.25.0`, TLS/DTLS early data is rejected in `v0.73.0`/`v0.75.0`, and initial Loom models gate `v0.78.0`; later patch milestones expand cross-provider and model closure. |
@@ -180,6 +180,16 @@ Current closure decisions are:
 | Cache hit/miss latency could be specified as impossible constant-time equality, encouraging artificial authentication work and a new DoS cost. | `v0.30.8` defines cache-membership secrecy, bounded envelopes, secret comparisons, semantic equivalence, and optional release scheduling without repeated expensive work. |
 | A runtime could inspect snapshots or reconstruct authority when queued relay-media permission/channel generations become stale. | `v0.43.3` makes stale-drop mandatory by default and permits replacement only through one bounded core-owned reauthorization event. |
 | TLS/DTLS control records that never become STUN frames could consume uncharged post-handshake crypto, output, timers, or state. | `v0.72.2` defines pre-plaintext control budgets and disabled features; `v0.76.4` closes equivalent enforcement across all selected providers. |
+| The documented crate graph could hide runtime's direct wire dependency and permit framing code to construct authenticated or method-authorized views. | `v0.2.3` documents the real graph and mechanically confines semantic promotion and wire/crypto composition to core. |
+| Determinism could remain an architectural promise until the full STUN core, allowing layout, word width, capacity, or correlation IDs to harden into APIs first. | `v0.2.4` lands a minimal executable reducer kernel and differential replay harness before protocol APIs. |
+| Queue-shaped permits, generations, or publication types could force core consumers to adopt Gjallarbru's runtime topology. | `v0.2.5` separates semantic preparation/commit from adapter-owned reservation and publication. |
+| Locked extension/deployment RFC text could remain only downloaded reference material until immediately before a conformance claim. | `v0.2.6` and `v0.2.7` complete semantic ledgers for every locked non-base profile before implementation authority. |
+| Storage layout, tombstone debt, `usize` width, generation wrap, or ambiguous Tick comparison could change deterministic results or exceed constrained-target bounds. | `v0.6.2` fixes probes/load/debt/order/width/wrap/horizon contracts with model evidence. |
+| A one-pass attribute inventory could allocate or retain one descriptor per tiny attribute and misclassify its own capacity limit as malformed input. | `v0.8.2` uses sparse fixed metadata plus caller-bounded unknown-required accumulation and a distinct resource outcome. |
+| Encoder dependency/finalizer plans could be logically bounded yet still allocate vectors, closures, trait objects, or grown scatter lists per message. | `v0.16.1` requires fixed arrays/caller workspace and fail-allocator/copy evidence before finalizers. |
+| A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
+| UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
+| Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -238,20 +248,25 @@ Deliverables:
 
 - an ADR defining identical output/state for identical initial state,
   immutable configuration, ordered events, supplied monotonic/absolute times,
-  entropy completions, and provider completions;
+  entropy completions, provider completions, storage seed/layout inputs, output
+  capacity, path/event identity, and every security-relevant generation;
 - all-or-nothing command and encoded-output preflight, explicit equal-tick,
   duplicate/decreasing/wrapping time rules, and wall-clock rollback isolation;
 - generation-tagged entropy request/completion, buffer-lease, provider, and
   runtime-operation contracts with purpose and length domains;
 - synchronous bounded callback-free storage requirements, complexity/capacity
   guarantees, capability-shaped runtime commands, and typestate boundaries;
+- prohibition on semantic dependence on collection iteration/insertion order,
+  pointer/address layout, `usize` width, platform endianness, allocator placement,
+  runtime correlation IDs, or other inputs absent from the reducer envelope;
 - a mechanism-admission register requiring a specification, threat model, key
   domain, wire identifier, and requirement entries before an internal name can
   acquire protocol authority; `STUN-DEREF` is explicitly unsupported/unassigned.
 
 Verification:
 
-- executable reducer examples replayed twice for byte-identical command/state output
+- executable architecture examples replayed twice for byte-identical command/state
+  output, followed by the minimal real core artifact required by `v0.2.4`
 - ADR review matrix covering capacity failure, equal/decreasing time, entropy
   failure, stale completion, lease reuse, storage misbehavior, and unknown names
 
@@ -293,6 +308,211 @@ Exit criteria:
   resolves its implementation and observes its declared tests in the right profile.
 - Stop: `v0.2.2 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.2.3 - Crate Authority and Dependency Boundary
+
+Goal: document and mechanically enforce the real crate graph before framing,
+crypto, or runtime APIs can accidentally acquire semantic protocol authority.
+
+Deliverables:
+
+- one authoritative dependency graph matching Cargo metadata:
+  `server -> runtime -> {core, wire}`, `core -> {wire, crypto}`, with `wire` and
+  `crypto` independent and the later facade depending only on reusable crates;
+- runtime access to `wire` limited to byte classification, transport framing,
+  exact frame consumption, and raw untrusted views needed for buffer handling;
+- only core can upgrade raw/basic wire input into authenticated, method-valid,
+  allocation/permission/channel/policy-authorized states or construct semantic
+  runtime commands;
+- sealed constructors/module visibility preventing runtime from constructing
+  authenticated/method-valid views, integrity success, policy decisions, or
+  capability-bearing commands from raw fields;
+- core-owned orchestration translating wire range/segment descriptions into
+  crypto provider input so neither `wire -> crypto` nor `crypto -> wire` is
+  required and no dependency cycle or exported-key bridge appears;
+- runtime-produced metadata and typed frame views remain explicitly untrusted
+  reducer inputs, generation-bound to their source buffer/path where applicable;
+- capability and quiescence types documented as evidence-bearing contracts for
+  reviewed conforming adapters, not cryptographic protection against a runtime
+  that already has syscall authority;
+- README, crate READMEs, architecture docs, Cargo metadata allowlists, and
+  generated dependency diagrams checked for exact agreement.
+
+Verification:
+
+- Cargo-metadata dependency/feature-policy tests rejecting new reverse edges,
+  cycles, or runtime access to forbidden reusable-crate modules
+- compile-fail/public-API fixtures proving runtime cannot construct or promote
+  authenticated, method-valid, authorized endpoint, or quiescence values
+- raw-frame-to-core-to-command integration test proving runtime classification
+  remains untrusted until core performs the semantic transition
+- documentation graph parity and provider substitution tests proving wire/
+  crypto composition remains core-owned without key export or fallback
+
+Exit criteria:
+
+- The documented graph matches the build, and no runtime framing or crypto
+  dependency can bypass core to create authentication, state, policy, or send authority.
+- Stop: `v0.2.3 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.4 - Executable Reducer Kernel
+
+Goal: turn deterministic architecture from prose into a minimal protocol-neutral
+core artifact before STUN/TURN API details become compatibility constraints.
+
+Deliverables:
+
+- a small no_std reducer kernel using caller-owned state, input, workspace, and
+  command arena, with no protocol parsing claim and no heap/clock/I/O/random access;
+- one canonical explicit input envelope containing ordered event identity,
+  complete path/generations, monotonic and absolute-time observations, entropy
+  bytes, provider completions, configuration generation, storage seed/layout
+  inputs, and output/workspace capacity;
+- byte-identical resulting state and commands for identical envelopes, with
+  adapter queue/provider/transport correlation IDs excluded from semantic input;
+- deterministic ordering rules forbidding output/state dependence on hash-table
+  iteration, insertion/tombstone layout, pointer/address layout, `usize` width,
+  platform endianness, allocator behavior, or unspecified collection order;
+- capacity/fault points proving insufficient workspace/command/output storage
+  leaves caller state, visible output, operation counters, and effects unchanged;
+- fixed canonical test snapshots and a replay harness reusable by every later
+  reducer milestone, including failure offset and first-divergence diagnostics;
+- a deliberately tiny behavioral implementation and nonzero unit/property test
+  suite without implying Binding, authentication, allocation, or conformance.
+
+Verification:
+
+- `cargo test -p gjallarbru-core reducer_kernel`
+- repeated identical-envelope replay plus event-order permutations proving order
+  is explicit, entropy/provider result substitution, time-source generation, and every capacity
+- 32-/64-bit or equivalent width fixtures plus storage seed, insertion order,
+  tombstone layout, memory-address, and runtime-correlation differential tests
+- fail-at-every-write instrumentation proving observationally unchanged state,
+  arena, and output on failure
+- no_std/no-allocator link check and traps for ambient time, entropy, callback,
+  thread-local, blocking, unwinding, or hosted-OS access
+
+Exit criteria:
+
+- Determinism and atomic absence on failure have executable evidence in core;
+  they are no longer claims inferred from an empty crate or documentation alone.
+- Stop: `v0.2.4 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.5 - Adapter-Neutral Capacity Admission
+
+Goal: preserve atomic semantic preparation and commit without forcing a
+microkernel, simulator, bare-metal loop, or OS runtime to adopt one queue model.
+
+Deliverables:
+
+- four explicit layers: core prepares a semantic transition in caller workspace;
+  adapter reserves its own effect/output capacity; core commits into a caller-
+  supplied bounded command arena; adapter publishes the completed arena;
+- `TransitionRequirements` describes semantic command kinds/counts, bytes,
+  retained ownership, terminal/control obligations, and alignment only—not queue
+  topology, wakeups, atomics, executor tasks, provider lanes, or OS submissions;
+- adapter-owned non-clone capacity reservation/token opaque to semantic logic,
+  with core observing only exact sufficiency, arena identity/capacity, and
+  single-consume validity;
+- queue/listener/worker generations, reservation ledgers, correlation IDs,
+  publication state, and release/acquire mechanics kept in adapter envelopes and
+  unable to affect reducer output, operation identity, or authorization;
+- local in-place adapter, simulated/custom-queue adapter, and later threaded
+  adapter able to implement equivalent reserve/commit/publish semantics without
+  core types depending on concurrency primitives;
+- exact release on failed/stale commit and prohibition of partial command-arena
+  publication, while post-publication OS partial execution remains completion-driven;
+- forward requirements updating `v0.23.2`-`v0.23.4` to consume this separation
+  rather than exposing a queue-shaped `CommandBatchPermit` in core.
+
+Verification:
+
+- `cargo test -p gjallarbru-core adapter_neutral_admission`
+- compile/API checks that core public types contain no atomics, queue/provider
+  IDs, wakeups, tasks, OS handles, runtime reservation ledgers, or topology enums
+- local, ring-buffer, deliberately unusual simulator, and threaded-test adapter
+  differential replays with distinct layouts/correlation IDs and identical semantics
+- insufficient/stale/dropped reservation, arena substitution, partial capacity,
+  commit failure, pre-publication crash, and adapter publication-invariant tests
+- freestanding fixture proving caller arenas and opaque capacity tokens require
+  neither global allocation nor a project-specific executor/queue implementation
+
+Exit criteria:
+
+- Core owns semantic atomicity while every consumer remains free to choose its
+  bounded capacity and publication mechanics without changing protocol behavior.
+- Stop: `v0.2.5 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.6 - Core and Deployment Standards Ledgers
+
+Goal: expand semantic traceability before non-base authentication, addressing,
+discovery, URI, and deployment profiles can claim implementation or conformance.
+
+Deliverables:
+
+- complete section/keyword inventories, errata decisions, semantic child
+  requirements, profile ownership, milestones, symbols/tests placeholders, and
+  explicit exclusions for locked RFC 5780, RFC 5928, RFC 6052, RFC 7064,
+  RFC 7065, RFC 7376, RFC 7443, RFC 8155, RFC 8265, and RFC 9325;
+- RFC 5769 classified as vector/evidence provenance rather than a protocol
+  conformance profile, with every usable vector mapped to its consumer milestone;
+- RFC 2119/RFC 8174 interpretation rules applied consistently without treating
+  their boilerplate as an independently advertised feature;
+- cross-RFC conflict/supersession links and decisions where base STUN/TURN,
+  authentication security, address translation, discovery, and TLS policy overlap;
+- no profile status beyond `planned` until `v0.2.2` resolves real symbols and
+  observes executed semantic positive/negative tests.
+
+Verification:
+
+- zero-gap validation and negative fixtures for every added locked document,
+  semantic child, erratum, exclusion, supersession, and evidence-only source
+- sampled manual source-to-ledger review plus deterministic regeneration and
+  exact requirement-count drift reports
+- feature/profile gates proving an unverified or incomplete ledger prevents the
+  corresponding release milestone and conformance documentation
+
+Exit criteria:
+
+- Every locked core/deployment standard has complete semantic planning evidence
+  before its profile can enter implementation or public support claims.
+- Stop: `v0.2.6 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.7 - Extension and Transport Standards Ledgers
+
+Goal: complete semantic traceability for every locked TURN extension and secure/
+shared transport before any extension-specific wire number or behavior activates.
+
+Deliverables:
+
+- complete section/keyword inventories, errata decisions, semantic child
+  requirements, profile ownership, milestones, symbols/tests placeholders, and
+  explicit exclusions for locked RFC 6062, RFC 6679, RFC 7350, RFC 7635,
+  RFC 7982, RFC 7983, RFC 8016, RFC 9147, and RFC 9443;
+- explicit cross-profile requirements for TCP allocations, ECN, DTLS, third-
+  party authorization, transaction measurement, shared-port demultiplexing,
+  mobility, DTLS 1.3, and TURN-over-QUIC applicability/non-claims;
+- assignment-provenance requirements prepared for the later reviewed `v0.3.0`
+  IANA snapshot, with no numeric value entering code before that gate; standardized,
+  reserved, unassigned, and vendor-specific values remain distinct/inert;
+- extension admission fails when its specification, threat model, key domain,
+  wire assignment, semantic requirements, or interoperability role is missing;
+- no extension status beyond `planned` until `v0.2.2` evidence gates pass.
+
+Verification:
+
+- zero-gap validation and negative fixtures for every added document/profile,
+  erratum, exclusion, numeric assignment, and cross-RFC dependency
+- IANA schema/assignment negative fixtures ready for `v0.3.0`, proving ledger
+  completion alone cannot activate or generate a numeric protocol assignment
+- configuration/wire fixtures proving vendor or unassigned methods/attributes
+  stay observable-but-inert and cannot alias a standardized profile
+
+Exit criteria:
+
+- Every locked extension/transport claim has complete semantic planning before
+  `v0.3.0` locks assignment provenance and implementation can grant authority.
+- Stop: `v0.2.7 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.3.0 - IANA Snapshot Tooling
 
 Goal: make protocol assignments reviewed, generated, and reproducible.
@@ -301,12 +521,16 @@ Deliverables:
 
 - dated method, attribute, error, channel, security-feature, and password
   algorithm registry snapshots with source metadata;
+- explicit standardized, reserved, unassigned, and vendor-specific states;
+  vendor/unassigned values stay raw and inert unless `v0.2.7` extension admission
+  evidence separately assigns an implementation profile;
 - manual updater, schema validator, deterministic generator, and review diff.
 
 Verification:
 
 - `scripts/check-iana-snapshot.sh`
 - regenerate twice and compare byte-for-byte output
+- live-versus-locked drift and vendor/unassigned-alias negative fixtures
 
 Exit criteria:
 
@@ -397,8 +621,13 @@ Deliverables:
 
 - one checked offset/length/padding implementation with structural padding
   validation, receive-side padding-value ignorance, and zero-only encoding;
-- fused failure behavior, minimum successful progress, no recursion or
-  attacker-controlled backtracking, and explicit message/attribute ceilings;
+- parser-local single-cursor APIs whose successful loop step advances by at
+  least the applicable minimum header, whose first failure permanently fuses,
+  and whose offsets cannot reset or jump without checked addition before slicing;
+- no recursion or attacker-controlled backtracking/reparse, exact permitted
+  datagram-frame consumption, and stream consumption that retains no borrow
+  across mutable buffer compaction/reuse;
+- explicit message/attribute ceilings;
 - fixed scan and cryptographic-operation budgets plus an admission rule against
   repeated attribute rescans that create attacker-controlled quadratic work;
 - first-change fuzz smoke harnesses, no-panic boundary corpus, and allocation/
@@ -409,6 +638,8 @@ Verification:
 - arbitrary byte and offset/length/padding property tests, including nonzero padding
 - fuzz smoke proving success advances, failure terminates, and configured work
   ceilings cannot be exceeded
+- compile/API and Kani candidates proving loops cannot clone/reset the cursor,
+  failure is fused, and stream borrows cannot outlive buffer mutation
 
 Exit criteria:
 
@@ -445,16 +676,22 @@ Deliverables:
 
 - a freestanding downstream fixture with no global allocator, no OS imports,
   caller-owned stores/command buffers, in-place initialization, and fixed panic handling;
+- no pointer-width atomics on the local path, callbacks, hidden blocking,
+  unwinding, thread-local storage, ambient clocks, or executor/runtime imports;
 - `--no-default-features`, every supported feature combination, and representative
   bare-metal target builds with measured stack/static-memory footprints;
 - qualified storage implementations whose operations are synchronous, bounded,
   callback-free, non-blocking, and documented with maximum complexity/capacity;
 - construction rules preventing large fixed arrays from being copied through the
-  stack and production-claim gates excluding unqualified custom storage.
+  stack and production-claim gates excluding unqualified custom storage;
+- integration with `v0.6.2` deterministic iteration, tombstone debt, word-size,
+  generation-wrap, and maximum Tick-comparison-horizon contracts.
 
 Verification:
 
 - compile/link fixture with allocator symbols forbidden and OS imports scanned
+- symbol/import traps for atomics, TLS, unwinding, callbacks, clocks, blocking,
+  executors, and hosted runtime initialization
 - stack-size, in-place construction, capacity/exhaustion, feature-matrix, and
   malicious storage-contract fixture tests
 
@@ -463,6 +700,53 @@ Exit criteria:
 - The portable core can be integrated with caller-owned memory on a freestanding
   target, and production claims name only qualified storage implementations.
 - Stop: `v0.6.1 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.2 - Deterministic Indexes and Wrap Closure
+
+Goal: make bounded storage layout, iteration, generation reuse, and time
+comparison deterministic across constrained targets and adversarial churn.
+
+Deliverables:
+
+- fixed load-factor and maximum-probe contracts for every first-party open-
+  addressed index, with insertion/lookup/removal outcomes independent of pointer
+  addresses, allocator placement, or platform-default hashing;
+- explicit tombstone/stale-entry count and byte debt, bounded cleanup/rehash
+  work, deterministic saturation outcome, and no hidden full-table scan;
+- storage APIs separate keyed lookup from iteration; protocol output, semantic
+  operation identity, audit order, and authorization cannot depend on bucket,
+  slab, insertion, tombstone, or unspecified trait iteration order;
+- any required enumeration uses a declared stable order or bounded canonical
+  selection in caller workspace, with exact overflow behavior and no heap sort;
+- stored widths, wire conversion, hashing inputs, counters, and snapshot formats
+  produce identical semantics on 16-/32-/64-bit `usize` and both endiannesses
+  supported by Rust targets, or reject an unsupported target at compile time;
+- wide generation/epoch domains with explicit exhaustion and fail-closed reuse;
+  modular `Tick` comparisons declare a maximum horizon below ambiguity and reject
+  schedules/lifetimes outside it;
+- fixed maximum stack/static memory/alignment for each index and iterator, no
+  pointer-width atomics on the local path, no thread-local storage, callback,
+  unwinding, ambient clock, hidden allocation, or blocking operation;
+- reference models and worst-case operation counts reusable by transactions,
+  timers, allocations, permissions, channels, and fast-path inventories.
+
+Verification:
+
+- `cargo test -p gjallarbru-core deterministic_storage`
+- Kani/property checks for every load/probe/tombstone boundary, collision chain,
+  cleanup interruption, stale handle, generation exhaustion, and Tick wrap horizon
+- insertion/bucket/hash-seed/tombstone-layout/word-width/endianness differential
+  traces proving byte-identical semantic output and canonical snapshots
+- no-allocator freestanding fixtures with stack/static/alignment measurements
+  and traps for forbidden atomic/TLS/callback/blocking/unwinding imports
+- malicious storage fixtures returning unstable iteration or over-budget work
+  must fail qualification without influencing committed core state
+
+Exit criteria:
+
+- Storage churn, layout, target width, and wrap cannot change protocol results or
+  exceed declared work/memory bounds; ambiguous reuse/time comparisons fail closed.
+- Stop: `v0.6.2 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 
@@ -537,6 +821,51 @@ Exit criteria:
 - Diagnostic bytes remain observable without allowing ignored or unauthenticated
   attributes to affect 420 responses, method schemas, policy, or state.
 - Stop: `v0.8.1 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.8.2 - Sparse Attribute Inventory
+
+Goal: preserve one-pass semantic evidence without turning a maximum-size STUN
+message into a descriptor object for every small attribute.
+
+Deliverables:
+
+- raw borrowed fused iteration remains the complete byte-preserving visibility
+  surface and stores no per-attribute heap object or escaping descriptor list;
+- fixed bitsets/counters for known presence, duplicate, and schema facts, plus
+  exact offsets only for the bounded integrity, fingerprint, and other fields
+  that later stages must revisit;
+- caller-sized fixed accumulator only for unknown comprehension-required types,
+  with deduplication/order policy, exact maximum entries/bytes/work, and no
+  accumulation of unknown optional values needed only for raw diagnostics;
+- inventory/workspace exhaustion reported as a distinct deterministic resource
+  outcome, never mislabeled as structurally malformed wire input and never
+  silently truncating a 420 response obligation;
+- implementation ceilings below the wire-format theoretical maximum documented
+  as profile/resource limits with transport-appropriate drop/error behavior and
+  amplification/accounting constraints;
+- semantic validators consume the sparse inventory or raw iterator under one
+  shared scan budget and cannot trigger backtracking or a second unbounded pass;
+- fixed inventory footprint/alignment and operation counts exposed to the
+  `v0.2.5` prepared-requirement workspace and later allocation instrumentation.
+
+Verification:
+
+- `cargo test -p gjallarbru-wire sparse_attribute_inventory`
+- maximum-count tiny-attribute, all-known, all-unknown-required, all-unknown-
+  optional, duplicate-heavy, integrity-position, and mixed-order corpora
+- fail-at-every-accumulator-slot tests distinguishing capacity from malformed,
+  preserving raw iteration, and producing no partial/truncated semantic view
+- allocation/copy/object-count instrumentation proving memory is proportional
+  to fixed known metadata plus caller-selected unknown-required capacity, not
+  total attribute count
+- single-pass/scan-count properties and differential method-validation results
+  against a deliberately simple unbounded test oracle
+
+Exit criteria:
+
+- One bounded pass retains every semantic fact needed by core without allocating
+  or storing one descriptor per attribute, and capacity limits remain explicit.
+- Stop: `v0.8.2 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.9.0 - STUN and ChannelData Classifier
 
@@ -778,6 +1107,47 @@ Exit criteria:
   failure cannot change caller-visible bytes.
 - Stop: `v0.16.0 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.16.1 - Fixed-Workspace Encoder Planning
+
+Goal: prove the encoder's segment/finalizer dependency graph is allocation-free
+and caller-bounded before cryptographic finalizers consume it.
+
+Deliverables:
+
+- fixed arrays or caller-provided workspace for segments, padding, borrowed
+  ranges, dependency nodes, finalizer slots, prepared fixed outputs, and optional
+  scatter entries, with exact size/alignment requirements;
+- no per-message `Vec`, `Box`, reference-counted object, dynamically grown
+  scatter list, captured closure, heap-created trait object, or recursive graph;
+- generic finalizers represented by fixed-size capability/function/state forms
+  whose maximum storage, alignment, invocation count, and failure behavior are
+  known during validation;
+- deterministic `PlanCapacity`/workspace exhaustion distinct from malformed
+  protocol input, leaving caller output and all slots unchanged;
+- one sizing pass that computes exact nodes/segments/finalizers/output/staging
+  bytes without allocating, guessing, retry growth, or repeating attribute scans;
+- fixed maximum stack footprint with large plans initialized in place and never
+  copied through return values, temporary arrays, or error formatting;
+- allocation, copy, segment, dependency-edge, finalizer-call, and retained-byte
+  counters available from this milestone rather than deferred to runtime closure.
+
+Verification:
+
+- `cargo test -p gjallarbru-wire encoder_workspace`
+- fail allocator enabled before every draft/validate/finalize/commit path plus
+  exact/short/zero/maximum caller workspace and output-buffer tests
+- compile/API checks rejecting growable containers, captured closures, recursive
+  nodes, clone/copy of large plans, and per-message dynamic trait objects
+- maximum-segment/dependency/finalizer graphs, capacity failure at each slot,
+  cycle/error injection, direct/staged/scatter variants, and unchanged sentinels
+- stack/static/alignment and copy-count evidence on supported word widths/MSRV
+
+Exit criteria:
+
+- Every encoder plan and finalizer graph fits declared fixed/caller storage,
+  performs no hidden allocation, and fails transactionally at exact capacity.
+- Stop: `v0.16.1 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.17.0 - FINGERPRINT Finalization
 
 Goal: implement exact STUN CRC-32 fingerprint framing and integrate it with the
@@ -814,9 +1184,15 @@ Deliverables:
 - separate fixed-output traits for HMAC-SHA-1, HMAC-SHA-256, MD5, SHA-256, and
   entropy, with fixed-size contexts/outputs and incremental fixed-segment input;
 - opaque key-handle support plus explicit `Unsupported`, `InvalidKey`,
-  `Unavailable`, and `InternalFailure` outcomes that always fail closed;
+  `Unavailable`, `StaleGeneration`, and `InternalFailure` outcomes that always fail closed;
+- associated purpose-specific key types for message integrity, nonce,
+  transaction, reservation, mobility, token, and later domains, without
+  `AsRef<[u8]>`, ordinary `Debug`, `Clone`, or equality;
+- fixed public validated tag-length types and combined derivation-and-MAC suite
+  support so externally held keys need not be exported between providers;
 - provider verification or mandatory first-party constant-time comparison for
-  public valid tag lengths, with no callback access to protocol policy/state;
+  public valid tag lengths after computing the complete required MAC and
+  comparing every offered byte, with no callback access to protocol policy/state;
 - non-Copy/non-Clone-by-default secret wrappers with redacted formatting,
   tightly scoped byte exposure, no ordinary equality, and documented
   best-effort zeroization limits;
@@ -827,6 +1203,9 @@ Verification:
 
 - compile-time secret trait assertions, redaction/log tests, provider
   substitution, fixed-output mismatch, unavailable/failure, and opaque-key tests
+- cross-purpose key substitution, prohibited export/Debug/Clone/equality,
+  complete-MAC/all-tag-byte comparison, public invalid-length, stale generation,
+  combined-suite, and no-algorithm-fallback tests
 - no_std/MSRV checks plus allocation instrumentation for every first-party provider path
 
 Exit criteria:
@@ -962,7 +1341,9 @@ Deliverables:
 - mandatory failure when a required response-integrity key cannot be selected
   or a provider returns unsupported, unavailable, stale, or internal failure;
 - constant-time comparison claims scoped to valid public lengths and backed by
-  provider review rather than inferred from a trait signature.
+  provider review rather than inferred from a trait signature; the complete
+  required MAC is computed and every offered byte compared without early exit,
+  while structurally invalid public lengths may fail before secret work.
 
 Verification:
 
@@ -970,6 +1351,8 @@ Verification:
   adjusted header lengths and post-integrity bytes
 - every truncation length, provider error, stale key, mixed-integrity ordering,
   downgrade, and missing-response-key negative fixture
+- instrumentation/test-provider evidence for complete MAC computation and
+  all-offered-byte comparison on every valid public tag length
 
 Exit criteria:
 
@@ -1074,8 +1457,12 @@ Deliverables:
   backtracking ceilings with linear-work evidence for admitted frames;
 - fail-after-startup allocator and copy counters covering errors, unknown lists,
   stream retention, integrity, Unicode adapters, and response construction;
-- fixed-size unknown/duplicate inventories and typed transitions from
-  `FrameView` through basic, authenticated, and method-valid views;
+- `v0.8.2` sparse fixed known-attribute bitsets/counters/selected offsets plus
+  caller-bounded unknown-required accumulation, never one descriptor per attribute;
+- `v0.16.1` fixed/caller-workspace segment, dependency, finalizer, and scatter
+  planning with transactional `PlanCapacity` behavior;
+- typed transitions from `FrameView` through basic, authenticated, and
+  method-valid views;
 - fuzz targets promoted from every parser milestone plus corpora for nonzero
   padding, post-integrity attributes, truncated tags, and all boundary lengths.
 
@@ -1084,6 +1471,8 @@ Verification:
 - maximum-size work counters and adversarial repeated-attribute complexity tests
 - fail-allocator/copy-count tests, typestate compile-fail fixtures, fuzz smoke,
   Miri-safe borrowed-view tests, and guaranteed iterator termination
+- maximum-attribute sparse-inventory and maximum encoder-graph workspace tests
+  proving capacity outcomes remain distinct from malformed protocol input
 
 Exit criteria:
 
@@ -1120,7 +1509,9 @@ planned or observationally absent.
 Deliverables:
 
 - byte-identical command and resulting-state replay for identical configuration,
-  events, supplied times, entropy results, and provider completions;
+  ordered event/path identities and generations, supplied times, entropy bytes,
+  provider completions, storage seed/layout inputs, output capacities, and every
+  other field frozen by the `v0.2.4` executable input envelope;
 - preflight of command count, encoded bytes, leases, and reservations before
   mutation, with `OutputCapacity` leaving state and outputs unchanged;
 - runtime execution rule forbidding command consumption until `step` succeeds,
@@ -1132,10 +1523,15 @@ Deliverables:
 - capability command types constraining the endpoints, lifetime, quota, key
   domain, and other fields available to conforming adapters, with safe-reference
   differential verification rather than a claim about malicious runtime behavior.
+- iteration/insertion/tombstone order, hash layout, pointer addresses, `usize`
+  width, endianness, allocator placement, and runtime correlation IDs forbidden
+  from affecting command/state bytes or semantic operation identity.
 
 Verification:
 
 - snapshot/replay properties across event sequences and every capacity boundary
+- `v0.2.4` replay corpus across storage layouts, word widths, correlation IDs,
+  configuration/path generations, and reordered arrival with explicit event order
 - fault injection at each preflight/encode/entropy/provider/lease stage proving
   state, counters, command sinks, and runtime side effects remain unchanged
 
@@ -1148,7 +1544,7 @@ Exit criteria:
 
 ### v0.23.2 - Prepared Transition and Atomic Admission
 
-Goal: compute exact command-batch requirements once before permit acquisition
+Goal: compute exact semantic effect requirements once before adapter capacity acquisition
 without repeating parsing, authentication, encoding, or attacker-controlled scans.
 
 Deliverables:
@@ -1167,14 +1563,17 @@ Deliverables:
   non-copy/non-clone assertions for large preparation workspaces;
 - preparation bound to event identity, state revision, configuration generation,
   and worker epoch so stale plans cannot commit after any relevant change;
-- exact requirements for command count, encoded bytes, retained leases/buffers,
-  semantic operation slots, effect-property queue capacity, and commit workspace;
-- permit acquisition only after preparation, with bounded declared work and no
+- exact requirements for command kinds/counts, encoded bytes, retained leases/
+  buffers, semantic/control obligations, alignment, and commit workspace, with
+  no queue topology, wakeup, atomic, executor, provider-lane, or OS-submission type;
+- adapter-owned capacity acquisition only after preparation, with bounded
+  declared work and no
   retry loop that reparses, reauthenticates, re-HMACs, rescans, or replans input;
 - fixed limits for preparation workspace/time/operations and deterministic
   failure when the event cannot be represented within them;
-- one commit API consuming the prepared transition and an exact permit; partial
-  batch acceptance is prohibited while later OS execution remains non-atomic.
+- one commit API consuming the prepared transition into an exactly sufficient
+  caller command arena under the opaque `v0.2.5` adapter reservation; partial
+  arena acceptance is prohibited while later OS execution remains non-atomic.
 
 Verification:
 
@@ -1183,40 +1582,44 @@ Verification:
 - exact-requirement properties across every event kind and capacity boundary
 - compile-fail escape/Send/Sync/Copy fixtures plus buffer-reuse, await/callback,
   derived-key/output-plan generation, scrubbing, stack-size, and lease tests
-- stale-plan, queue-race, insufficient-permit, oversized-workspace, and
+- stale-plan, adapter-reservation race, insufficient arena, oversized-workspace, and
   adversarial partial-accept tests leaving state and queues unchanged
 
 Exit criteria:
 
-- Every permit is sized from one worker-local single-consume prepared transition;
-  admission never repeats attacker work, leaks a borrow/secret, or guesses by retry.
+- Every adapter reservation is sized from one worker-local single-consume prepared
+  transition; core remains topology-neutral and admission never repeats attacker
+  work, leaks a borrow/secret, or guesses by retry.
 - Stop: `v0.23.2 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.23.3 - Linear Permit and Operation-ID Authority
+### v0.23.3 - Linear Capacity Reservation and Operation-ID Authority
 
-Goal: make permit capacity single-use and generation-bound while assigning all
-semantic operation identity exclusively to the deterministic core.
+Goal: make adapter capacity reservation single-use and generation-bound while
+assigning all semantic operation identity exclusively to deterministic core.
 
 Deliverables:
 
-- a non-`Clone`, non-reusable `CommandBatchPermit` exactly matching one prepared
-  transition and binding worker, queue, and configuration generations;
-- explicit limits for outstanding permits and total reserved bytes/slots at
+- a non-`Clone`, non-reusable adapter-owned capacity reservation exactly matching
+  one prepared transition and caller command arena, opaque to semantic core logic;
+- explicit limits for outstanding reservations and total reserved bytes/slots at
   global, worker, and queue scopes, with bounded acquisition work and no
   incremental reservation/queue-capacity hoarding;
-- automatic exactly-once release after failed commit, cancellation, permit
+- queue/provider generations, topology, wakeups, publication state, and runtime
+  correlation IDs remain in the adapter envelope; core validates only opaque
+  reservation/arena identity, exact sufficiency, and single-consume state;
+- automatic exactly-once release after failed commit, cancellation, reservation
   drop, shutdown, queue restart/resize, worker replacement, or stale rejection;
 - semantic operation IDs generated only by core from an explicit engine/worker
   epoch plus bounded generational counter, with exhaustion/wrap failing closed;
 - runtime, queue, provider, and transport correlation IDs kept outside reducer
   equality and forbidden from changing protocol behavior or authorization;
-- exact permit capacity hidden from semantic decisions beyond successful
-  requirement satisfaction, preserving byte-identical deterministic replay.
+- exact reservation capacity and topology hidden from semantic decisions beyond
+  successful requirement satisfaction, preserving byte-identical replay.
 
 Verification:
 
 - compile-time non-clone/single-consume checks plus reuse, double-release,
-  permit-drop, failed-commit, cancellation, shutdown, queue-resize/restart,
+  reservation-drop, failed-commit, cancellation, shutdown, queue-resize/restart,
   worker-replacement, stale-generation, and reservation-hoarding models
 - semantic-ID uniqueness, epoch change, counter exhaustion/wrap, stale
   completion, and correlation-ID substitution tests
@@ -1225,8 +1628,8 @@ Verification:
 
 Exit criteria:
 
-- No permit can be reused, leaked, or hoard capacity, and no runtime-provided
-  identifier can become semantic protocol authority.
+- No capacity reservation can be reused, leaked, or hoard capacity, core depends
+  on no queue design, and no runtime-provided identifier becomes protocol authority.
 - Stop: `v0.23.3 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.23.4 - Atomic Publication Memory Model
@@ -1238,10 +1641,11 @@ Deliverables:
 
 - mutable core state exclusively owned by one worker, with no concurrent direct
   state reads or writes from runtime consumers;
-- commands written into permit-reserved but unpublished queue slots before the
-  prepared state mutation is completed;
-- one infallible batch-ready publication using release ordering after state
-  mutation, with consumers observing ready batches using acquire ordering;
+- commands written into the adapter-reserved caller arena before the prepared
+  state mutation is completed, without core knowing its eventual queue topology;
+- one adapter-owned infallible ready-arena publication after state mutation;
+  threaded adapters use release ordering and acquire consumption while local/
+  custom adapters use equivalent mechanics without atomics;
 - owner-generated immutable/versioned snapshots as the only cross-thread state
   inspection path, published independently without widening command authority;
 - worker epoch invalidation for crashes before publication, abandoned reserved
@@ -1251,7 +1655,7 @@ Deliverables:
 
 Verification:
 
-- Loom/model tests for every interleaving around reserved-slot writes, state
+- Loom/model tests for every interleaving around reserved-arena writes, state
   mutation, ready publication, acquire consumption, snapshot, crash, and restart
 - fault injection before and after every publication boundary proving consumers
   never observe commands without committed owner state or partial batches
@@ -1479,8 +1883,9 @@ while preserving one publication contract across threaded and local runtimes.
 
 Deliverables:
 
-- `gjallarbru-core` permits, prepared transitions, state, events, commands,
-  capabilities, and snapshots contain no atomics and require neither `Send` nor `Sync`;
+- `gjallarbru-core` requirements, prepared transitions, state, events, commands,
+  capabilities, and snapshots contain no adapter reservation/topology types or
+  atomics and require neither `Send` nor `Sync`;
 - publication/consumption traits owned by runtime adapters, not the reducer or
   public no_std core data model;
 - a single-thread/no-atomic adapter committing and consuming locally with no
@@ -1841,9 +2246,10 @@ Exit criteria:
 - Binding behavior is deterministic for every admitted transport path.
 - Stop: `v0.24.0 implementation stop reached. Run pentest for this exact commit.`
 
-### v0.25.0 - Stateless Authenticated Nonces
+### v0.25.0 - Context-Bound Stateless Authenticated Nonces
 
-Goal: issue and validate replay-resistant nonces without a nonce database.
+Goal: issue context-bound authenticated nonces with a finite replay window
+without claiming stateless validation can detect same-context reuse.
 
 Deliverables:
 
@@ -1852,17 +2258,25 @@ Deliverables:
   with uncertain/unavailable time failing closed;
 - active/previous/revoked key handling, stale response, tamper, cross-path,
   rollback, forward-jump, and uninitialized-clock behavior.
+- explicit replay semantics: capture/reuse inside the same accepted path/realm/
+  time/key context may validate, while authentication, transaction idempotence,
+  quotas, allocation rules, and short lifetime contain its effect;
+- metrics, errors, docs, and APIs reserve “replay detected” for mechanisms with
+  actual replay state and describe these nonces as context-bound/replay-window-limited.
 
 Verification:
 
 - `cargo test -p gjallarbru-crypto nonce`
 - arbitrary nonce decode fuzzing and deterministic trusted/uncertain/unavailable
   time, rollback, forward-jump, and recovery-generation tests
+- same-context replay acceptance/containment plus cross-path/realm/time/key-
+  generation rejection tests with no false single-use/replay-detected signal
 
 Exit criteria:
 
-- A nonce cannot be issued from untrusted wall time or replayed across path,
-  realm, time-trust generation, or key generation.
+- A nonce cannot be issued from untrusted wall time or reused across path,
+  realm, time-trust, or key generations; same-context reuse is honestly bounded
+  by its acceptance window and surrounding authenticated/idempotent controls.
 - Stop: `v0.25.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.25.1 - Absolute-Clock Trust Model
@@ -1975,12 +2389,17 @@ Deliverables:
 
 - profile policy, PASSWORD-ALGORITHMS negotiation, downgrade rejection, and
   response algorithm binding;
-- configuration validation preventing accidental legacy enablement.
+- two independent legacy gates: compile-time provider/feature availability and
+  explicit listener/profile configuration, with a Cargo feature alone unable
+  to enable network negotiation or downgrade;
+- configuration validation preventing accidental legacy enablement and refusing
+  a configured profile whose required provider capability is absent.
 
 Verification:
 
 - `cargo test -p gjallarbru-core password_negotiation`
-- cross-profile and downgrade matrix
+- cross-feature/profile/provider and downgrade matrix, including legacy feature
+  compiled but listener disabled and listener requested but feature unavailable
 
 Exit criteria:
 
@@ -2039,6 +2458,12 @@ Deliverables:
   same-key different-request input without trusting a collision-prone digest;
 - independent item, retained-request-byte, and cached-response-byte ceilings
   with deterministic admission, eviction, and reconstructable-response policy;
+- `v0.6.2` fixed load factor, maximum probes, tombstone/stale debt, bounded
+  cleanup work, and saturation outcome for the transaction index;
+- lookup/equality constant-time only for secret-bearing keyed evidence, not
+  ordinary public transaction IDs, while collision resolution remains bounded;
+- protocol output, response order, semantic operation identity, and eviction
+  choice independent of bucket/insertion/tombstone iteration order;
 - cached response identity bound to authentication/profile/configuration
   generation so stale policy cannot be replayed after change.
 
@@ -2048,6 +2473,8 @@ Verification:
   configuration-generation, eviction, and expiry properties
 - response-size/exhaustion tests proving byte ceilings hold independently of
   record count and no mismatched response is replayed
+- reference-model collision, expiry, reload, revocation, load/probe/tombstone,
+  cleanup interruption, iteration-layout, and generation/Tick-wrap tests
 
 Exit criteria:
 
@@ -2448,7 +2875,7 @@ Deliverables:
 - file-descriptor, buffer-lease, queue-item, transaction-response-byte, and
   shutdown reconciliation counters with stable metrics;
 - baseline latency/throughput/copy reports retained for later scalar/batched/
-  accelerated differential comparison.
+  accelerated differential comparison and eventual `v0.80.1` named profile closure.
 
 Verification:
 
@@ -2947,6 +3374,47 @@ Exit criteria:
 - Two-phase allocation invariants have executable model evidence before the
   portable relay runtime becomes the reference for later features.
 - Stop: `v0.39.1 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.39.2 - External-Effect Lifecycle Specification
+
+Goal: mechanically explore the full allocation/open/cancel/timeout/completion/
+fence/quarantine/quiescence lifecycle before portable sockets make one event
+ordering look authoritative.
+
+Deliverables:
+
+- a small reviewable TLA+/PlusCal, Quint, or equivalently exhaustive declarative
+  model separate from production Rust and the executable reference model;
+- states/transitions for prepared/committed allocation, external open handoff,
+  success/failure, local deadline, cancellation request/result, late/conflicting
+  completion, revocation fence/acknowledgement, semantic retirement, physical
+  quarantine, recovery budget, domain replacement, and typed quiescence proof;
+- explicit environment/fairness assumptions for provider silence, delayed/lost/
+  duplicate observations, control-lane scheduling, crash/restart, and process death;
+- checked invariants for at-most-once external effect/terminal result, unique
+  relay ownership, no stale semantic authority, no physical storage alias while
+  externally reachable, no invented cancellation/failure, bounded mailbox/
+  quarantine capacity, and recovery only under valid evidence;
+- checked progress properties under declared fair/healthy-provider assumptions,
+  with silence leading to bounded uncertainty/containment rather than false success;
+- trace translation between model states and Rust/reference-model events plus a
+  stable counterexample format promoted into ordinary regression fixtures.
+
+Verification:
+
+- exhaustive bounded model runs across tiny capacities, two allocations,
+  multiple generations, reordered/lost/duplicate events, and every fault state
+- mutation checks showing removal of a fence, generation, ownership, recovery,
+  or quiescence condition produces a model counterexample
+- replay of model traces against the simple reference model and core implementation
+- CI resource/time bounds, pinned model-tool versions, deterministic outputs,
+  and reviewed assumptions/invariants documentation
+
+Exit criteria:
+
+- The first external allocation effect has independent checked lifecycle
+  evidence covering authority, completion truth, quarantine, and physical reuse.
+- Stop: `v0.39.2 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.40.0 - Portable Relay Socket Adapter
 
@@ -3919,12 +4387,17 @@ Deliverables:
 
 - fixed storage implementation and traits for time, wall time, randomness, packet I/O,
   relay handles, credentials, audit, and configuration generations;
+- `v0.2.5` caller-owned semantic workspace/command arena with an Aesynx-owned
+  capacity reservation/publication mechanism rather than a required queue model;
+- `v0.6.1`/`v0.6.2` no-atomic local path, deterministic storage iteration,
+  tombstone/probe debt, fixed stack/static/alignment, generation wrap, and Tick horizon;
 - compile-only/mock Aesynx adapter with no `std`, OS socket, thread, or ambient allocator dependency.
 
 Verification:
 
 - `cargo test -p gjallarbru-core --no-default-features fixed_storage`
-- Aesynx-shaped mock integration and no_std target checks
+- Aesynx-shaped mock integration, distinct queue-free publication fixture,
+  width/wrap/layout differential, symbol/import, and no_std target checks
 
 Exit criteria:
 
@@ -4704,6 +5177,50 @@ Exit criteria:
   overtaken, reauthorized, or moved to another connection.
 - Stop: `v0.79.3 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.79.4 - UDP GRO/GSO Segment Semantics
+
+Goal: admit optional UDP receive coalescing and send segmentation only when
+every original datagram/segment remains semantically equivalent to scalar I/O.
+
+Deliverables:
+
+- platform capability detection and disabled-by-default fallback for UDP GRO/
+  GSO, with no requirement that a supported OS/provider expose either feature;
+- GRO input split into exact original datagram views using validated segment
+  metadata, each retaining remote/local destination, interface/scope, ECN/TOS,
+  truncation, listener/worker/buffer generations, and independent admission;
+- no aggregate parse, HMAC, credential, transaction, policy, quota, or command
+  permit: every reconstructed datagram pays the same work and byte/packet charge
+  and produces the same core event/result as scalar receive;
+- malformed/inconsistent segment size, final short segment, ancillary metadata,
+  overflow, or provider ambiguity rejects/punts without treating concatenated
+  bytes as one STUN/ChannelData frame;
+- GSO output accepts only equal compatible segment plans whose individual
+  capabilities, buffers, charges, deadlines, destinations, and generations were
+  validated; aggregation creates no broader destination or authority;
+- exact per-segment handoff/completion/error contract, including provider
+  behavior that reports only whole-superpacket status, with unsupported partial
+  truth falling back to scalar sends rather than inventing completions;
+- buffer/lease ownership and copy/allocation counters integrated with
+  `v0.79.2`, `v0.80.0`, and `v0.80.1`, with scalar fallback always available.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime udp_gro_gso_semantics`
+- every segment count/size/final-length, maximum buffer, mixed STUN/ChannelData,
+  malformed metadata, ancillary mismatch, truncation, and exhaustion case
+- scalar-versus-GRO event/result/charge traces and scalar-versus-GSO wire/
+  completion traces under loss, error, cancellation, revocation, and stale epochs
+- capability/destination/charge substitution and aggregate-permit adversary tests
+- platform/provider matrix proving ambiguous completion semantics disable GSO
+  and unsupported GRO/GSO changes performance only
+
+Exit criteria:
+
+- GRO/GSO changes syscall amortization only; each original datagram retains its
+  exact scalar parsing, authorization, accounting, ownership, and completion truth.
+- Stop: `v0.79.4 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.80.0 - Buffer Pools and Scatter/Gather
 
 Goal: prove zero allocator calls and avoid unnecessary payload copies on the hot path.
@@ -4721,8 +5238,59 @@ Verification:
 
 Exit criteria:
 
-- Claimed packet paths allocate nothing after startup and never reuse a live lease.
+- Claimed packet paths allocate nothing after their `v0.80.1` named warm-up
+  boundary and never reuse a live lease.
 - Stop: `v0.80.0 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.80.1 - Measured Allocation and Copy Profiles
+
+Goal: replace one global zero-copy/zero-allocation slogan with exact measurable
+profiles for each transport phase and deliberately retained copy boundary.
+
+Deliverables:
+
+- separately versioned profiles for UDP/STUN steady state after worker startup,
+  UDP/TURN relay after pool initialization, TCP after connection admission,
+  TLS/DTLS handshake/session lifecycle, and established TLS/DTLS records/frames;
+- each profile declares warm-up boundary, allowed allocator calls/bytes, pool/
+  stack/static/provider-owned bytes, copies and copied bytes, retained bytes,
+  tasks/timers, descriptors, scatter segments, and deterministic exhaustion;
+- UDP/STUN and UDP/TURN steady state require zero allocator calls; TCP steady
+  state requires zero calls after configured connection storage admission;
+- secure handshake/lifecycle allocation may be finite and measured under
+  `v0.72.1`; hardened established TLS/DTLS paths require zero calls after warm-up
+  or explicitly reject that provider/platform/profile;
+- deliberate bounded copies classified by reason—ownership transfer, secret
+  isolation, provider boundary, platform limitation, or pre-lease relay safety—
+  and kept distinct from avoidable copies and false universal zero-copy claims;
+- worker-scoped fail-after-warm-up allocator plus isolated-process test mode so
+  unrelated harness/global allocations cannot mask or falsely fail packet paths;
+- allocation/copy/retention counters integrated from wire cursor/encoder,
+  PRECIS, transaction evidence/cache, prepared transitions/queues, credentials,
+  relay payloads/leases, logs/errors, and TLS/DTLS provider buffers;
+- reference safe scalar profile retained for differential comparison with
+  batching, `io_uring`, and later kernel acceleration; acceleration may reduce
+  work but cannot weaken semantic or resource evidence.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime allocation_copy_profiles`
+- isolated fail-allocator runs for valid, malformed, auth failure, cache hit/
+  miss, allocation/relay, stream fragmentation, slow reader, provider failure,
+  exhaustion, cancellation, disconnect, reload, and shutdown paths
+- exact counter/copy-reason assertions at profile boundaries plus maximum-size,
+  sustained churn, and retained-byte leak/plateau tests
+- portable/batched/provider/platform differential reports and negative fixtures
+  proving a single hidden allocation, unclassified copy, or undeclared retained
+  byte rejects the claimed profile
+- documentation tests preventing “zero-copy” or “allocation-free” claims without
+  a named profile, warm-up boundary, provider/platform set, and evidence artifact
+
+Exit criteria:
+
+- Every performance/resource claim names an executable profile; Gjallarbru can
+  prove zero unnecessary copies without denying intentional security copies.
+- Stop: `v0.80.1 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.81.0 - `io_uring` Backend
 

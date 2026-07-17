@@ -175,6 +175,23 @@ Owns configuration, listener and relay setup, privilege reduction, sandboxing,
 key loading/rotation, health, administration, drain, shutdown, packaging, and
 operator-facing errors.
 
+The enforced dependency direction is:
+
+```text
+gjallarbru facade -> {wire, crypto, core}
+server -> runtime -> {core, wire}
+core -> {wire, crypto}
+```
+
+Runtime's direct wire access is restricted to classification, transport
+framing, exact frame consumption, and raw untrusted views. Only core promotes
+those views into authenticated, method-valid, stateful, policy-authorized, or
+capability-bearing values. Core also orchestrates wire range/segment evidence
+into crypto provider calls, keeping wire and crypto independent. Module/API and
+dependency tests enforce this boundary. Typed capabilities and quiescence
+evidence constrain reviewed conforming adapters; they are not cryptographic
+proof against a malicious runtime that already possesses syscall authority.
+
 ## 5. Core Data Model
 
 Core address and transport types use byte arrays and integers rather than
@@ -233,6 +250,11 @@ the authenticated semantic view ignores them except for integrity/fingerprint
 attributes explicitly permitted there by RFC 8489. Attribute iteration is
 fused, always advances on success, terminates on failure, and feeds one bounded
 inventory so later validation cannot repeatedly rescan attacker-controlled input.
+That inventory uses fixed bitsets/counters for known attributes, selected exact
+offsets for integrity/fingerprint and other revisited fields, and caller-bounded
+storage only for unknown comprehension-required types. It does not retain one
+descriptor per attribute. Inventory exhaustion is a resource/profile outcome,
+not malformed syntax, and raw iteration remains byte-preserving.
 
 ### 6.3 Validation stages
 
@@ -269,6 +291,14 @@ another plan. The dependency graph requires all integrity fields in wire order
 before FINGERPRINT, detects missing/duplicate/cyclic finalization, and admits
 `FinalizedEncodePlan` only when every required node is complete.
 
+Segments, dependency nodes, finalizer slots, prepared outputs, and scatter
+entries use fixed arrays or caller-provided workspace with exact alignment and
+capacity. Per-message vectors, boxes, captured closures, heap-created trait
+objects, recursive nodes, and dynamically grown scatter lists are prohibited.
+Workspace exhaustion is `PlanCapacity`, not malformed input, and leaves caller
+output unchanged. Allocation/copy/edge/finalizer counters begin with the first
+encoder implementation.
+
 Sizing, prescribed HMAC/CRC range views, prepared fixed-size tags, and final
 writing derive from the same validated segment plan. Provider finalization
 completes before direct caller output changes, writing occurs once, and the
@@ -302,6 +332,12 @@ authenticated values with a key identifier and rotation overlap. Raw keys,
 credentials, nonces, tokens, usernames, and full endpoint identities never
 enter ordinary logs or metrics.
 
+These stateless nonces are context-bound and replay-window-limited, not single-
+use or replay-detecting. A captured nonce can validate again inside the same
+accepted path/realm/time/key context; short lifetime, authentication,
+transaction idempotence, quotas, and allocation semantics contain that reuse.
+“Replay detected” is reserved for mechanisms that retain replay state.
+
 Credentials are returned as bounded derived-key records. Slow providers are
 represented by pending operations and bounded caches; the core never performs
 an external lookup while holding an incomplete mutation.
@@ -312,6 +348,22 @@ Opaque handles cannot conceal I/O under that interface. HSM, KMS, network, or
 other external cryptographic work uses generation-tagged asynchronous
 command/completion operations, so provider state and nondeterministic results
 become explicit reducer inputs.
+
+Provider key types are opaque and purpose-specific for message integrity,
+nonces, transactions, reservations, mobility, tokens, and other domains; they
+do not expose `AsRef<[u8]>`, ordinary `Debug`, `Clone`, or equality. Fixed
+public validated tag-length types and fixed outputs prevent caller-selected
+shape drift. A provider may expose a combined derivation-and-MAC suite so an
+externally held key never needs export between provider objects. `Unsupported`,
+`InvalidKey`, `Unavailable`, `StaleGeneration`, and `InternalFailure` remain
+distinct internally but all fail closed without algorithm fallback or
+unauthenticated success.
+
+For valid public tag lengths, verification computes the complete required MAC
+and compares every offered tag byte without secret-dependent early exit.
+Structurally invalid public lengths may fail before secret work. Statistical
+leakage tests are regression evidence for qualified provider boundaries, not a
+mathematical or end-to-end constant-time claim.
 
 Base-profile packet HMAC remains synchronous; asynchronous external services
 normally provision/manage keys rather than retain packet input. Any separately
@@ -337,12 +389,19 @@ Borrowed packet data must be consumed before event handling returns or replaced
 by an explicit runtime-owned buffer lease.
 
 The core is a pure reducer: identical initial state, immutable configuration,
-ordered events, supplied monotonic/absolute times, entropy results, and provider
-completions produce byte-identical commands and identical resulting state.
+ordered event/path identities and generations, supplied monotonic/absolute
+times, entropy bytes, provider completions, storage seed/layout inputs, and
+output/workspace capacities produce byte-identical commands and identical
+resulting state. Bucket/insertion/tombstone order, pointer layout, `usize`
+width, endianness, allocator placement, and runtime correlation IDs cannot
+affect semantic output or operation identity.
 It first performs one bounded preparation pass into caller-provided fixed
 workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds
 the event, state revision, configuration generation, and worker epoch.
+Requirements describe only semantic command kinds/counts, bytes, retained
+ownership, terminal/control obligations, and alignment. They contain no queue
+topology, wakeup, atomics, executor tasks, provider lanes, or OS submissions.
 Preparation performs parsing, authentication, policy scans, encoding planning,
 and other attacker-controlled work at most once. Client-ingress preparation
 requires irreversible conversion from the finite unclassified fixed-header
@@ -359,35 +418,38 @@ credential-derived response material in the workspace. Stack/static footprint
 and alignment have explicit ceilings, and no implicit copy of the workspace is
 allowed. The no-escaping-borrow rule applies to this intermediate object.
 
-The runtime acquires one exact single-use command-batch permit from those
-requirements. Acquisition has bounded constant/declared work, limits
-outstanding permits and total reserved slots/bytes, and cannot retry
-preparation, incrementally hoard queue capacity, or expose excess capacity to
-the reducer. A too-old prepared transition or insufficient capacity is
-discarded without mutation. Only droppable client ingress may be retried as a
-new external event under a newly acquired ingress-work permit.
+The adapter acquires one exact single-use capacity reservation and supplies a
+bounded command arena from those requirements. Reservation has bounded declared
+work, limits outstanding reservations and bytes/slots in the adapter, and
+cannot retry preparation, incrementally hoard capacity, or expose queue layout
+to the reducer. Core observes only opaque reservation/arena identity, exact
+sufficiency, and single-consume validity. A stale prepared transition or
+insufficient capacity is discarded without mutation. Only droppable client
+ingress may be retried as a new external event under a new ingress-work permit.
 
-The permit binds worker, queue, and configuration generations. Failed commit,
-cancellation, dropped permit, shutdown, queue resize/restart, and worker
-replacement release unused reservations deterministically and make stale
-permits inert. Semantic operation IDs are created only by core from an explicit
-engine/worker epoch and bounded generational counter. Exhaustion or generation
-wrap fails closed. Runtime queue/provider IDs are correlation metadata only and
-cannot affect reducer behavior.
+Queue/listener/worker generations, topology, publication state, wakeups, and
+correlation IDs stay in the adapter envelope. Failed commit, cancellation,
+dropped reservation, shutdown, resize/restart, and worker replacement release
+unused capacity and make stale reservations inert. Semantic operation IDs are
+created only by core from an explicit engine/worker epoch and bounded
+generational counter. Exhaustion or wrap fails closed; adapter correlation
+metadata cannot affect reducer behavior.
 
-Mutable core state is exclusively worker-owned. Commit writes commands into
-reserved but unpublished queue slots, completes the state mutation, then
-performs one infallible batch-ready release publication. Cross-thread consumers
-observe only ready batches through acquire ordering. State inspection occurs
-through owner-generated immutable snapshots, never concurrent direct reads.
-A crash before publication invalidates the prepared state and reserved slots
-through the worker epoch; recovery never treats either side as committed.
-Partial batch acceptance is prohibited, while later OS execution remains
-explicitly non-atomic and completion-driven.
+Mutable core state is exclusively worker-owned. Commit writes commands into the
+adapter-reserved caller arena without knowing its eventual queue, completes the
+state mutation, and returns one complete ready arena. The adapter then performs
+its reserved infallible publication. Threaded consumers use release/acquire;
+local and custom adapters use equivalent mechanics without atomics. State
+inspection occurs through owner-generated immutable snapshots, never concurrent
+direct reads. A crash before publication invalidates the committed arena and
+adapter reservation through the worker epoch; recovery never treats a partial
+arena as published. Partial arena acceptance is prohibited, while later OS
+execution remains explicitly non-atomic and completion-driven.
 
-Publication is a runtime-adapter responsibility, not part of the portable core
-data model. `gjallarbru-core` permits, transitions, state, events, commands, and
-capabilities contain no atomics and do not require `Send` or `Sync`. A
+Capacity reservation and publication are runtime-adapter responsibilities, not
+part of the portable core data model. `gjallarbru-core` transitions, requirements,
+state, events, commands, and capabilities contain no atomics, queue topology,
+wakeups, tasks, or OS handles and do not require `Send` or `Sync`. A
 single-thread adapter commits and consumes locally without atomics. Threaded
 adapters select `target_has_atomic`-appropriate release/acquire machinery and
 must remain differentially equivalent; targets without pointer-width atomics
@@ -555,8 +617,12 @@ The core accepts storage traits with two first-party implementations:
 - startup-preallocated slabs for production runtimes.
 
 Bounded open-addressed indexes use per-process keyed hashing, a load ceiling,
-and a maximum probe count. Direct relay-port indexes avoid attacker-keyed hash
-lookups on the hottest peer path.
+maximum probe count, tombstone/stale-debt ceiling, and bounded cleanup work.
+Iteration/bucket/insertion order never controls protocol output, operation
+identity, authorization, or eviction; required enumeration has a stable bounded
+order. Width-independent hashing/serialization and explicit generation/Tick
+wrap horizons keep results equivalent across qualified targets. Direct relay-
+port indexes avoid attacker-keyed hash lookups on the hottest peer path.
 
 One hierarchical timing wheel per worker manages allocations, permissions,
 channels, reuse blocks, transactions, reservations, nonces, credentials,
@@ -572,7 +638,10 @@ identity and pending/completed outcome. An exact retransmission repeats no side
 effect and reuses the prior response; the same transaction key with different
 bytes is treated as suspicious. Collision resolution retains enough original
 byte/semantic evidence to avoid trusting the digest alone, while request and
-cached-response bytes have ceilings independent of record count.
+cached-response bytes have ceilings independent of record count. Transaction
+tables inherit fixed load/probe/tombstone bounds and cannot order responses or
+semantic choices by bucket layout. Constant-time comparison applies to secret-
+bearing keyed evidence, not ordinary public transaction IDs.
 
 Cache timing follows an explicit observer and secrecy threat model rather than
 claiming identical full-path runtime. Lookup and secret-bearing identity
@@ -659,6 +728,13 @@ Retry attempt charging follows the declared idempotency policy and never
 recreates a consumed capability. Expiry, revocation, disconnect, or buffer
 reuse between a partial result and retry makes the unsent entry inert.
 
+Optional UDP GRO is split into original datagrams before scalar admission;
+each segment retains complete path/ancillary/generation metadata and pays its
+own parse, crypto, policy, quota, and command charges. Optional GSO combines
+only independently authorized compatible segment plans and requires truthful
+per-segment completion semantics; ambiguous whole-superpacket providers fall
+back to scalar sends. Coalescing/segmentation changes amortization only.
+
 The first cross-worker queues, configuration publication, cancellation, and
 shutdown ordering receive focused Loom models before batching or Linux
 acceleration is admitted. Comprehensive concurrency and sanitizer closure still
@@ -694,6 +770,15 @@ reviewed equivalent internal limits; an opaque provider that cannot demonstrate
 the bound is unavailable for that profile. Exhaustion suppresses, rejects, or
 closes according to the transport contract without reaching STUN processing,
 refreshing authority, or generating unbounded control output.
+
+Allocation and copy claims are profile-specific. UDP/STUN steady state after
+worker startup, UDP/TURN after pool initialization, and TCP after connection
+admission require zero allocator calls. TLS/DTLS lifecycle allocation may be
+bounded and measured; established hardened provider paths are allocation-free
+after warm-up or excluded. Every profile declares allocation, copy, retained-
+byte, task/timer, descriptor, and provider ownership counters plus deterministic
+exhaustion. Deliberate security/ownership/platform copies remain classified and
+measured; the claim is zero unnecessary copies, never universal zero-copy.
 
 Every client transport converges on the same normalized ingress-work contract.
 UDP datagrams, complete TCP/TLS frames, DTLS plaintext datagrams after
@@ -926,9 +1011,20 @@ RFC/section, level, profile, component, symbol, test, status, and security
 notes. Verified errata are applied; every other relevant erratum gets an
 explicit decision.
 
+The base RFC 8489/8656 ledger is followed before protocol implementation by
+complete semantic ledgers for every locked advertised core, deployment,
+extension, and transport RFC. RFC 5769 remains vector provenance rather than a
+separate conformance profile, while RFC 2119/8174 define keyword interpretation.
+Downloaded text alone grants no implementation status. Each extension remains
+planned until semantic children resolve real symbols and CI observes their
+positive/negative tests in the applicable profile.
+
 IANA registries are updated only by a manually invoked tool. Normal builds are
 offline and consume reviewed, dated snapshots. Numeric protocol assignments
-are generated from that snapshot rather than scattered through source.
+are generated from that snapshot rather than scattered through source. Current
+standardized, reserved, unassigned, and vendor-specific values are preserved;
+unknown values remain byte-visible but inert until the extension-admission gate
+assigns specification, threat model, key domain, requirements, and authority.
 
 Scheduled post-1.0 controls review RFCs, errata, IANA, browsers, TLS/DTLS,
 providers, dependencies, Rust, and platform behavior. New extensions require a
@@ -946,6 +1042,8 @@ regression tests. Required layers are:
 - separate fuzz targets for cursors, attributes, frames, stream chunks,
   integrity ranges, nonces, transactions, timers, and event sequences;
 - Kani for cursor/slab/state invariants where tractable;
+- a small declarative lifecycle model for allocation/open/cancel/timeout/
+  completion/fence/quarantine/quiescence, with traces replayed against Rust;
 - Miri for ownership-sensitive runtime helpers;
 - Loom for bounded concurrency primitives;
 - sanitizers for syscall and buffer code;
@@ -966,8 +1064,9 @@ the modularity limit.
 ## 16. Definition of 1.0.0
 
 `1.0.0` requires all planned profiles to have published scope and evidence;
-wire/core/crypto remain `no_std`; packet processing allocates nothing after
-startup; all supported transports and address-family combinations
+wire/core/crypto remain `no_std`; each packet/transport profile meets its
+declared post-warm-up allocation, copy, and retention contract; all supported
+transports and address-family combinations
 interoperate; every external resource is bounded; acceleration is optional;
 platform behavior is tested; tenant boundaries and Pawalyze ephemeral credentials
 are verified; secure multi-node communication, node-local HA, ICE-restart recovery,

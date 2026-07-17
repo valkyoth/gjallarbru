@@ -52,6 +52,10 @@ All notable changes to `gjallarbru` are documented here.
 - Added typed execution-domain quiescence evidence, an explicit cache-timing
   threat model, core-only queued-media reauthorization, and pre-plaintext
   TLS/DTLS control-work budgets with cross-provider closure.
+- Added early executable reducer and crate-authority gates, adapter-neutral
+  admission, complete locked-profile ledger passes, deterministic storage and
+  sparse wire workspaces, honest nonce replay semantics, UDP GRO/GSO closure,
+  and named allocation/copy profiles.
 
 ## 0.2.0 - 2026-07-14
 

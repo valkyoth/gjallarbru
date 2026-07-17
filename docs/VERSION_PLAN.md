@@ -28,6 +28,11 @@ The index and detailed contracts are checked together by
 | `0.2.0` | RFC requirement-ledger schema | Every section of RFC 8489 and RFC 8656 is indexed with no silent gaps |
 | `0.2.1` | Deterministic architecture contract | Reducer inputs, output atomicity, time, entropy, storage, capability, lease, and protocol-name rules are frozen before APIs |
 | `0.2.2` | Executed requirement evidence | Semantic requirements can become verified only when CI resolves their real symbol and observes their named test |
+| `0.2.3` | Crate authority and dependency boundary | The real crate graph is documented and mechanically prevents runtime framing views or crypto adapters from acquiring protocol authority |
+| `0.2.4` | Executable reducer kernel | A minimal protocol-neutral reducer replays complete explicit inputs byte-identically across layout, pointer-width, capacity, and correlation-ID variants |
+| `0.2.5` | Adapter-neutral capacity admission | Core prepares semantic requirements and commits to caller arenas while queue topology, reservations, publication, wakeups, and atomics remain adapter-owned |
+| `0.2.6` | Core and deployment standards ledgers | Locked authentication, address, URI, discovery, security, and deployment RFC profiles receive complete semantic requirement inventories |
+| `0.2.7` | Extension and transport standards ledgers | Locked TURN extension, DTLS, shared-port, mobility, measurement, and congestion-profile RFCs receive complete semantic requirement inventories |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
 | `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, monotonic time, absolute-time trust/source generations, limits, and errors have boundary tests |
 | `0.4.1` | Complete client-path identity | Listener, socket, provenance, interface, configuration, connection, and worker generations prevent stale or cross-realm authority |
@@ -35,6 +40,7 @@ The index and detailed contracts are checked together by
 | `0.5.1` | Hostile-input parser foundation | Progress, termination, checked padding, complexity, size, and early fuzz obligations are executable |
 | `0.6.0` | Generational storage | Fixed slab rejects stale handles and capacity overflow under model/Kani tests |
 | `0.6.1` | Freestanding and storage qualification | No-allocator downstream fixtures and bounded storage contracts pass without OS assumptions |
+| `0.6.2` | Deterministic indexes and wrap closure | Load, probes, tombstones, iteration, word-size independence, generation wrap, and tick horizons have executable fixed bounds |
 
 ## Phase B: First-Party Wire Protocol
 
@@ -43,6 +49,7 @@ The index and detailed contracts are checked together by
 | `0.7.0` | STUN header decoder | Type bits, cookie, length, alignment, transaction, truncation, and trailing-byte cases pass |
 | `0.8.0` | Borrowed attribute iterator | Padding, duplicates, unknowns, offsets, and truncation pass without allocation |
 | `0.8.1` | Authenticated attribute boundary | Nonzero receive padding is accepted structurally and post-integrity attributes cannot affect authenticated semantics |
+| `0.8.2` | Sparse attribute inventory | Known attributes use fixed bitsets/counters and selected offsets while caller-bounded unknown-required accumulation fails as capacity, never malformed syntax |
 | `0.9.0` | Frame classifier | STUN/ChannelData/impossible-prefix classification is deterministic across transports |
 | `0.10.0` | Address attributes | IPv4/IPv6 mapped and XOR address vectors round trip |
 | `0.11.0` | Raw text attributes | USERNAME, REALM, NONCE, SOFTWARE, and ERROR-CODE stay byte-oriented and bounded |
@@ -53,6 +60,7 @@ The index and detailed contracts are checked together by
 | `0.15.0` | ChannelData codec | Datagram and stream length/padding boundaries round trip |
 | `0.15.1` | UDP ChannelData alignment closure | Both legal datagram forms are accepted while arbitrary trailing bytes remain rejected |
 | `0.16.0` | STUN encoder typestate engine | Plan-bound exact-once finalizer slots follow an explicit dependency graph before one transactional caller-buffer commit |
+| `0.16.1` | Fixed-workspace encoder planning | Segment, dependency, and finalizer plans use fixed arrays or caller workspace with allocation/copy instrumentation and deterministic capacity failure |
 | `0.17.0` | FINGERPRINT finalization | RFC 5769 and corruption vectors pass with CRC finalization integrated and FINGERPRINT last |
 | `0.17.1` | Crypto provider and secret contract | Capability-specific fixed-output providers, opaque keys, redacted secrets, and fail-closed errors are proven |
 | `0.17.2` | Synchronous and external crypto split | Packet crypto is bounded and deterministic; HSM/KMS work is asynchronous and cannot hide I/O or entropy |
@@ -72,9 +80,9 @@ The index and detailed contracts are checked together by
 | --- | --- | --- |
 | `0.23.0` | Sans-I/O event/command API | Synthetic events produce bounded commands with no borrowed data escaping |
 | `0.23.1` | Atomic deterministic reducer | Identical explicit inputs produce byte-identical results and capacity failure leaves state and runtime untouched |
-| `0.23.2` | Prepared transition and atomic admission | One bounded preparation pass computes exact requirements; permit acquisition and commit never repeat attacker-controlled work |
-| `0.23.3` | Linear permit and operation-ID authority | Single-use generation-bound permits release deterministically, while only core creates semantic operation IDs |
-| `0.23.4` | Atomic publication memory model | Worker-owned state and reserved command slots become visible through one release/acquire batch-ready publication |
+| `0.23.2` | Prepared transition and atomic admission | One bounded preparation pass computes semantic requirements; adapter capacity acquisition and caller-arena commit never repeat attacker-controlled work |
+| `0.23.3` | Linear capacity reservation and operation-ID authority | Adapter-owned reservations release deterministically without exposing queue topology, while only core creates semantic operation IDs |
+| `0.23.4` | Atomic publication memory model | Worker-owned state and a complete caller command arena become visible through one adapter-owned local or release/acquire publication |
 | `0.23.5` | Composable runtime effect envelope | Semantic authority, resource ownership, delivery guarantee, and durability combine orthogonally without false completions |
 | `0.23.6` | Chargeable-work accounting | Occupancy, attempt, completion, and retry charges have explicit non-refundable and exactly-once semantics |
 | `0.23.7` | Authoritative control-lane progress | Admitted operations reserve terminal completion, compensation, cancellation, shutdown, and ownership-release capacity unavailable to packet traffic |
@@ -89,7 +97,7 @@ The index and detailed contracts are checked together by
 | `0.23.16` | Bounded unresolved recovery | Timeout/cancellation recovery has fixed rounds, ages, counts, escalation, quarantine, and non-aliasing capacity rules |
 | `0.23.17` | Typed execution-domain quiescence proof | Physical storage leaves quarantine only after generation-bound adapter evidence proves every external accessor is unable to reach it |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
-| `0.25.0` | Stateless authenticated nonces | Source/realm/time-trust binding, stale handling, tamper rejection, and key overlap pass |
+| `0.25.0` | Context-bound stateless nonces | Source/realm/time-trust binding limits the replay window without falsely claiming single-use detection |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
 | `0.26.0` | Credential provider boundary | Fixed and asynchronous lookup models fail closed under timeout/capacity |
 | `0.26.1` | Credential timing and provider assurance | Dummy-user work, negative-cache normalization, opaque handles, provider substitution, and leakage tests pass |
@@ -129,6 +137,7 @@ The index and detailed contracts are checked together by
 | `0.38.0` | Allocate semantic validation | Every RFC error path executes without opening a relay resource |
 | `0.39.0` | Two-phase allocation state | Duplicate/reordered relay completions cannot duplicate or leak state |
 | `0.39.1` | Early state-model assurance | Reference-model and bounded model checks cover duplicate, reordered, stale, and capacity-failed transitions |
+| `0.39.2` | External-effect lifecycle specification | Allocation/open/cancel/timeout/completion/fence/quarantine/quiescence interleavings satisfy checked safety and bounded-recovery invariants |
 | `0.40.0` | Portable relay socket adapter | Exact bind success/failure/close behavior matches synthetic runtime results |
 | `0.40.1` | Relay address topology | Bind/public addresses, one-to-one NAT, multi-homing, and public relay-IP pools validate and advertise correctly |
 | `0.41.0` | Allocate completion | Success/error responses, actual lifetime, mapped/relayed addresses, and caching pass |
@@ -200,7 +209,9 @@ The index and detailed contracts are checked together by
 | `0.79.1` | Batch completion semantics | Normalized path metadata, partial sends, unsent work, and stale batch results preserve scalar behavior |
 | `0.79.2` | Partial-batch capability consumption | Only the accepted send prefix consumes delivery authority; unsent entries retain ownership and revalidate before charged retry |
 | `0.79.3` | Partial stream-frame closure | A partially accepted frame remains ordered at the connection head and either finishes within its in-flight bound or closes the stream |
+| `0.79.4` | UDP GRO/GSO segment semantics | Optional coalescing/segmentation preserves per-original-datagram identity, admission, authority, accounting, completion, and scalar behavior |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
+| `0.80.1` | Measured allocation and copy profiles | UDP/STUN, UDP/TURN, TCP, TLS, and DTLS profiles publish exact warm-up, allocation, copy, retention, and provider qualification evidence |
 | `0.81.0` | `io_uring` backend | Differential, cancellation, stale completion, fallback, and overload tests pass |
 | `0.82.0` | Optional eBPF/AF_XDP fast path | Installed rules remain a verified subset of live core authority and fail closed |
 | `0.82.1` | Fast-path revocation closure | Revocation, expiry, map loss, reuse, and reconciliation cannot leave kernel authority broader or longer-lived than core state |
