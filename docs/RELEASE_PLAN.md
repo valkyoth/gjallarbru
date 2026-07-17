@@ -190,10 +190,12 @@ Current closure decisions are:
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
 | UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
 | Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
-| Raw Rust memory bytes, provider handles, or overlapping caller regions could make reducer equality undefined or permit aliasing during commit. | `v0.2.4` defines a versioned canonical semantic projection, stable core references, exact arena identities, disjointness, and raw-boundary validation with compile-fail/Miri evidence. |
+| Raw Rust memory bytes, provider handles, overlapping caller regions, or an authority-bearing/exported state projection could make reducer equality undefined, leak secrets, or permit aliasing during commit. | `v0.2.4` defines a confined versioned canonical semantic projection, stable core references, exact arena identities, disjointness, and raw-boundary validation with compile-fail/Miri evidence. |
 | A valid-looking prefix retained from a truncated UDP datagram could be parsed, authenticated, or answered. | `v0.30.9` normalizes scalar platform truncation before classification and requires silent whole-datagram discard; `v0.79.4` later preserves the same rule under GRO/GSO. |
 | A TCP/TLS framer could scan for a new boundary after an impossible prefix and desynchronize or perform quadratic work. | `v0.21.1` makes invalid prefixes, padding, lengths, and partial EOF terminal connection errors with linear-work fuzz evidence. |
-| `io_uring` or AF_XDP could use raw-pointer identities, lose multishot/buffer completion truth, expose mixed map generations, or mishandle complex packet shapes. | `v0.81.0` closes checked operation and buffer-ring lifecycles with scalar fallback; `v0.82.0` adds tuple-first shape eligibility, atomic multi-map epochs, and exact UMEM ownership. |
+| `io_uring` or AF_XDP could use raw/lossy identities, lose multishot/buffer completion truth, expose mixed or prematurely reclaimed map generations, or mishandle complex packet shapes. | `v0.81.0` uses one opaque checked 64-bit slab token and closes buffer-ring lifecycles with scalar fallback; `v0.82.0` captures one immutable map epoch through grace/fence/quiescence reclamation and exact UMEM ownership. |
+| Scalar, batched, GRO, `io_uring`, and AF_XDP receive metadata could drift, lose ancillary truncation, or reply through an unauthorized wildcard-socket source. | `v0.30.10` makes one canonical `IngressEnvelope` mandatory, rejects incomplete/conflicting ancillary data before classification, and binds response source/interface selection. |
+| An unwind-enabled embedder could catch a reducer/provider panic and continue using partially modified or externally reachable state. | `v0.23.18` poisons the complete engine epoch across every unwind boundary and exposes only quarantine/destruction; production remains abort-and-supervise. |
 
 ## Phase A: Repository and Specification Foundation
 
@@ -373,8 +375,20 @@ Deliverables:
   bytes, provider completions, configuration generation, storage seed/layout
   inputs, and output/workspace capacity;
 - byte-identical wire output and semantic commands for identical envelopes;
-  state equality uses a fixed, versioned canonical semantic projection and
-  digest that excludes padding, pointers, allocator layout, and backend handles;
+  state equality uses a fixed-buffer, versioned, domain-separated canonical
+  semantic projection that excludes padding, pointers, allocator layout, and
+  backend handles;
+- full canonical-projection comparison is decisive for determinism; its digest
+  is only a domain-separated diagnostic/index shortcut and never sufficient
+  evidence for security-relevant equality, authorization, or state adoption;
+- the projection is test evidence, not a persistence/restart wire format,
+  authority-bearing snapshot, log/metric/crash-report/admin payload, or stable
+  public serialization API; production export is absent unless a separately
+  reviewed redacted diagnostic profile explicitly enables it;
+- projection output contains no keys, credentials, packet/authentication
+  evidence, raw client/tenant identities, nonces, reusable capabilities, or
+  backend handles, and has no deserializer that can reconstruct authoritative
+  engine state; durable recovery requires a future separately reviewed profile;
 - provider/runtime resources appear in state only through stable core-owned
   `{domain, id, generation}` references, never backend representation or raw
   Rust object bytes; adapter queue/provider/transport correlation IDs remain
@@ -412,6 +426,9 @@ Verification:
   tombstone layout, memory-address, and runtime-correlation differential tests
 - canonical-projection fixtures proving stable semantic equality across padding,
   layout, handle representation, pointer width, and provider adapters
+- full-projection versus digest-collision test doubles, domain/version mismatch,
+  fixed-buffer exhaustion, redaction/forbidden-field, production-export, and
+  no-authoritative-deserializer API tests
 - fail-at-every-preflight/write instrumentation using shadow records or bounded
   undo journals and proving unchanged state, arena, and output before commit;
   panic/fault injection at each commit/publication edge proves either one complete
@@ -424,9 +441,10 @@ Verification:
 
 Exit criteria:
 
-- Determinism uses canonical semantics rather than object representation; no
-  fallible work follows semantic mutation, caller regions cannot alias, and a
-  pre-publication crash cannot preserve state whose commands were lost.
+- Determinism uses a confined full canonical projection rather than object bytes
+  or digest equality; the projection leaks and reconstructs no authority, no
+  fallible work follows mutation, caller regions cannot alias, and a crash
+  cannot preserve state whose unpublished commands were lost.
 - Stop: `v0.2.4 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.2.5 - Adapter-Neutral Capacity Admission
@@ -1612,8 +1630,8 @@ planned or observationally absent.
 
 Deliverables:
 
-- byte-identical command replay and identical versioned canonical-state
-  projection/digest for identical configuration,
+- byte-identical command replay and identical full versioned canonical-state
+  projection for identical configuration, with the digest diagnostic only,
   ordered event/path identities and generations, supplied times, entropy bytes,
   provider completions, storage seed/layout inputs, output capacities, and every
   other field frozen by the `v0.2.4` executable input envelope;
@@ -2347,6 +2365,52 @@ Exit criteria:
   evidence contract never overstates what Rust visibility or types can prove.
 - Stop: `v0.23.17 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.23.18 - Unwind Engine-Epoch Poisoning
+
+Goal: ensure hosted downstream builds that enable and catch unwinding cannot
+resume a reducer/provider epoch after a panic crossed its trust boundary.
+
+Deliverables:
+
+- an engine-epoch poison state set by a non-bypassable boundary guard unless a
+  reducer/provider call reaches its normal validated return and disarms it;
+  detection does not require `std`, allocation, or `thread::panicking`;
+- any unwind crossing reducer preparation/commit, storage, crypto, policy,
+  encoder, runtime-provider, completion, or adapter callback boundaries poisons
+  that complete engine/worker epoch even when mutation was not expected;
+- a poisoned engine returns typed `EnginePoisoned` before inspecting another
+  client/control event, committing or publishing a prepared arena, accepting a
+  completion, refreshing authority, generating output, or creating resources;
+- only bounded destruction, externally reachable resource quarantine, report/
+  audit extraction under the redaction policy, and supervised replacement by a
+  disjoint epoch remain available; poison never proves external quiescence or
+  releases ownership by itself;
+- all outstanding preparations, reservations, commands, leases, capabilities,
+  snapshots, provider results, and semantic identifiers from the poisoned epoch
+  become inert and cannot be adopted by its replacement;
+- release production retains `panic = "abort"` plus `v0.66.1` process
+  supervision; `catch_unwind` exists only in hosted qualification tests and is
+  explicitly not a production fault-containment or availability mechanism.
+
+Verification:
+
+- `cargo test -p gjallarbru-core unwind_epoch_poisoning`
+- hosted `catch_unwind` injection before, during, and after every reducer,
+  provider, callback, commit, arena-write, and publication boundary
+- subsequent event/completion/publish/resource-release calls return
+  `EnginePoisoned`; quarantine and destruction remain bounded and exactly once
+- outstanding handle, arena, snapshot, lease, completion, and old-epoch replay
+  tests plus Miri/Loom models for guard disarm/drop and concurrent observations
+- release-profile forced-panic process tests prove abort/supervision behavior is
+  unchanged and no code path catches an unwind in production
+
+Exit criteria:
+
+- No unwind-capable embedder can continue authoritative work after a panic;
+  poison permits containment only, while production still aborts and replaces
+  the process/epoch through the supervised recovery contract.
+- Stop: `v0.23.18 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.24.0 - Binding State Processing
 
 Goal: implement Binding request validation and response planning without sockets.
@@ -2796,7 +2860,8 @@ revocation-fenced authority discipline as peer-bound delivery.
 Deliverables:
 
 - non-forgeable `AuthorizedClientPath`/`ClientDeliveryCapability` binding the
-  complete `v0.4.1` `ClientPath`, remote/local destination, transport, listener,
+  complete `v0.4.1` `ClientPath` derived from the `v0.30.10` envelope,
+  remote/local destination, transport, listener,
   socket/connection/session, worker, configuration, proxy, TLS/DTLS, interface,
   realm, and tenant generations;
 - binding to exact command, accepted batch, buffer/lease, transaction and/or
@@ -2965,6 +3030,61 @@ Exit criteria:
   or uncertain receive is silently discarded as one indivisible input event.
 - Stop: `v0.30.9 implementation stop reached. Run pentest for this exact commit.`
 
+### v0.30.10 - Canonical Ingress Envelope
+
+Goal: make every scalar, batched, coalesced, asynchronous, and accelerated
+receive path produce one complete, authoritative adapter-input shape before the
+first public listener fixes platform-specific metadata behavior.
+
+Deliverables:
+
+- one bounded `IngressEnvelope` shared by scalar UDP, batched UDP, GRO,
+  `io_uring`, AF_XDP, TCP/TLS/DTLS framing, trusted termination, simulation, and
+  future Aesynx adapters rather than separately maintained field lists;
+- remote and local transport addresses; listener/socket identity and generation;
+  local-destination and outbound-source-selection identity; interface index,
+  scope/zone, and generation; transport and connection/session identity; worker,
+  configuration, trust/proxy, operation, and buffer generations;
+- optional typed ECN/DSCP values where supported plus explicit payload-
+  completeness and ancillary-metadata-completeness states; optional absence is
+  distinct from malformed, conflicting, truncated, or required-but-missing data;
+- normalized `MSG_CTRUNC` and platform equivalents that reject the complete
+  event before classification, parsing, HMAC, lookup, state, cache, or response;
+- a bounded checked ancillary decoder covering control-header length/alignment,
+  integer/range overflow, progress, unknown records, duplicate/conflicting
+  packet-info/source/interface records, truncated buffers, and platform layouts;
+- profile-specific required-metadata rules: wildcard/multihomed sockets reject
+  missing local destination/interface/source-selection identity instead of
+  allowing ambient OS defaults to choose a response path;
+- every response capability binds the authorized local source address,
+  interface/scope, listener/socket generation, and send mechanism; runtime uses
+  a correctly bound socket or validated per-send packet information exactly;
+- forward rules requiring `v0.31.0`, `v0.79.0`, `v0.79.4`, `v0.81.0`, and
+  `v0.82.0` to construct/differentially preserve this envelope without
+  transport-specific authority fields or silent metadata loss.
+
+Verification:
+
+- `cargo test -p gjallarbru-runtime canonical_ingress_envelope`
+- scalar/batched/GRO/`io_uring`/AF_XDP/simulated adapter differential fixtures
+  producing identical envelopes for the same packet and path identity
+- arbitrary-byte ancillary decoder fuzzing for header length, alignment,
+  truncation, wraparound, no-progress, duplicates, conflicts, unknown records,
+  maximum chains, and `MSG_CTRUNC` equivalents
+- wildcard, multihomed, IPv4/IPv6, scoped IPv6, address removal, interface/
+  socket generation reuse, and configuration/trust/proxy transition tests
+- packet capture/source-selection assertions proving accepted responses use the
+  authorized source/interface and cannot fall back to the OS-selected default
+- compile/API checks preventing adapters from bypassing the canonical envelope
+  or constructing a complete path from incomplete required ancillary metadata
+
+Exit criteria:
+
+- Every adapter supplies the same complete ingress identity before protocol
+  work, ancillary truncation fails closed, and every response leaves through
+  the exact authorized local source/interface rather than ambient OS selection.
+- Stop: `v0.30.10 implementation stop reached. Run pentest for this exact commit.`
+
 ### v0.31.0 - Portable IPv4 UDP Binding Runtime
 
 Goal: connect real UDP sockets to the same Binding core path used in tests.
@@ -2976,6 +3096,8 @@ Deliverables:
   completion accounting, and clean shutdown;
 - mandatory `v0.30.9` whole-datagram completeness normalization and silent
   truncation discard before classification or ingress-work conversion;
+- mandatory `v0.30.10` canonical ingress/ancillary construction and authorized
+  source/interface selection for wildcard and explicitly bound listeners;
 - mandatory `v0.30.3`-`v0.30.5` two-stage just-in-time ingress admission before
   class-specific parse, HMAC, lookup, preparation, and response work;
 - `v0.30.7` charged cache lookup/substate behavior for exact retransmissions;
@@ -5217,8 +5339,8 @@ success and stale-result behavior.
 
 Deliverables:
 
-- normalized receive events retaining remote address, local destination,
-  transport, truncation state, buffer generation, operation ID, and worker epoch;
+- every receive preserves the complete `v0.30.10` canonical `IngressEnvelope`
+  without a batch-specific metadata list or completeness downgrade;
 - scalar core invocation for every admitted packet with bounded per-batch
   fairness and no batch-wide authorization shortcut;
 - send completion plans distinguishing sent, unsent, retryable, permanently
@@ -5362,8 +5484,8 @@ Deliverables:
 - platform capability detection and disabled-by-default fallback for UDP GRO/
   GSO, with no requirement that a supported OS/provider expose either feature;
 - GRO input split into exact original datagram views using validated segment
-  metadata, each retaining remote/local destination, interface/scope, ECN/TOS,
-  truncation, listener/worker/buffer generations, and independent admission;
+  metadata, each retaining one complete `v0.30.10` canonical `IngressEnvelope`
+  plus its independent payload completeness and admission identity;
 - no aggregate parse, HMAC, credential, transaction, policy, quota, or command
   permit: every reconstructed datagram pays the same work and byte/packet charge
   and produces the same core event/result as scalar receive;
@@ -5475,8 +5597,20 @@ Deliverables:
 
 - fixed files/buffers, multishot capability detection, bounded in-flight operations,
   cancellation, shutdown, and portable fallback;
-- `user_data` encoded only as a checked slab index, slab generation, execution-
-  domain generation, and operation kind; raw pointers and unchecked casts are forbidden;
+- receive completions construct/preserve the full `v0.30.10` canonical ingress
+  envelope and reject incomplete ancillary results before protocol work;
+- `user_data` is exactly one opaque nonzero 64-bit `OperationToken`, never a raw
+  pointer or lossy bit-pack of index/generation/domain/kind; zero and declared
+  sentinels are reserved and rejected on decode;
+- a bounded runtime token table resolves the exact token to checked slab index,
+  slab generation, execution-domain/ring generation, operation kind, ownership,
+  and expected completion mode before any CQE can touch state or buffers;
+- tokens are monotonically unique and never reused inside a live execution
+  domain; `u64` exhaustion/wrap fails closed and forces drain plus `v0.23.17`
+  validated quiescence before a disjoint ring/domain may reset its token space;
+- encode/decode use explicit checked conversions with one documented endian-
+  independent integer representation and reject truncating casts, reserved
+  values, unknown tokens, stale slots, wrong operation kinds, and domain reuse;
 - exact multishot semantics: every `F_MORE` completion preserves operation and
   buffer authority, while the one terminal CQE closes the ledger exactly once;
   cancellation may race with multiple late CQEs without early reuse;
@@ -5497,7 +5631,7 @@ Deliverables:
   linked, multishot, or vector submissions with partial acceptance;
 - `v0.79.3` ordered stream-tail ownership/close semantics where `io_uring`
   accepts only part of a stream frame;
-- `v0.23.17` adapter proof covering ring disable/exit, completion drain,
+- `v0.23.17` adapter report and core validation covering ring disable/exit, completion drain,
   registered file/buffer unregister, worker/process death where used, and the
   exact quarantined fixed-resource inventory before physical reuse;
 - isolated unsafe/syscall modules with safety evidence.
@@ -5511,6 +5645,9 @@ Verification:
 - multishot `F_MORE`/terminal/cancel race models, CQ overflow/disable, buffer-ring
   depletion/`ENOBUFS`, buffer double-return, fixed-file update, linked partial-
   submission, and slab index/generation/kind corruption tests
+- exhaustive token boundary fixtures for zero/reserved/maximum/unknown/stale
+  values, truncating conversions, table substitution, domain replacement, token
+  exhaustion/wrap, and delayed CQEs after a new ring generation
 - capability-matrix fixtures forcing every scalar fallback plus, if enabled,
   `SEND_ZC` notification loss/reorder/late-arrival ownership tests
 
@@ -5530,6 +5667,8 @@ Deliverables:
 - tuple steering/filtering before semantic parsing wherever possible; the first
   fast path does not duplicate the complete STUN/TURN parser or authentication
   state machine in eBPF;
+- AF_XDP/userspace handoff constructs the full `v0.30.10` canonical ingress
+  envelope or punts/drops when required path/ancillary identity is unavailable;
 - an explicit packet-shape matrix for VLAN/QinQ, IPv4 options and fragments,
   IPv6 extension headers and fragments, checksum/offload ambiguity, and GRO
   metadata; unsupported or ambiguous shapes deterministically punt to the
@@ -5543,6 +5682,19 @@ Deliverables:
 - multi-map updates populated completely under an inactive generation followed
   by one atomic epoch switch; packets can never observe mixed endpoint,
   permission, channel, quota, policy, or expiry generations;
+- each packet/program invocation reads the active epoch exactly once before its
+  first related lookup and carries that captured epoch through every endpoint,
+  permission, channel, quota, policy, and expiry map access;
+- entries/maps in an active generation are immutable; updates create a complete
+  new generation, preferably switched through atomic map-in-map replacement
+  where supported, with an explicit capability/fallback matrix;
+- the prior generation remains installed and immutable until a bounded platform
+  grace period plus acknowledged fence, or a `v0.23.17` core-validated
+  quiescence report, establishes that no packet, program invocation, CPU, XSK
+  queue, or DMA/UMEM reference can still reach it;
+- epoch values and map generations have fixed width/exhaustion rules and cannot
+  wrap, reset, or be reused while any old entry/map remains installed, reachable,
+  quarantined, or awaiting acknowledgement; uncertainty disables acceleration;
 - UMEM frame identity/generation, XSK queue ownership, headroom/alignment,
   fill/completion-ring lifecycle, and exactly-once return before frame reuse;
 - install/remove ordering, map-capacity, fail-closed miss, and reconciliation checks.
@@ -5556,11 +5708,17 @@ Verification:
   extension headers/fragments, malformed or offloaded checksums, and GRO metadata
 - multi-map fault injection before every population/switch step and UMEM/XSK
   depletion, misalignment, stale frame, queue migration, and double-return tests
+- race/model tests switch and reclaim generations while packets execute on every
+  CPU and while maps/programs are evicted, reloaded, partially populated, or
+  fence-delayed; every lookup observes only its one captured immutable epoch
+- map-in-map and fallback capability tests plus epoch maximum/exhaustion/wrap,
+  premature reclamation, delayed reader, and stale CPU/XSK reference fixtures
 
 Exit criteria:
 
 - Kernel rules cannot create, refresh, broaden, or outlive core authorization;
-  no packet observes mixed authority generations and every UMEM frame has one owner.
+  no packet observes mixed/reclaimed authority generations, old maps remain
+  reachable until readers quiesce, and every UMEM frame has one owner.
 - Stop: `v0.82.0 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.82.1 - Fast-Path Revocation Closure

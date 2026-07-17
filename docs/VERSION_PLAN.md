@@ -29,7 +29,7 @@ The index and detailed contracts are checked together by
 | `0.2.1` | Deterministic architecture contract | Reducer inputs, output atomicity, time, entropy, storage, capability, lease, and protocol-name rules are frozen before APIs |
 | `0.2.2` | Executed requirement evidence | Semantic requirements can become verified only when CI resolves their real symbol and observes their named test |
 | `0.2.3` | Crate authority and dependency boundary | The real crate graph is documented and mechanically prevents runtime framing views or crypto adapters from acquiring protocol authority |
-| `0.2.4` | Executable reducer and memory contract | A minimal reducer uses canonical semantic state projections, disjoint identity-bound caller arenas, and an explicit infallible-commit/epoch-loss crash rule |
+| `0.2.4` | Executable reducer and memory contract | A minimal reducer uses confined canonical semantic projections, disjoint identity-bound caller arenas, and an explicit infallible-commit/epoch-loss crash rule |
 | `0.2.5` | Adapter-neutral capacity admission | Core prepares semantic requirements and commits to caller arenas while queue topology, reservations, publication, wakeups, and atomics remain adapter-owned |
 | `0.2.6` | Core and deployment standards ledgers | Locked authentication, address, URI, discovery, security, and deployment RFC profiles receive complete semantic requirement inventories |
 | `0.2.7` | Extension and transport standards ledgers | Locked TURN extension, DTLS, shared-port, mobility, measurement, and congestion-profile RFCs receive complete semantic requirement inventories |
@@ -98,6 +98,7 @@ The index and detailed contracts are checked together by
 | `0.23.15` | Fence and ownership separation | Fence acknowledgement prevents new handoff but never releases storage still reachable by an in-flight external operation |
 | `0.23.16` | Bounded unresolved recovery | Timeout/cancellation recovery has fixed rounds, ages, counts, escalation, quarantine, and non-aliasing capacity rules |
 | `0.23.17` | Validated execution-domain quiescence | Adapters submit generation-bound reports; core alone validates a single-use challenge and releases physical storage while adapter truthfulness remains explicit trust |
+| `0.23.18` | Unwind engine-epoch poisoning | Any reducer/provider unwind permanently poisons the epoch; only quarantine and destruction remain available, while production still aborts |
 | `0.24.0` | Binding state processing | Correct XOR-MAPPED responses and error paths without sockets |
 | `0.25.0` | Context-bound stateless nonces | Source/realm/time-trust binding limits the replay window without falsely claiming single-use detection |
 | `0.25.1` | Absolute-clock trust model | Uncertain, unavailable, rollback, forward-jump, and recovery generations fail closed without changing monotonic lifetimes |
@@ -116,6 +117,7 @@ The index and detailed contracts are checked together by
 | `0.30.7` | Cached retransmission admission | Cache lookup is charged inside the ordinary method class before a bounded cached-response substate may release only unused reservations |
 | `0.30.8` | Cache timing threat model | Cache membership has explicit secrecy policy, bounded timing envelopes, no semantic oracle, and no artificial expensive equalization work |
 | `0.30.9` | Scalar datagram truncation boundary | Every platform reports or conservatively detects receive truncation and discards the complete datagram before classification or response |
+| `0.30.10` | Canonical ingress envelope | Scalar, batched, GRO, `io_uring`, and AF_XDP adapters produce one complete identity/ancillary envelope and preserve authorized response-source selection |
 | `0.31.0` | Portable UDP Binding runtime | Real IPv4 Binding works through the same core path as synthetic tests |
 | `0.31.1` | First hot-path resource baseline | Fail-after-startup allocation, copy, task, descriptor, and response-byte instrumentation stays within budget |
 | `0.32.0` | IPv6 Binding runtime | IPv6 and dual-stack listener/path identity tests pass |
@@ -215,8 +217,8 @@ The index and detailed contracts are checked together by
 | `0.79.4` | UDP GRO/GSO segment semantics | Optional coalescing/segmentation preserves per-original-datagram identity, admission, authority, accounting, completion, and scalar behavior |
 | `0.80.0` | Buffer pools and scatter/gather | Allocator instrumentation proves zero packet-path allocations/copies where planned |
 | `0.80.1` | Measured allocation and copy profiles | UDP/STUN, UDP/TURN, TCP, TLS, and DTLS profiles publish exact warm-up, allocation, copy, retention, and provider qualification evidence |
-| `0.81.0` | `io_uring` backend | Checked slab identities, multishot/cancel/CQ/buffer lifecycles, linked partial submission, and feature-by-feature scalar fallback pass |
-| `0.82.0` | Optional eBPF/AF_XDP fast path | Packet-shape eligibility, atomic multi-map epochs, UMEM ownership, and tuple-first rules remain a fail-closed subset of core authority |
+| `0.81.0` | `io_uring` backend | One opaque 64-bit operation token, multishot/cancel/CQ/buffer lifecycles, linked partial submission, and feature-by-feature scalar fallback pass |
+| `0.82.0` | Optional eBPF/AF_XDP fast path | Captured immutable map epochs, safe grace-period reclamation, packet-shape eligibility, UMEM ownership, and tuple-first rules remain a fail-closed subset of core authority |
 | `0.82.1` | Fast-path revocation closure | Revocation, expiry, map loss, reuse, and reconciliation cannot leave kernel authority broader or longer-lived than core state |
 | `0.82.2` | Fast-path quota leases | Kernel byte/packet authority is finite, generation-bound, reconciled before renewal, and never independently refillable |
 

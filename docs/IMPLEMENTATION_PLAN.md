@@ -404,11 +404,17 @@ The core is a pure reducer: identical initial semantic state, immutable configur
 ordered event/path identities and generations, supplied monotonic/absolute
 times, entropy bytes, provider completions, storage seed/layout inputs, and
 output/workspace capacities produce byte-identical wire/command output and the
-same versioned canonical state projection/digest. Equality never compares raw
-Rust memory, padding, pointers, or backend handles; resources use stable core-
-owned `{domain, id, generation}` references. Bucket/insertion/tombstone order, pointer layout, `usize`
-width, endianness, allocator placement, and runtime correlation IDs cannot
-affect semantic output or operation identity.
+same fixed-buffer, versioned, domain-separated canonical state projection.
+Full projection comparison is decisive; its digest is diagnostic only and never
+security equality or authority. The projection is not persistence, restart
+state, an authority-bearing snapshot, or an automatic logging/metrics/admin/
+crash-report format. It contains no secrets, packet evidence, raw identities,
+nonces, reusable handles, or authoritative deserializer, and production export
+is absent unless a separately reviewed redacted profile enables it. Equality
+never compares raw Rust memory, padding, pointers, or backend handles; resources
+use stable core-owned `{domain, id, generation}` references. Bucket, insertion,
+tombstone order, pointer layout, `usize` width, endianness, allocator placement,
+and runtime correlation IDs cannot affect semantic output or operation identity.
 It first performs one bounded preparation pass into caller-provided fixed
 workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds
@@ -471,6 +477,15 @@ state together with the arena; invalidating only the unpublished arena is
 forbidden and this is epoch loss, not rollback. Partial arena acceptance is
 prohibited, while later OS execution remains explicitly non-atomic and
 completion-driven.
+
+Every reducer, provider, storage, crypto, policy, encoder, completion, and
+adapter-callback entry uses a no_std boundary guard that poisons the complete
+engine epoch unless normal validated return disarms it. If an unwind-enabled
+host catches a panic, all later work returns `EnginePoisoned`; only bounded
+quarantine, redacted evidence, destruction, and supervised disjoint-epoch
+replacement remain. Poison never proves quiescence or releases external
+ownership. Production retains abort-and-supervise and never treats
+`catch_unwind` as fault isolation.
 
 Capacity reservation and publication are runtime-adapter responsibilities, not
 part of the portable core data model. `gjallarbru-core` transitions, requirements,
@@ -731,14 +746,29 @@ classification, parsing, authentication, lookup, state, or response. A retained
 prefix is never an input frame even when it is a complete valid authenticated
 STUN message. Batched and accelerated receives refine this scalar rule.
 
+All receive paths construct one bounded `IngressEnvelope`: remote/local
+transport addresses; listener/socket and local-destination/source-selection
+identity; interface/scope; transport/session; worker/configuration/trust/proxy/
+operation/buffer generations; typed optional ECN/DSCP; and separate payload and
+ancillary completeness. Scalar, batched, GRO, `io_uring`, AF_XDP, stream,
+trusted-termination, simulation, and future Aesynx adapters share this shape.
+`MSG_CTRUNC`, malformed/conflicting/duplicate packet information, or missing
+profile-required metadata fails before classification. Wildcard/multihomed
+responses bind the authorized local address/interface to a bound socket or
+validated per-send packet information; ambient OS source selection is forbidden.
+
 Linux adds worker-local `SO_REUSEPORT` steering, batched receive/send,
 scatter-gather buffers, then `io_uring` only after measurement. Optional eBPF
 and AF_XDP can filter or accelerate already-authorized plaintext UDP paths but
 cannot authenticate, create state, refresh lifetimes, or independently decide
 policy.
 
-The `io_uring` adapter identifies operations with checked slab index,
-generation, domain, and kind—never a raw pointer. It models multishot `F_MORE`
+The `io_uring` `user_data` is one opaque nonzero 64-bit operation token—never a
+pointer or lossy packed identifier. A bounded token table resolves it to checked
+slab index/generation, domain/ring generation, kind, ownership, and completion
+mode. Reserved/unknown/stale tokens fail closed; tokens never repeat in a live
+domain, and exhaustion requires drain plus validated quiescence before a
+disjoint domain resets the space. The adapter models multishot `F_MORE`
 and terminal CQEs, cancellation with late completions, provided-buffer depletion
 and exactly-once return, CQ overflow/ring disable, failed unregister/fixed-file
 updates, and partial linked submission. `SEND_ZC` is excluded unless its separate
@@ -749,13 +779,17 @@ The first eBPF/AF_XDP profile prefers tuple steering/filtering and does not
 duplicate the semantic STUN parser. VLAN/QinQ, IP options/fragments, IPv6
 extension headers/fragments, checksum/offload ambiguity, and GRO metadata have
 explicit punt/drop eligibility. Related maps are filled under one inactive
-generation and exposed by a single atomic epoch switch. UMEM frames carry a
-generation and one XSK queue owner with fixed headroom/alignment and exactly-once
-fill/completion return.
+generation and exposed by a single atomic epoch switch, preferably map-in-map.
+Each packet captures the active epoch once and uses it for every related lookup;
+active entries are immutable. Old generations remain installed until a bounded
+grace/fence or core-validated quiescence report closes every CPU/program/XSK/
+DMA reader. Epochs cannot wrap or be reused while reachable; uncertainty
+disables acceleration. UMEM frames carry a generation and one XSK queue owner
+with fixed headroom/alignment and exactly-once fill/completion return.
 
-Batched receives preserve remote address, local destination, transport,
-truncation, operation, worker epoch, and buffer generation for every scalar core
-transition. Partial sends report unsent packets truthfully. Fast-path rules are
+Batched receives preserve the complete canonical `IngressEnvelope` for every
+scalar core transition without maintaining a second field list. Partial sends
+report unsent packets truthfully. Fast-path rules are
 removed or invalidated before authority reuse, never expire later than core
 authority, and drop or return to the slow path on map loss or reconciliation
 uncertainty.

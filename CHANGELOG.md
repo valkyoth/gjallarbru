@@ -59,6 +59,9 @@ All notable changes to `gjallarbru` are documented here.
 - Closed reducer commit/crash, canonical-state, caller-memory aliasing, scalar
   UDP truncation, terminal stream framing, runtime validation, constructible
   quiescence, bounded key-lease, `io_uring`, and AF_XDP lifecycle contracts.
+- Added canonical ingress/ancillary metadata and unwind-poisoning releases, and
+  confined state projections, 64-bit `io_uring` tokens, response-source
+  selection, and eBPF epoch reclamation before their first production use.
 
 ## 0.2.0 - 2026-07-14
 
