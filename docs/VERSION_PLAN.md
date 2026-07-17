@@ -34,6 +34,7 @@ The index and detailed contracts are checked together by
 | `0.2.6` | Core and deployment standards ledgers | Locked authentication, address, URI, discovery, security, and deployment RFC profiles receive complete semantic requirement inventories |
 | `0.2.7` | Extension and transport standards ledgers | Locked TURN extension, DTLS, shared-port, mobility, measurement, and congestion-profile RFCs receive complete semantic requirement inventories |
 | `0.2.8` | Complete-witness confinement | Private internal harnesses can compare complete state, while production crates, features, adapters, callbacks, formatting, and byte export cannot obtain witness data |
+| `0.2.9` | Private witness harness topology | External fuzzers emit only public replay inputs; same-crate unit/model replay consumes them and proves complete witness comparison without friend-crate or test-feature escape |
 | `0.3.0` | IANA snapshot tooling | Reviewed registry snapshot deterministically regenerates protocol assignments |
 | `0.4.0` | Primitive domains | Addresses, methods, classes, transactions, monotonic time, absolute-time trust/source generations, limits, and errors have boundary tests |
 | `0.4.1` | Complete client-path identity | Listener, socket, provenance, interface, configuration, connection, and worker generations prevent stale or cross-realm authority |
@@ -44,6 +45,7 @@ The index and detailed contracts are checked together by
 | `0.6.2` | Deterministic indexes and wrap closure | Load, probes, tombstones, iteration, word-size independence, generation wrap, and tick horizons have executable fixed bounds |
 | `0.6.3` | Hash-layout resource determinism | Seed, layout, probe, and saturation are explicit resource inputs; exact replay uses identical resources while cross-layout tests preserve safety and authorization invariants |
 | `0.6.4` | Keyed-hash seed lifecycle | Purpose-separated opaque seeds come from explicit entropy, rotate only through bounded rebuild, survive no fork/clone ambiguity, and separate deterministic safety from probabilistic availability |
+| `0.6.5` | Hash-provider identity binding | Provider, algorithm/version, seed reference, and generation map immutably to one purpose/seed behavior; uncertainty forces a new generation and table rebuild |
 
 ## Phase B: First-Party Wire Protocol
 

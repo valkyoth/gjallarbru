@@ -184,13 +184,13 @@ Current closure decisions are:
 | Determinism could remain an architectural promise until the full STUN core, allowing layout, word width, capacity, or correlation IDs to harden into APIs first. | `v0.2.4` lands a minimal executable reducer kernel and differential replay harness before protocol APIs. |
 | Queue-shaped permits, generations, or publication types could force core consumers to adopt Gjallarbru's runtime topology. | `v0.2.5` separates semantic preparation/commit from adapter-owned reservation and publication. |
 | Locked extension/deployment RFC text could remain only downloaded reference material until immediately before a conformance claim. | `v0.2.6` and `v0.2.7` complete semantic ledgers for every locked non-base profile before implementation authority. |
-| Storage layout, tombstone debt, hash-seed lifecycle, `usize` width, generation wrap, or ambiguous Tick comparison could silently change results, weaken DoS resistance, or exceed constrained-target bounds. | `v0.6.2` fixes mechanical bounds; `v0.6.3` makes layout saturation explicit; `v0.6.4` owns purpose-separated entropy-backed seed lifecycle and separates guaranteed capacity from probabilistic availability. |
+| Storage layout, tombstone debt, hash-seed/provider lifecycle, `usize` width, generation wrap, or ambiguous Tick comparison could silently change results, weaken DoS resistance, or exceed constrained-target bounds. | `v0.6.2` fixes bounds; `v0.6.3` makes saturation explicit; `v0.6.4` owns opaque seeds/availability; `v0.6.5` binds provider, algorithm/version, reference, generation, purpose, and seed behavior immutably. |
 | A one-pass attribute inventory could allocate or retain one descriptor per tiny attribute and misclassify its own capacity limit as malformed input. | `v0.8.2` uses sparse fixed metadata plus caller-bounded unknown-required accumulation and a distinct resource outcome. |
 | Encoder dependency/finalizer plans could be logically bounded yet still allocate vectors, closures, trait objects, or grown scatter lists per message. | `v0.16.1` requires fixed arrays/caller workspace and fail-allocator/copy evidence before finalizers. |
 | A global zero-copy/allocation-free claim could conceal different warm-up, security-copy, stream, and provider behavior. | `v0.80.1` defines transport/phase-specific allocation, copy, retention, and qualification profiles. |
 | UDP GRO/GSO could accidentally authenticate or charge a coalesced super-packet once or invent per-segment completion truth unavailable from the provider. | `v0.79.4` preserves scalar identity/admission/accounting per original datagram and disables ambiguous segmentation paths. |
 | Reference tests could miss lifecycle interleavings spanning allocation open, timeout/cancel, fence, quarantine, and quiescence before real sockets arrive. | `v0.39.2` model-checks the complete external-effect lifecycle and promotes every counterexample. |
-| Raw Rust memory bytes, a redacted view used as equality, provider handles, overlapping caller regions, or an exported witness could make reducer equality incomplete, leak secrets, or permit aliasing during commit. | `v0.2.4` separates complete witness from redacted observation and validates disjoint arenas; `v0.2.8` mechanically prevents production crates/features/adapters from naming, formatting, exporting, or receiving witness data. |
+| Raw Rust memory bytes, a redacted view used as equality, provider handles, overlapping caller regions, an exported witness, or impossible friend-crate fuzz access could make reducer equality incomplete or leak secrets. | `v0.2.4` separates witnesses/observations and arenas; `v0.2.8` confines witness data; `v0.2.9` makes external fuzzers emit public replay inputs that only same-crate private harnesses compare completely. |
 | A valid-looking prefix retained from a truncated UDP datagram could be parsed, authenticated, or answered. | `v0.30.9` normalizes scalar platform truncation before classification and requires silent whole-datagram discard; `v0.79.4` later preserves the same rule under GRO/GSO. |
 | A TCP/TLS framer could scan for a new boundary after an impossible prefix and desynchronize or perform quadratic work. | `v0.21.1` makes invalid prefixes, padding, lengths, and partial EOF terminal connection errors with linear-work fuzz evidence. |
 | Linux acceleration could assume a nonexistent userspace BPF reader-drain token, confuse kernel object lifetime with semantic authority, or leave pinned objects outside process-death recovery. | `v0.81.1` proves exact primitives per backend; without drain evidence it requires a final active-epoch check, separate in-flight/semantic/kernel-object ledgers, full pin/link/program/map inventory, and scalar fallback. |
@@ -597,12 +597,18 @@ Deliverables:
   trait-object sink exists for witness data;
 - fixed witness scratch and temporary sensitive values obey prepared-transition
   rules: non-escaping borrows, exact capacity, no hidden allocation/copy, scoped
-  exposure, deterministic scrubbing on success/error/panic, and no retention by
+  exposure, deterministic scoped-destruction scrubbing on success, ordinary
+  error, or unwind, and no retention by
   diagnostics, failures, assertions, fuzz crash artifacts, or snapshots;
+- under `panic = "abort"`, destructors are not claimed to run; process
+  termination, secret-bearing core-dump disablement, and supervised replacement
+  provide containment while scratch is never persisted to an external sink;
 - `RedactedObservationSnapshot` remains the only production observation surface
   and cannot be converted to or compared as a complete witness;
 - package/content/API gates ensure crates.io archives and EUPL runtime/server
   artifacts contain no accidentally exported witness symbol or enablement path.
+- `v0.2.9` fixes the executable topology: external fuzzers emit only public
+  replay inputs, and a same-crate replayer performs complete private comparison.
 
 Verification:
 
@@ -614,7 +620,8 @@ Verification:
 - dedicated internal fuzz/model harness tests proving full comparison remains
   usable without public visibility or proportional allocation
 - Miri plus panic/error/capacity tests for scratch escape, retained callback,
-  uninitialized bytes, double scrub, and sensitive crash/assertion output
+  uninitialized bytes, double scrub, unwind scrubbing, abort-process containment,
+  and sensitive crash/assertion output
 
 Exit criteria:
 
@@ -622,6 +629,57 @@ Exit criteria:
   production and downstream code can obtain redacted observations but cannot
   name, enable, export, format, retain, or callback-stream witness material.
 - Stop: `v0.2.8 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.2.9 - Private Witness Harness Topology
+
+Goal: make long-running fuzzing and model checking exercise complete private
+state comparison without relying on nonexistent Rust friend-crate visibility or
+opening a production test-support feature.
+
+Deliverables:
+
+- the selected topology is fixed: same-crate `#[cfg(test)]` unit/model modules
+  and approved same-crate formal-tool modules consume private witness iterators
+  directly; no integration test, binary, facade, runtime, or external fuzz crate does;
+- external cargo-fuzz/AFL/libFuzzer-style targets exercise only published packet,
+  event, configuration, capacity, and completion APIs and emit/minimize a bounded
+  versioned `ReplayInput` containing public reducer inputs—never witness items,
+  witness digests, secrets, private handles, or internal state bytes;
+- one same-crate private `WitnessReplayer` consumes the exact replay corpus,
+  executes reference/candidate transitions, compares complete witness streams,
+  and reports only redacted divergence location/category plus the replay input;
+- Kani/Loom/property/model adapters live within the owning crate/module topology
+  or consume the same public replay input through a same-crate wrapper; no claim
+  that `pub(crate)` grants access to a separate integration/fuzz/model crate;
+- no public or additive `test-support`, `fuzzing`, `model`, `witness`, or similar
+  Cargo feature exposes private witness APIs through dependency feature unification;
+- repository scripts connect external corpus generation/minimization to the
+  same-crate replayer using files/stdin/test fixtures containing replay inputs
+  only, with fixed size/count/time and malformed-version bounds;
+- an executed-evidence marker/counter records that a release fuzz/model gate
+  reached complete witness comparison, not merely packet output comparison;
+- fuzz crash/minimized artifacts contain only replay inputs and redacted failure
+  metadata; witness scratch follows `v0.2.8` containment and is never persisted.
+
+Verification:
+
+- `cargo test -p gjallarbru-core private_witness_harness_topology`
+- compile-fail fixtures proving integration tests, binaries, external fuzz crates,
+  runtime adapters, and every feature combination cannot name witness types/sinks
+- a seeded external fuzz-smoke case emitted as `ReplayInput`, replayed by the
+  same-crate harness, and required to increment/assert the witness-comparison marker
+- mutation fixtures where commands remain identical but private future-behavior
+  state differs, proving the long-running pipeline detects witness-only divergence
+- corpus version/size/count/truncation/malformed tests plus redaction and artifact scans
+- CI/package/rustdoc/public-API checks proving no normal feature or published
+  archive creates a witness access route
+
+Exit criteria:
+
+- Long-running external fuzzing and formal tests demonstrably reach complete
+  private-state comparison through replay inputs, while Rust crate privacy and
+  production feature/package boundaries remain mechanically intact.
+- Stop: `v0.2.9 implementation stop reached. Run pentest for this exact commit.`
 
 ### v0.3.0 - IANA Snapshot Tooling
 
@@ -956,6 +1014,9 @@ Deliverables:
   probabilistic; if the proven guaranteed minimum is below a required hard
   service capacity, that profile must add and qualify a bounded fallback/overflow
   structure before making the guarantee.
+- `v0.6.5` binds every opaque provider reference to an immutable provider,
+  algorithm/version, generation, purpose, seed, output interpretation, and work
+  behavior before production keyed-table determinism is claimed.
 
 Verification:
 
@@ -977,6 +1038,59 @@ Exit criteria:
   safety never depends on seed luck, and every higher capacity/availability claim
   is either proven for all layouts or explicitly statistical and reproducible.
 - Stop: `v0.6.4 implementation stop reached. Run pentest for this exact commit.`
+
+### v0.6.5 - Hash-Provider Identity Binding
+
+Goal: preserve secret seed opacity while making the provider behavior behind an
+opaque reference a complete immutable reducer input that can be replayed and qualified.
+
+Deliverables:
+
+- `HashProviderIdentity { provider_id, algorithm_id, algorithm_version,
+  seed_ref, seed_generation }` plus table purpose/hash domain is immutable
+  reducer configuration/resource input and appears completely in
+  `CanonicalStateWitness` without raw production seed bytes;
+- within one provider/seed generation, each `seed_ref` maps immutably and
+  injectively to exactly one seed value, purpose, algorithm/version, output
+  interpretation, and fixed-work behavior; aliases and purpose remapping are forbidden;
+- a provider cannot remap a live reference after cache eviction, restart,
+  restore, internal rotation, failover, handle reuse/wrap, storage recovery, or
+  backend migration; it may restore the identical qualified mapping or return unavailable;
+- provider loss, mapping uncertainty, algorithm/provider update, or required
+  rotation creates new provider/seed generations and triggers the bounded
+  `v0.6.3`/`v0.6.4` rebuild before any affected table accepts ingress;
+- core never assumes equality of backend handles or seed bytes; it validates the
+  stable identity/generations/purpose and treats stale, duplicate, unknown,
+  mismatched, or ambiguous references as fail-closed resource/provider errors;
+- a deterministic test provider exposes fixed reviewed identity-to-seed mappings
+  for exact replay across toolchains/layouts without sharing production seed material;
+- qualified production providers prove same identity plus same key input always
+  produces the same fixed hash output and work bound for the complete generation;
+- algorithm/provider migration is an explicit versioned control transition with
+  capacity reservation, dual-generation isolation during rebuild, atomic
+  activation, rollback before activation, and retirement after old lookups end.
+
+Verification:
+
+- `cargo test -p gjallarbru-core hash_provider_identity_binding`
+- deterministic provider vectors for every supported algorithm/version/purpose
+  plus replay across restart/cache-eviction/restore and stable provider identity
+- malicious provider fixtures for same-reference/different-seed, same-reference/
+  different-algorithm, cross-purpose alias, handle reuse, remap after eviction,
+  nondeterministic output, variable work, stale generation, and identity collision
+- provider restart/uncertainty/migration fault injection proving ingress remains
+  blocked until new generation and complete bounded table rebuild activate
+- complete-witness mutation tests for every identity field and compile/API/log/
+  snapshot scans proving raw seed bytes remain unavailable
+- no_std/MSRV, fixed-work/no-allocation, failure, exhaustion, generation-wrap,
+  and provider-differential qualification gates
+
+Exit criteria:
+
+- One complete provider identity always denotes one immutable purpose-specific
+  hashing behavior for its generation; any ambiguity creates a new generation
+  and rebuild before ingress rather than silently changing reducer behavior.
+- Stop: `v0.6.5 implementation stop reached. Run pentest for this exact commit.`
 
 ## Phase B: First-Party Wire Protocol
 

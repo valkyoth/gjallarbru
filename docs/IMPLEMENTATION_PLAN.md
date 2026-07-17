@@ -414,11 +414,20 @@ Provider secret bytes remain outside core when stable purpose-bound
 `{domain, id, generation}` references are the semantic state.
 
 Witness types, iterators, scratch, and sinks are private or `pub(crate)` and
-reachable only from a repository-internal fuzz/model/differential harness—not a
-normal Cargo feature, facade/runtime adapter, callback, FFI, or published API.
-No general byte sink or dynamic callback exists. Sensitive fixed scratch is
-non-escaping and scrubbed on success, error, and unwind; production package,
-symbol, rustdoc, and compile fixtures mechanically enforce the confinement.
+reachable only from same-crate `#[cfg(test)]` unit/model modules and approved
+same-crate formal-tool modules—not a normal Cargo feature, integration test,
+external fuzz crate, facade/runtime adapter, callback, FFI, or published API.
+External fuzz targets exercise only public packet/event/configuration APIs and
+emit bounded versioned `ReplayInput`s. A same-crate private `WitnessReplayer`
+consumes those inputs and performs complete witness comparison; release gates
+require an executed marker proving that comparison was reached. No friend-crate
+claim, public test-support feature, general byte sink, or dynamic callback
+exists. Sensitive fixed scratch is non-escaping and scrubbed by scoped
+destruction on success, error, and unwind. Under `panic = "abort"`, destructors
+are not claimed to run: process termination, disabled secret-bearing core dumps,
+and supervised replacement provide containment, and scratch is never persisted.
+Production package, symbol, rustdoc, and compile fixtures mechanically enforce
+the confinement.
 
 `RedactedObservationSnapshot` is a separate bounded production diagnostic with
 identities, credentials, nonces, packet/authentication evidence, and reusable
@@ -439,16 +448,26 @@ Each attacker-keyed table uses an opaque non-cloneable `HashSeed` from explicit
 entropy, bound to process/engine/worker, purpose, and hash-domain generation.
 Transactions, allocations, permissions, channels, credentials, nonce/replay,
 and rate-limit tables use separate domains. Raw seed material never formats,
-serializes, exports, or enters observations/witnesses; the stable purpose/
-generation reference does. A seed changes only through a
-capacity-reserved bounded rebuild. Fork/clone/snapshot/restart/replacement must
-establish unique instance entropy and rebuild before ingress; failure stays
-closed. Live clone profiles require a non-snapshot-stable supervisor identity or
-resume event; otherwise live snapshot cloning is unsupported and service starts
-in a fresh process/epoch. The keyed hash has fixed work and no allocation or
-blocking. Deterministic safety, worst-case guaranteed insertion capacity, and
-statistical availability under healthy secret seeds are measured and documented
-as distinct claims.
+serializes, exports, or enters observations/witnesses. Instead,
+`HashProviderIdentity { provider_id, algorithm_id, algorithm_version, seed_ref,
+seed_generation }` plus purpose/domain is immutable reducer resource input and
+complete witness state. Within a provider/seed generation, each reference maps
+immutably and injectively to exactly one seed, purpose, algorithm/version,
+output interpretation, and fixed-work behavior. The identical identity and key
+must always produce the identical output and work bound. Cache eviction,
+restart, restore, internal rotation, failover, handle reuse, or backend migration
+may restore that exact mapping or report it unavailable; they may never remap it.
+Loss or uncertainty establishes a new provider/seed generation and completes a
+capacity-reserved bounded table rebuild before ingress. Deterministic replay uses
+a reviewed test provider with fixed identity-to-seed mappings, without exposing
+production seed bytes. Fork/clone/snapshot/restart/replacement must establish
+unique instance entropy and rebuild before ingress; failure stays closed. Live
+clone profiles require a non-snapshot-stable supervisor identity or resume event;
+otherwise live snapshot cloning is unsupported and service starts in a fresh
+process/epoch. The keyed hash has fixed work and no allocation or blocking.
+Deterministic safety, worst-case guaranteed insertion capacity, and statistical
+availability under healthy secret seeds are measured and documented as distinct
+claims.
 It first performs one bounded preparation pass into caller-provided fixed
 workspace. The resulting non-cloneable `PreparedTransition` contains immutable
 planned state changes, commands, and exact `TransitionRequirements`; it binds

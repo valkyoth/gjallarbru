@@ -67,6 +67,8 @@ All notable changes to `gjallarbru` are documented here.
   typed ingress provenance, and evidence-based eBPF reader reclamation.
 - Added mechanical witness confinement, keyed-hash seed lifecycle, a Linux BPF
   reader-capability spike, and raw AF_XDP L2/L3/L4 validation before acceleration.
+- Added a same-crate private-witness replay topology and immutable hash-provider
+  identity binding, with accurate unwind-versus-abort scratch containment.
 
 ## 0.2.0 - 2026-07-14
 
